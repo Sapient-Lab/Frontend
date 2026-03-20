@@ -1,16 +1,24 @@
+import { useProject } from '../../context/ProjectContext';
+
 export default function TeamPanel() {
+  const { projectMode } = useProject();
+
   const teamMembers = [
     { id: 1, name: 'Tú', initials: 'FC', role: 'Desarrollador', status: 'online' },
-    { id: 2, name: 'Dr. A. Gómez', initials: 'AG', role: 'Investigador Principal', status: 'online' },
-    { id: 3, name: 'Elena R.', initials: 'ER', role: 'Especialista Datos', status: 'away' },
-    { id: 4, name: 'Sistema Central', initials: 'Sys', role: 'Bot Automático', status: 'online' },
+    ...((projectMode === 'team') ? [
+      { id: 2, name: 'Dr. A. Gómez', initials: 'AG', role: 'Investigador Principal', status: 'online' },
+      { id: 3, name: 'Elena R.', initials: 'ER', role: 'Especialista Datos', status: 'away' },
+      { id: 4, name: 'Sistema Central', initials: 'Sys', role: 'Bot Automático', status: 'online' },
+    ] : [
+      { id: 4, name: 'Sistema Central', initials: 'Sys', role: 'Asistente IA', status: 'online' }
+    ])
   ];
 
   return (
     <aside className="w-64 bg-surface border-l border-lab-border flex flex-col h-full">
       <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center px-4">
         <h2 className="text-xs font-mono font-semibold text-accent uppercase tracking-wider">
-          Equipo y Estado
+          {projectMode === 'solo' ? 'Estado' : 'Equipo y Estado'}
         </h2>
       </div>
 
@@ -18,7 +26,9 @@ export default function TeamPanel() {
         
         {/* Progreso del Módulo */}
         <div>
-          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">Progreso Actual</h3>
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">
+            {projectMode === 'solo' ? 'Mi Progreso' : 'Progreso Actual'}
+          </h3>
           <div className="bg-lab-bg rounded border border-lab-border p-3">
             <div className="flex justify-between text-xs mb-1 font-mono">
               <span className="text-gray-600">Sprint Alpha</span>
@@ -33,7 +43,9 @@ export default function TeamPanel() {
 
         {/* Miembros Conectados */}
         <div>
-          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">Conectados</h3>
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">
+            {projectMode === 'solo' ? 'Conectado' : 'Conectados'}
+          </h3>
           <div className="space-y-3">
             {teamMembers.map(member => (
               <div key={member.id} className="flex items-center gap-3">

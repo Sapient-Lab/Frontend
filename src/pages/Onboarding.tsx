@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useProject } from '../context/ProjectContext';
 
 const mockProjects = [
   { id: 1, name: 'Proyecto Alpha', owner: 'Equipo Rojo', desc: 'Desarrollo de microservicios con Spring Boot y base de datos relacional.' },
@@ -19,10 +20,12 @@ export default function Onboarding() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const navigate = useNavigate();
+  const { setProjectMode } = useProject();
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Proyecto creado:', { projectName, projectDesc });
+    setProjectMode('solo');
     // TODO: Llamada a la API para crear proyecto
     navigate('/app');
   };
@@ -30,6 +33,7 @@ export default function Onboarding() {
   const handleJoinProject = (projectId: number) => {
     console.log('Solicitud enviada al proyecto id:', projectId);
     alert('¡Tu solicitud ha sido enviada con éxito! Serás notificado cuando sea aprobada.');
+    setProjectMode('team');
     // TODO: Llamada a la API para solicitar unirse
     navigate('/app');
   };

@@ -1,9 +1,24 @@
 import { useState } from 'react';
 import Editor from '@monaco-editor/react';
+import { useProject } from '../context/ProjectContext';
 
 export default function LabWorkspace() {
-  const [code, setCode] = useState(
-`// log: 2026-03-20 - Alpha Team
+  const { projectMode } = useProject();
+  
+  const initialCodeSolo = `// log: 2026-03-20 - Mi Proyecto Solo
+// Analizando y limpiando los datos del experimento.
+
+import { analyzeSpectrum } from './core/spectrometer';
+
+export function processData(rawData) {
+  // TODO: Implementar limpieza de datos
+  
+  
+  return null;
+}
+`;
+
+  const initialCodeTeam = `// log: 2026-03-20 - Alpha Team
 // Necesitamos que esta función procese los datos del espectrómetro antes del mediodía.
 // PD: No borres las importaciones principales.
 
@@ -15,8 +30,9 @@ export function processData(rawData) {
   
   return null;
 }
-`
-  );
+`;
+
+  const [code, setCode] = useState(projectMode === 'solo' ? initialCodeSolo : initialCodeTeam);
 
   return (
     <div className="h-full flex flex-col md:flex-row gap-4">
@@ -25,7 +41,7 @@ export function processData(rawData) {
       <div className="w-full md:w-1/3 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm">
         <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center px-4 justify-between">
           <h2 className="text-xs font-mono font-semibold text-accent uppercase tracking-wider">
-            Log de Equipo
+            {projectMode === 'solo' ? 'Mi Registro' : 'Log de Equipo'}
           </h2>
           <span className="flex h-2 w-2 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -34,33 +50,55 @@ export function processData(rawData) {
         </div>
         <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-4 text-sm font-sans bg-[#fbfbfb]">
           
-          {/* Mensaje 1 */}
-          <div className="bg-white border border-lab-border p-3 rounded shadow-sm relative">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-accent text-xs">Dr. A. Gómez</span>
-              <span className="text-[10px] text-muted font-mono">08:42 AM</span>
-            </div>
-            <p className="text-gray-700 leading-relaxed text-sm">
-              Las lecturas del sensor principal están llegando con ruido. Hay que crear un filtro pasa-bajos en <code className="bg-gray-100 px-1 py-0.5 rounded text-accent text-xs">processData</code>.
-            </p>
-          </div>
+          {projectMode === 'team' ? (
+            <>
+              {/* Mensaje 1 */}
+              <div className="bg-white border border-lab-border p-3 rounded shadow-sm relative">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-accent text-xs">Dr. A. Gómez</span>
+                  <span className="text-[10px] text-muted font-mono">08:42 AM</span>
+                </div>
+                <p className="text-gray-700 leading-relaxed text-sm">
+                  Las lecturas del sensor principal están llegando con ruido. Hay que crear un filtro pasa-bajos en <code className="bg-gray-100 px-1 py-0.5 rounded text-accent text-xs">processData</code>.
+                </p>
+              </div>
 
-          {/* Mensaje 2 (Tarea Activa) */}
-          <div className="bg-accent-light border border-accent p-3 rounded shadow-sm relative">
-            <div className="absolute -left-1 top-4 w-2 h-8 bg-accent rounded-r"></div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-accent text-xs">Sistema Central</span>
-              <span className="text-[10px] text-accent font-mono">AHORA</span>
-            </div>
-            <div className="text-gray-800 leading-relaxed text-sm">
-              <strong>Prioridad Alta:</strong>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>Limpiar nulos del arreglo <code className="bg-white px-1 py-0.5 rounded text-xs">rawData</code>.</li>
-                <li>Aplicar la función <code className="bg-white px-1 py-0.5 rounded text-xs">analyzeSpectrum</code>.</li>
-                <li>Retornar el objeto normalizado.</li>
-              </ul>
-            </div>
-          </div>
+              {/* Mensaje 2 (Tarea Activa) */}
+              <div className="bg-accent-light border border-accent p-3 rounded shadow-sm relative">
+                <div className="absolute -left-1 top-4 w-2 h-8 bg-accent rounded-r"></div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-accent text-xs">Sistema Central</span>
+                  <span className="text-[10px] text-accent font-mono">AHORA</span>
+                </div>
+                <div className="text-gray-800 leading-relaxed text-sm">
+                  <strong>Prioridad Alta:</strong>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>Limpiar nulos del arreglo <code className="bg-white px-1 py-0.5 rounded text-xs">rawData</code>.</li>
+                    <li>Aplicar la función <code className="bg-white px-1 py-0.5 rounded text-xs">analyzeSpectrum</code>.</li>
+                    <li>Retornar el objeto normalizado.</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Mensaje Solo */}
+              <div className="bg-accent-light border border-accent p-3 rounded shadow-sm relative">
+                <div className="absolute -left-1 top-4 w-2 h-8 bg-accent rounded-r"></div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-accent text-xs">Módulos de Sistema</span>
+                  <span className="text-[10px] text-accent font-mono">AHORA</span>
+                </div>
+                <div className="text-gray-800 leading-relaxed text-sm">
+                  <strong>Tus tareas activas:</strong>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>Filtrar y analizar matriz de variables independientes <code className="bg-white px-1 py-0.5 rounded text-xs">rawData</code>.</li>
+                    <li>Verificar la distribución de ruido.</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Input para nuevo log */}
           <div className="mt-auto pt-4">

@@ -54,7 +54,7 @@ export default function Login() {
     } else {
       // TODO: Implementar inicio de sesión real en backend
       console.log('Iniciando sesión con:', email);
-      navigate('/onboarding');
+      navigate('/app'); // Si ya tiene cuenta, va directo a la app, no al onboarding
     }
   };
 

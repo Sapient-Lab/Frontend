@@ -50,9 +50,6 @@ export default function Topbar() {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <span className="font-mono text-[11px] text-muted bg-lab-bg border border-lab-border px-2.5 py-1 rounded-full">
-          Innovation Challenge · Mar 2026
-        </span>
         <div className="w-[30px] h-[30px] bg-accent rounded-full flex items-center justify-center text-white text-xs font-semibold">
           FC
         </div>
