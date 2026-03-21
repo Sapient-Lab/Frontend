@@ -113,7 +113,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <h2 className="text-lg font-medium text-gray-800 mb-1">Escáner de Seguridad</h2>
-              <p className="text-xs text-gray-500 mb-4">Revisa la teoría del módulo y pasa tus apuntes por la IA para detectar riesgos biológicos.</p>
+              <p className="text-xs text-gray-500 mb-4">Revisa la teoría y pasa tus apuntes por la IA para detectar riesgos biológicos.</p>
               <span className="text-xs font-semibold text-green-600 mt-auto group-hover:underline">Abrir escáner &rarr;</span>
             </div>
 

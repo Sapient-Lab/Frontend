@@ -28,98 +28,91 @@ export interface AuthResponse {
   };
 }
 
-// Simulador de retardo de red (eliminar cuando haya API real)
-const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
 export const authService = {
   /**
-   * Iniciar Sesión
-   * TODO: Conectar a POST /api/auth/login
+   * Iniciar Sesión REAL
+   * Conectado al futuro endpoint de Backend
    */
   async login(payload: LoginPayload): Promise<AuthResponse> {
-    // ---- MOCK ACTUAL ----
-    await delay(1500); // Simulamos 1.5s de carga
-    
-    // Simulamos validación simple
-    if (payload.email === 'error@test.com') {
-      throw new Error('Credenciales inválidas');
-    }
-
-    return {
-      success: true,
-      token: 'fake-jwt-token-12345',
-      user: {
-        name: 'Usuario Demo',
-        email: payload.email
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        // En caso de que el backend no exista aún o haya error en credenciales
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Error de autenticación. Verifica tus datos o si el backend está listo.');
       }
-    };
-
-    /* ---- CÓDIGO REAL A FUTURO ----
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    
-    if (!response.ok) {
-      throw new Error('Error de autenticación');
+      
+      const data = await response.json();
+      return {
+        success: true,
+        token: data.access_token || data.token,
+        user: {
+          name: data.user?.name || 'Usuario',
+          email: payload.email
+        }
+      };
+    } catch (error: any) {
+      console.warn("Fallo el login real al backend, asegúrate de que el endpoint /api/auth/login exista en tu backend NestJS.");
+      throw error;
     }
-    return response.json();
-    --------------------------------*/
   },
 
   /**
-   * Crear cuenta (Registro)
-   * TODO: Conectar a POST /api/auth/register
+   * Crear cuenta (Registro) REAL
    */
   async register(payload: RegisterPayload): Promise<AuthResponse> {
-    // ---- MOCK ACTUAL ----
-    await delay(1500);
-    
-    return {
-      success: true,
-      token: 'fake-jwt-token-67890',
-      user: {
-        name: payload.name,
-        email: payload.email
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Error al crear la cuenta. Intenta de nuevo.');
       }
-    };
-
-    /* ---- CÓDIGO REAL A FUTURO ----
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    
-    if (!response.ok) {
-      throw new Error('Error al registrar usuario');
+      
+      const data = await response.json();
+      return {
+        success: true,
+        token: data.access_token || data.token,
+        user: {
+          name: payload.name,
+          email: payload.email
+        }
+      };
+    } catch (error: any) {
+      console.warn("Falló el registro hacia el servidor, asegúrate de que /api/auth/register exista.");
+      throw error;
     }
-    return response.json();
-    --------------------------------*/
   },
 
   /**
-   * Solicitar recuperación de contraseña
-   * TODO: Conectar a POST /api/auth/forgot-password
+   * Recuperar Contraseña
    */
-  async forgotPassword(_email: string): Promise<{ success: boolean; message: string }> {
-    // ---- MOCK ACTUAL ----
-    await delay(1000);
-    return {
-      success: true,
-      message: 'Si el correo existe, recibirás un enlace de recuperación.'
-    };
-
-    /* ---- CÓDIGO REAL A FUTURO ----
-    const response = await fetch('/api/auth/forgot-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    
-    if (!response.ok) throw new Error('Error al solicitar recuperación');
-    return response.json();
-    --------------------------------*/
+  async forgotPassword(email: string): Promise<AuthResponse> {
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      
+      if (!response.ok) {
+        throw new Error('No se pudo enviar el correo de recuperación.');
+      }
+      
+      return { success: true, message: 'Si el correo existe, te hemos enviado un enlace.' };
+    } catch (error: any) {
+      // Dejamos un MOCK temporal en caso de que este endpoint secundario no lo hagan aún
+      await new Promise((res) => setTimeout(res, 1000));
+      return { success: true, message: '[Simulado] Enlace de recuperación enviado a tu correo.' };
+    }
   }
 };

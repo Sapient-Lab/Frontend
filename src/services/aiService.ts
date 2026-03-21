@@ -1,5 +1,5 @@
 export type BaseAiRequest = {
-  provider?: 'mistral' | 'deepseek';
+  // Provider removido ya que el backend lo gestiona dinámicamente con LLMProviderService
 };
 
 export type ChatMessage = {
@@ -19,19 +19,33 @@ export const aiService = {
 
   /**
    * Envía un mensaje al endpoint conversacional del backend
-   * Ajustar la estructura según como la pida exactamente tu controlador NestJS
    */
-  async sendMessage(message: string, provider: 'mistral' | 'deepseek' = 'mistral') {
+  async sendMessage(message: string, messages?: ChatMessage[]) {
     const response = await fetch('/api/ai/conversation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Suponemos que el backend acepta esto, si pide "messages" como arreglo se puede ajustar
-      body: JSON.stringify({ message, provider }), 
+      body: JSON.stringify({ message, messages }), 
     });
 
     if (!response.ok) throw new Error('Error en el chat de IA');
+    return response.json();
+  },
+
+  /**
+   * Chat específico de código con Copilot AI
+   */
+  async copilotChat(message: string, language: string = 'typescript') {
+    const response = await fetch('/api/ai/copilot/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message, language }), 
+    });
+
+    if (!response.ok) throw new Error('Error en Copilot Chat');
     return response.json();
   },
 
@@ -45,7 +59,6 @@ export const aiService = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        provider: 'deepseek', // deepseek es mejor para código según el README
         language: 'typescript',
         prefix,
         suffix,
@@ -65,7 +78,7 @@ export const aiService = {
     const response = await fetch('/api/ai/results/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payload, format, provider: 'mistral' })
+      body: JSON.stringify({ payload, format })
     });
     if (!response.ok) throw new Error('Error al analizar los resultados');
     return response.json();
@@ -78,7 +91,7 @@ export const aiService = {
     const response = await fetch('/api/ai/images/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64Image, prompt, provider: 'mistral' })
+      body: JSON.stringify({ base64Image, prompt })
     });
     if (!response.ok) throw new Error('Error al analizar la imagen');
     return response.json();
@@ -91,7 +104,7 @@ export const aiService = {
     const response = await fetch('/api/ai/copilot/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, question, filePath, provider: 'deepseek' }) // Usamos DeepSeek para código
+      body: JSON.stringify({ code, question, filePath, language: 'typescript' })
     });
     if (!response.ok) throw new Error('Error al explicar el código');
     return response.json();
@@ -104,7 +117,7 @@ export const aiService = {
     const response = await fetch('/api/ai/protocol/interpret', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ protocolText, riskLevel: 'medium', provider: 'mistral' })
+      body: JSON.stringify({ protocolText, riskLevel: 'medium' })
     });
     if (!response.ok) throw new Error('Error al escanear el protocolo');
     return response.json();

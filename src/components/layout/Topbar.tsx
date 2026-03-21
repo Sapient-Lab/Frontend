@@ -4,7 +4,7 @@ import type { NavItem } from '../../types/navigation'
 const navItems: NavItem[] = [
   { label: 'Laboratorio', path: '/app/lab' },
   { label: 'Equipo', path: '/app/equipo' },
-  { label: 'Protocolos', path: '/app/protocolos' },
+  { label: 'Escaner de Protocolos', path: '/app/protocolos' },
   { label: 'Resultados', path: '/app/resultados' },
   { label: 'Tareas', path: '/app/tareas' },
   { label: 'Docs', path: '/app/docs' },

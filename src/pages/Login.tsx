@@ -40,7 +40,7 @@ export default function Login() {
         }
         
         const res = await authService.forgotPassword(email);
-        setSuccessMsg(res.message);
+        setSuccessMsg(res.message || 'Solicitud enviada correctamente.');
         
       } else if (mode === 'register') {
         if (password !== confirmPassword) {
