@@ -12,10 +12,10 @@ type Task = {
 };
 
 const mockTasks: Task[] = [
-  { id: 't1', title: 'Entregar Repositorio Base', module: '2. Setup', dueDate: 'Hoy, 23:59', status: 'pending' },
-  { id: 't2', title: 'Desplegar API en Vercel', module: '3. API REST', dueDate: 'Mañana, 20:00', status: 'pending' },
-  { id: 't3', title: 'Script de Limpieza de Datos', module: '1. Introducción', dueDate: 'Hace 2 días', status: 'approved', feedback: 'Excelente uso de expresiones regulares. Código limpio y eficiente.' },
-  { id: 't4', title: 'Endpoint Login con JWT', module: '4. Microservicios', dueDate: 'La próxima semana', status: 'rejected', feedback: 'Falta implementar la expiración de tokens. Revisa la documentación de seguridad.' },
+  { id: 't1', title: 'Registrar protocolo y controles negativos', module: '2. Ingesta de protocolo', dueDate: 'Hoy, 23:59', status: 'pending' },
+  { id: 't2', title: 'Clasificar nivel de riesgo del ensayo', module: '3. Evaluación de riesgo', dueDate: 'Mañana, 20:00', status: 'pending' },
+  { id: 't3', title: 'Normalizar datos de corrida piloto', module: '1. Contexto del experimento', dueDate: 'Hace 2 días', status: 'approved', feedback: 'Buena estandarización de unidades y trazabilidad consistente entre muestras.' },
+  { id: 't4', title: 'Justificar recomendación de siguiente paso', module: '5. Siguientes pasos', dueDate: 'La próxima semana', status: 'rejected', feedback: 'La evidencia es insuficiente para concluir; agrega controles y explicación de incertidumbre.' },
 ];
 
 export default function TasksAndEvaluation() {
@@ -53,8 +53,8 @@ export default function TasksAndEvaluation() {
       {/* Sidebar de Tareas */}
       <div className="w-full sm:w-1/3 max-w-[320px] bg-white border-r border-lab-border overflow-y-auto flex flex-col">
         <div className="p-5 border-b border-lab-border sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-gray-800">Centro de Tareas</h2>
-          <p className="text-xs text-gray-500 mt-1">Selecciona una entrega para ver detalles</p>
+          <h2 className="text-lg font-bold text-gray-800">Centro de Validación</h2>
+          <p className="text-xs text-gray-500 mt-1">Selecciona una evidencia para revisar detalle</p>
         </div>
         
         <div className="flex-1 p-3 space-y-2">
@@ -117,18 +117,18 @@ export default function TasksAndEvaluation() {
               <div className="bg-white rounded-xl border border-lab-border shadow-sm flex flex-col overflow-hidden">
                 <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
                   <span className="text-xl">🤖</span>
-                  <h3 className="text-sm font-bold text-gray-700">Subir y Evaluar con IA</h3>
+                  <h3 className="text-sm font-bold text-gray-700">Enviar a análisis asistido</h3>
                 </div>
                 
                 <div className="p-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pega tu link de repositorio o código para analizar:
+                    Adjunta un enlace o pega evidencia experimental para analizar:
                   </label>
                   <textarea 
                     value={fileOrLink}
                     onChange={(e) => setFileOrLink(e.target.value)}
                     className="w-full min-h-[120px] p-3 text-sm font-mono bg-gray-50 border border-lab-border rounded-lg focus:outline-none focus:border-accent resize-none mb-4"
-                    placeholder="https://github.com/usuario/mi-repo&#10;o pega el código directamente aquí..."
+                    placeholder="https://drive.google.com/...&#10;o pega tus observaciones y resultados aquí..."
                   />
                   
                   <div className="flex justify-end gap-3">
@@ -145,10 +145,10 @@ export default function TasksAndEvaluation() {
                       {isEvaluating ? (
                         <>
                           <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
-                          Analizando Tarea...
+                          Analizando evidencia...
                         </>
                       ) : (
-                        'Enviar para Evaluación'
+                        'Enviar para revisión'
                       )}
                     </button>
                   </div>

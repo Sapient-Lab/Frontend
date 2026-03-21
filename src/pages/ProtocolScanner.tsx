@@ -28,26 +28,32 @@ export default function ProtocolScanner() {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#fbfbfb] p-8 lg:p-10">
+    <div className="h-full w-full overflow-y-auto p-8 lg:p-10 page-fade-in">
       <div className="max-w-4xl mx-auto">
         
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
             Escáner de Protocolos de Seguridad
           </h1>
-          <p className="text-sm text-gray-500">
-            Pega las instrucciones de tu experimento o procedimiento. La IA de Mistral lo revisará y generará un checklist de seguridad, identificando riesgos y precauciones necesarias.
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Interpreta protocolos experimentales con trazabilidad y foco en seguridad. El asistente sugiere precauciones y pasos de control, pero la decisión final siempre recae en el equipo científico.
+          </p>
+        </div>
+
+        <div className="mb-6 p-4 rounded-xl border border-[#d8e1ec] bg-white/80">
+          <p className="text-xs text-[#4f6278] leading-relaxed">
+            Límite de uso: evita ejecutar recomendaciones sensibles sin validación humana y políticas de bioseguridad del laboratorio.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           {/* Input Panel */}
-          <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm flex flex-col">
+          <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in">
             <h2 className="text-sm font-bold text-gray-700 mb-3">Instrucciones del Experimento</h2>
             <textarea
               className="w-full flex-1 min-h-[300px] p-4 text-sm font-sans bg-gray-50 border border-lab-border rounded-lg resize-none focus:outline-none focus:border-accent"
-              placeholder="Ejemplo: Tomar 50ml de Ácido Clorhídrico (HCl) al 1M y mezclar lentamente con Nitrato de Plata..."
+              placeholder="Ejemplo: Transferir 50 mL de HCl 1M, añadir NaOH 0.5M de forma controlada, registrar pH por minuto, detener si supera umbral térmico..."
               value={protocolText}
               onChange={(e) => setProtocolText(e.target.value)}
             />
@@ -63,14 +69,14 @@ export default function ProtocolScanner() {
                 isLoading ? 'bg-muted cursor-not-allowed' : 'bg-accent hover:bg-accent-dim'
               }`}
             >
-              {isLoading ? 'Analizando Reactivos y Pasos...' : 'Escanear Protocolo'}
+              {isLoading ? 'Evaluando riesgos y controles...' : 'Escanear protocolo'}
             </button>
           </div>
 
           {/* Output Panel */}
           <div className="flex flex-col">
             {scanResult ? (
-              <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm h-full overflow-y-auto animate-in fade-in">
+              <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm h-full overflow-y-auto animate-in fade-in stagger-in" style={{ animationDelay: '80ms' }}>
                 
                 {scanResult.structured ? (
                   <div className="space-y-6">
@@ -86,7 +92,7 @@ export default function ProtocolScanner() {
                     {scanResult.structured.hazards && scanResult.structured.hazards.length > 0 && (
                       <div className="p-4 bg-red-50/50 rounded-lg border border-red-100">
                         <h3 className="text-[11px] font-mono font-bold text-red-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                          Extrema Precaución
+                          Riesgos detectados
                         </h3>
                         <ul className="list-disc pl-4 text-sm text-red-800 space-y-1">
                           {scanResult.structured.hazards.map((hazard: string, idx: number) => (
@@ -100,7 +106,7 @@ export default function ProtocolScanner() {
                     {scanResult.structured.checklist && scanResult.structured.checklist.length > 0 && (
                       <div>
                         <h3 className="text-[11px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-3">
-                          Checklist de Bioseguridad
+                          Checklist de bioseguridad
                         </h3>
                         <div className="space-y-3">
                           {scanResult.structured.checklist.map((item: any, idx: number) => (
@@ -138,7 +144,7 @@ export default function ProtocolScanner() {
             ) : (
               <div className="bg-white border-2 border-dashed border-lab-border rounded-xl p-6 flex flex-col items-center justify-center h-full text-gray-400">
                 <span className="text-4xl mb-4">🛡️</span>
-                <p className="text-sm text-center">Un protocolo escaneado revelará alertas de nivel biológico, equipo de protección personal (PPE) requerido y riesgos de manipulación.</p>
+                <p className="text-sm text-center">Aquí verás alertas de riesgo, controles sugeridos y una explicación base para cada recomendación.</p>
               </div>
             )}
           </div>

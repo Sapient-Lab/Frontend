@@ -1,16 +1,16 @@
 import type { SidebarModule } from '../../types/navigation'
 
 const modules: SidebarModule[] = [
-  { id: '1', label: 'Introducción',          status: 'done'   },
-  { id: '2', label: 'Setup del entorno',      status: 'done'   },
-  { id: '3', label: 'API REST con Spring',    status: 'active' },
-  { id: '4', label: 'Microservicios',         status: 'locked' },
-  { id: '5', label: 'Base de datos',          status: 'locked' },
-  { id: '6', label: 'React + Consumo API',    status: 'locked' },
-  { id: '7', label: 'Despliegue / Vercel',    status: 'locked' },
+  { id: '1', label: 'Contexto del experimento', status: 'done'   },
+  { id: '2', label: 'Ingesta de protocolo',     status: 'done'   },
+  { id: '3', label: 'Evaluación de riesgo',     status: 'active' },
+  { id: '4', label: 'Análisis de resultados',   status: 'locked' },
+  { id: '5', label: 'Siguientes pasos',         status: 'locked' },
+  { id: '6', label: 'Control de calidad',       status: 'locked' },
+  { id: '7', label: 'Trazabilidad',             status: 'locked' },
 ]
 
-const resources = ['Documentación', 'Ejemplos de código', 'Guía de entrega']
+const resources = ['Protocolos de referencia', 'Matriz de bioseguridad', 'Guía de cumplimiento']
 
 const statusTag: Record<SidebarModule['status'], { label: string; className: string }> = {
   done:   { label: 'done',  className: 'bg-green-50 text-green-700' },
@@ -28,7 +28,7 @@ const itemBase = 'flex items-center gap-2.5 px-5 py-2.5 text-[13.5px] cursor-poi
 
 export default function Sidebar() {
   return (
-    <aside className="w-[240px] bg-surface border-r border-lab-border py-5 overflow-y-auto">
+    <aside className="w-[250px] bg-surface border-r border-lab-border py-5 overflow-y-auto hidden xl:block">
 
       {/* Módulos */}
       <div className="mb-6">

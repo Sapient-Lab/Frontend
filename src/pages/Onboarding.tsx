@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 
 const mockProjects = [
-  { id: 1, name: 'Proyecto Alpha', owner: 'Equipo Rojo', desc: 'Desarrollo de microservicios con Spring Boot y base de datos relacional.' },
-  { id: 2, name: 'Sistema de Gestión', owner: 'Equipo Azul', desc: 'Plataforma administrativa creada en React y Node.js.' },
-  { id: 3, name: 'E-commerce API', owner: 'Ana Gómez', desc: 'Migración de un monolito a una arquitectura serverless en AWS.' },
-  { id: 4, name: 'App de Salud', owner: 'BioTech S.A.', desc: 'Aplicación móvil para el seguimiento de pacientes crónicos.' },
+  { id: 1, name: 'Biofilm MRSA - Lote 24A', owner: 'Equipo Rojo', desc: 'Evaluación de inhibición de biopelícula con trazabilidad de reactivos.' },
+  { id: 2, name: 'PCR Multiplex Respiratoria', owner: 'Equipo Azul', desc: 'Comparativa de Ct y control de calidad entre corridas.' },
+  { id: 3, name: 'Cohorte Neuromarcadores', owner: 'Dra. Ana Gómez', desc: 'Integración de hallazgos de ELISA con notas de interpretación clínica.' },
+  { id: 4, name: 'Monitoreo de Cultivos Celulares', owner: 'BioTech S.A.', desc: 'Seguimiento de viabilidad y alertas tempranas de contaminación.' },
 ];
 
 export default function Onboarding() {
@@ -59,9 +59,9 @@ export default function Onboarding() {
           </div>
           <h1 className="text-2xl font-mono font-bold text-accent">Configura tu espacio</h1>
           <p className="text-sm text-muted mt-2">
-            {view === 'choice' && '¿Cómo te gustaría empezar a trabajar?'}
-            {view === 'create' && 'Crea tu propio proyecto para iniciar'}
-            {view === 'join' && 'Explora proyectos abiertos y colabora'}
+            {view === 'choice' && 'Selecciona cómo quieres iniciar tu cuaderno de laboratorio.'}
+            {view === 'create' && 'Crea un entorno con objetivos, riesgos y criterios de validación.'}
+            {view === 'join' && 'Únete a un estudio activo y contribuye con evidencia verificable.'}
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export default function Onboarding() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               </div>
               <h3 className="font-semibold text-gray-800 text-lg mb-2">Solo para mí</h3>
-              <p className="text-sm text-muted">Quiero configurar un nuevo proyecto desde cero y ser el líder del equipo.</p>
+              <p className="text-sm text-muted">Configuraré un protocolo propio con métricas y decisiones bajo mi supervisión.</p>
             </button>
 
             <button 
@@ -87,7 +87,7 @@ export default function Onboarding() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               </div>
               <h3 className="font-semibold text-gray-800 text-lg mb-2">Unirme a proyecto</h3>
-              <p className="text-sm text-muted">Quiero unirme a un equipo existente y aportar mis conocimientos.</p>
+              <p className="text-sm text-muted">Me integraré a un equipo activo para documentar y contrastar resultados.</p>
             </button>
           </div>
         )}
@@ -103,7 +103,7 @@ export default function Onboarding() {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 className="w-full px-4 py-2.5 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors"
-                placeholder="Ej. Sistema de Inventario IA"
+                placeholder="Ej. Evaluación de sensibilidad antimicrobiana"
               />
             </div>
             <div>
@@ -114,7 +114,7 @@ export default function Onboarding() {
                 value={projectDesc}
                 onChange={(e) => setProjectDesc(e.target.value)}
                 className="w-full px-4 py-2.5 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors resize-none"
-                placeholder="Describe brevemente los objetivos y tecnologías de tu laboratorio..."
+                placeholder="Describe hipótesis, criterios de éxito, riesgos y variables críticas..."
               />
             </div>
             

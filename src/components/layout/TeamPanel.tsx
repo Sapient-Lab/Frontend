@@ -15,8 +15,8 @@ export default function TeamPanel() {
   ];
 
   return (
-    <aside className="w-64 bg-surface border-l border-lab-border flex flex-col h-full">
-      <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center px-4">
+    <aside className="w-72 bg-surface border-l border-lab-border flex flex-col h-full">
+      <div className="h-11 bg-lab-bg border-b border-lab-border flex items-center px-4">
         <h2 className="text-xs font-mono font-semibold text-accent uppercase tracking-wider">
           {projectMode === 'solo' ? 'Estado' : 'Equipo y Estado'}
         </h2>
@@ -29,15 +29,15 @@ export default function TeamPanel() {
           <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">
             {projectMode === 'solo' ? 'Mi Progreso' : 'Progreso Actual'}
           </h3>
-          <div className="bg-lab-bg rounded border border-lab-border p-3">
+          <div className="bg-gradient-to-br from-[#f8fbff] to-[#f1f6fc] rounded-lg border border-lab-border p-3">
             <div className="flex justify-between text-xs mb-1 font-mono">
-              <span className="text-gray-600">Sprint Alpha</span>
+              <span className="text-gray-600">Fase de validación</span>
               <span className="text-accent font-semibold">65%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
               <div className="bg-accent h-1.5 rounded-full" style={{ width: '65%' }}></div>
             </div>
-            <p className="text-[10px] text-gray-500">2 de 3 módulos completados</p>
+            <p className="text-[10px] text-gray-500">2 de 3 bloques experimentales completados</p>
           </div>
         </div>
 
@@ -74,15 +74,15 @@ export default function TeamPanel() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-mono">
               <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-              <span className="text-gray-600">Conexión a BD estable</span>
+              <span className="text-gray-600">Conexión a base de datos estable</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-mono">
               <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-              <span className="text-gray-600">Espectrómetro sincronizado</span>
+              <span className="text-gray-600">Registro de laboratorio sincronizado</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-mono">
               <svg className="w-3.5 h-3.5 text-accent animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-              <span className="text-gray-600">Esperando processData...</span>
+              <span className="text-gray-600">Evaluando recomendaciones seguras...</span>
             </div>
           </div>
         </div>
@@ -90,8 +90,8 @@ export default function TeamPanel() {
       </div>
 
       <div className="p-4 border-t border-lab-border bg-lab-bg">
-        <button className="w-full py-2 bg-white border border-lab-border text-accent font-mono text-sm font-semibold rounded hover:bg-gray-50 transition-colors shadow-sm">
-          VALIDAR MÓDULO
+        <button className="w-full py-2 bg-white border border-lab-border text-accent font-mono text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+          Validar bitácora
         </button>
       </div>
 
