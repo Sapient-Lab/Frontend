@@ -2,11 +2,13 @@ import { useState, useRef } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import { FiAlertTriangle, FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
+import { useTheme } from '../context/ThemeContext';
 import ChatAgent from '../components/laboratory/ChatAgent';
 import { aiService } from '../services/aiService';
 
 export default function LabWorkspace() {
   const { projectMode } = useProject();
+  const { isDark } = useTheme();
   const providerRef = useRef<any>(null);
   const editorRef = useRef<any>(null); // Ref para el editor
 
@@ -270,7 +272,7 @@ export function processData(rawData) {
             <Editor
               height="100%"
               language="javascript"
-              theme="vs-light" // Se reemplazará con un tema personalizado después
+              theme={isDark ? 'vs-dark' : 'vs-light'}
               value={code}
               onChange={(val) => setCode(val || '')}
               onMount={handleEditorDidMount}
