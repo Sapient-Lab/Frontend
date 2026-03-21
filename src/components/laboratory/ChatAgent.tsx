@@ -1,13 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { aiService, type ChatMessage } from '../../services/aiService';
+import { useProject } from '../../context/ProjectContext';
 
 export default function ChatAgent() {
+  const { projectGoal, projectDesc } = useProject();
+
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: 'Hola. Soy tu Agente IA alojado en Mistral/DeepSeek. ¿En qué te puedo ayudar con el código hoy?' }
+    { role: 'assistant', content: 'Hola. Soy tu Agente IA alojado en Mistral/DeepSeek. ¿En qué te puedo ayudar hoy con tu proyecto?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Inyectar el projectGoal y projectDesc como mensaje de sistema
+  useEffect(() => {
+    if ((projectGoal || projectDesc) && messages.length === 1) {
+      setMessages(prev => [
+        { role: 'system', content: `Contexto del Proyecto del usuario:\nDescripción: ${projectDesc}\nObjetivo: ${projectGoal}\nUsa esto como tu memoria principal para ayudar al usuario.` },
+        ...prev
+      ]);
+    }
+  }, [projectGoal, projectDesc]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -25,12 +38,15 @@ export default function ChatAgent() {
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    const newChatMsg: ChatMessage = { role: 'user', content: userMessage };
+    const updatedMessages = [...messages, newChatMsg];
+    setMessages(updatedMessages);
     setIsLoading(true);
 
     try {
       // Llamada real al backend NestJS a través de nuestro proxy de Vite
-      const response = await aiService.sendMessage(userMessage);
+      // Pasamos el historial completo de mensajes al backend para mantener contexto
+      const response = await aiService.sendMessage(userMessage, updatedMessages);
 
       // Aqui dependemos de cómo responda tu backend, asumimos un response.answer o response.text
       // Si el backend devuelve un string directo, pones response

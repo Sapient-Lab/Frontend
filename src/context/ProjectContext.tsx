@@ -1,17 +1,21 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 type ProjectMode = 'solo' | 'team';
 
 interface ProjectContextType {
   projectMode: ProjectMode;
   setProjectMode: (mode: ProjectMode) => void;
+  projectGoal: string;
+  setProjectGoal: (goal: string) => void;
+  projectDesc: string;
+  setProjectDesc: (desc: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-export function ProjectProvider({ children }: { children: ReactNode }) {
+export function ProjectProvider({ children }: { children: ReactNode }) {        
   // Inicializamos el estado leyendo el localStorage
-  const [projectMode, setProjectModeState] = useState<ProjectMode>(() => {
+  const [projectMode, setProjectModeState] = useState<ProjectMode>(() => {      
     try {
       const savedMode = localStorage.getItem('sapientlab_mode');
       if (savedMode === 'solo' || savedMode === 'team') {
@@ -22,6 +26,22 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
     return 'solo';
   });
+
+  const [projectGoal, setProjectGoal] = useState<string>(() => {
+      return localStorage.getItem('sapientlab_goal') || '';
+  });
+
+  const [projectDesc, setProjectDesc] = useState<string>(() => {
+      return localStorage.getItem('sapientlab_desc') || '';
+  });
+
+  useEffect(() => {
+      localStorage.setItem('sapientlab_goal', projectGoal);
+  }, [projectGoal]);
+
+  useEffect(() => {
+      localStorage.setItem('sapientlab_desc', projectDesc);
+  }, [projectDesc]);
 
   // Cada vez que cambie, lo guardamos en localStorage
   const setProjectMode = (mode: ProjectMode) => {
@@ -34,7 +54,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProjectContext.Provider value={{ projectMode, setProjectMode }}>
+    <ProjectContext.Provider value={{ projectMode, setProjectMode, projectGoal, setProjectGoal, projectDesc, setProjectDesc }}>
       {children}
     </ProjectContext.Provider>
   );

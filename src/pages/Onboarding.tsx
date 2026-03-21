@@ -14,20 +14,41 @@ export default function Onboarding() {
   
   // States para crear
   const [projectName, setProjectName] = useState('');
-  const [projectDesc, setProjectDesc] = useState('');
+  const [projectDescInput, setProjectDescInput] = useState('');
+  const [projectGoalInput, setProjectGoalInput] = useState('');
+  const [projectFiles, setProjectFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   
   // State para buscar
   const [searchTerm, setSearchTerm] = useState('');
   
   const navigate = useNavigate();
-  const { setProjectMode } = useProject();
+  const { setProjectMode, setProjectGoal, setProjectDesc } = useProject();
 
-  const handleCreateProject = (e: React.FormEvent) => {
+  const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Proyecto creado:', { projectName, projectDesc });
-    setProjectMode('solo');
-    // TODO: Llamada a la API para crear proyecto
-    navigate('/app');
+    setIsUploading(true);
+
+    try {
+      console.log('Proyecto creado:', { projectName, projectDescInput, projectGoalInput });
+      setProjectMode('solo');
+      setProjectDesc(projectDescInput);
+      setProjectGoal(projectGoalInput);
+
+      // Si hay archivos, enviarlos al Backend
+      if (projectFiles.length > 0) {
+        const { aiService } = await import('../services/aiService');
+        await aiService.uploadProjectDocuments(projectFiles, 'nuevo_proyecto_id');
+        console.log('Documentos subidos y procesados correctamente.');
+      }
+
+      navigate('/app');
+    } catch (error) {
+      console.error('Error al procesar el proyecto:', error);
+      alert('Hubo un problema al crear el proyecto o subir los archivos.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleJoinProject = (projectId: number) => {
@@ -94,7 +115,7 @@ export default function Onboarding() {
 
         {/* Vista 2: Crear proyecto */}
         {view === 'create' && (
-          <form onSubmit={handleCreateProject} className="space-y-5 animate-in fade-in">
+          <form onSubmit={handleCreateProject} className="space-y-4 animate-in fade-in">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Proyecto</label>
               <input 
@@ -102,35 +123,66 @@ export default function Onboarding() {
                 required
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors"
+                className="w-full px-4 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors"
                 placeholder="Ej. Sistema de Inventario IA"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción corta</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">¿En qué está trabajando? (Descripción)</label>
               <textarea 
                 required
-                rows={4}
-                value={projectDesc}
-                onChange={(e) => setProjectDesc(e.target.value)}
-                className="w-full px-4 py-2.5 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors resize-none"
-                placeholder="Describe brevemente los objetivos y tecnologías de tu laboratorio..."
+                rows={3}
+                value={projectDescInput}
+                onChange={(e) => setProjectDescInput(e.target.value)}
+                className="w-full px-4 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors resize-none"
+                placeholder="Describe los dominios y tecnologías de tu laboratorio..."
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">¿Qué está tratando de lograr? (Objetivo)</label>
+              <textarea 
+                required
+                rows={2}
+                value={projectGoalInput}
+                onChange={(e) => setProjectGoalInput(e.target.value)}
+                className="w-full px-4 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans bg-gray-50 focus:bg-white transition-colors resize-none"
+                placeholder="Ej. Crear un prototipo rápido de la base de datos..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Documentos base (opcional)</label>
+              <input 
+                type="file" 
+                multiple
+                onChange={(e) => setProjectFiles(Array.from(e.target.files || []))}
+                className="w-full px-3 py-2 border border-lab-border rounded text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-accent file:text-white hover:file:bg-accent-dim transition-colors"
+              />
+              <p className="text-xs text-muted mt-1">Sube archivos que la IA pueda leer (PDFs, TXT, código, etc) para agregarlos a la memoria del proyecto.</p>
+            </div>
             
-            <div className="flex gap-3 pt-4 border-t border-lab-border">
+            <div className="flex gap-3 pt-3 border-t border-lab-border">
               <button 
                 type="button" 
                 onClick={() => setView('choice')}
-                className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded transition-colors"
+                disabled={isUploading}
+                className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
               >
                 Volver
               </button>
               <button 
                 type="submit" 
-                className="flex-1 bg-accent text-white font-mono py-2 rounded hover:bg-accent-dim transition-colors"
+                disabled={isUploading}
+                className="flex-1 bg-accent text-white font-mono py-2 rounded hover:bg-accent-dim transition-colors disabled:opacity-75 flex items-center justify-center gap-2"
               >
-                CREAR PROYECTO
+                {isUploading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    PROCESANDO...
+                  </>
+                ) : 'CREAR PROYECTO'}
               </button>
             </div>
           </form>
