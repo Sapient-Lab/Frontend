@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>('login');
@@ -9,6 +10,7 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -21,40 +23,53 @@ export default function Login() {
     return null;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setError('');
     setSuccessMsg('');
+    setIsLoading(true);
 
-    if (mode === 'forgot_password') {
-      if (!email) {
-        setError('Por favor, ingresa tu correo electrónico.');
-        return;
+    try {
+      if (mode === 'forgot_password') {
+        if (!email) {
+          setError('Por favor, ingresa tu correo electrónico.');
+          setIsLoading(false);
+          return;
+        }
+        
+        const res = await authService.forgotPassword(email);
+        setSuccessMsg(res.message);
+        
+      } else if (mode === 'register') {
+        if (password !== confirmPassword) {
+          setError('Las contraseñas no coinciden.');
+          setIsLoading(false);
+          return;
+        }
+        
+        const pwdError = validatePassword(password);
+        if (pwdError) {
+          setError(pwdError);
+          setIsLoading(false);
+          return;
+        }
+        
+        await authService.register({ name, email, password });
+        console.log('Registro exitoso. Token fake guardado en fondo.');
+        navigate('/onboarding');
+        
+      } else {
+        // mode === 'login'
+        await authService.login({ email, password });
+        console.log('Login exitoso. Token fake guardado en fondo.');
+        navigate('/app'); 
       }
-      // Simular envío de correo
-      setSuccessMsg('Se ha enviado un enlace de recuperación a tu correo electrónico.');
-      return; // No redirigimos, para que el usuario pueda ver el mensaje
-    }
-
-    if (mode === 'register') {
-      if (password !== confirmPassword) {
-        setError('Las contraseñas no coinciden.');
-        return;
-      }
-      
-      const pwdError = validatePassword(password);
-      if (pwdError) {
-        setError(pwdError);
-        return;
-      }
-      
-      // TODO: Implementar registro real en backend
-      console.log('Creando usuario:', { name, email });
-      navigate('/onboarding');
-    } else {
-      // TODO: Implementar inicio de sesión real en backend
-      console.log('Iniciando sesión con:', email);
-      navigate('/app'); // Si ya tiene cuenta, va directo a la app, no al onboarding
+    } catch (err: any) {
+      setError(err.message || 'Ocurrió un error inesperado');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -175,11 +190,16 @@ export default function Login() {
 
           <button 
             type="submit" 
-            className="w-full bg-accent text-white py-2 px-4 rounded hover:bg-accent-dim transition-colors font-medium font-mono mt-2"
+            disabled={isLoading}
+            className={`w-full text-white py-2 px-4 rounded transition-colors font-medium font-mono mt-2 ${isLoading ? 'bg-muted cursor-not-allowed' : 'bg-accent hover:bg-accent-dim'}`}
           >
-            {mode === 'login' && 'ENTRAR'}
-            {mode === 'register' && 'REGISTRARSE'}
-            {mode === 'forgot_password' && 'ENVIAR ENLACE'}
+            {isLoading ? 'CARGANDO...' : (
+              <>
+                {mode === 'login' && 'ENTRAR'}
+                {mode === 'register' && 'REGISTRARSE'}
+                {mode === 'forgot_password' && 'ENVIAR ENLACE'}
+              </>
+            )}
           </button>
         </form>
 

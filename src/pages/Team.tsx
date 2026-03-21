@@ -1,0 +1,193 @@
+import { useState } from 'react';
+import { useProject } from '../context/ProjectContext';
+
+type MemberStatus = 'active' | 'pending';
+type Role = 'Administrador' | 'Colaborador' | 'Lector';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  email: string;
+  role: Role;
+  status: MemberStatus;
+  color: string;
+}
+
+const mockTeamMembers: TeamMember[] = [
+  { id: '1', name: 'Tú', initials: 'FC', email: 'tu@email.com', role: 'Administrador', status: 'active', color: 'bg-accent' },
+  { id: '2', name: 'Dr. A. Gómez', initials: 'AG', email: 'agomez@universidad.edu', role: 'Colaborador', status: 'active', color: 'bg-blue-500' },
+  { id: '3', name: 'Elena R.', initials: 'ER', email: 'elena@email.com', role: 'Colaborador', status: 'pending', color: 'bg-green-500' },
+];
+
+export default function Team() {
+  const { projectMode, setProjectMode } = useProject();
+  const [members, setMembers] = useState<TeamMember[]>(
+    projectMode === 'team' ? mockTeamMembers : [mockTeamMembers[0]]
+  );
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<Role>('Colaborador');
+
+  const handleInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+
+    const newMember: TeamMember = {
+      id: Date.now().toString(),
+      name: 'Usuario Invitado',
+      initials: inviteEmail.substring(0, 2).toUpperCase(),
+      email: inviteEmail,
+      role: inviteRole,
+      status: 'pending',
+      color: 'bg-gray-400'
+    };
+
+    setMembers([...members, newMember]);
+    setInviteEmail('');
+    
+    // Si estaba en modo solo y acaba de invitar a alguien, lo pasamos a equipo
+    if (projectMode === 'solo') {
+      setProjectMode('team');
+    }
+  };
+
+  const removeMember = (id: string) => {
+    const updated = members.filter(m => m.id !== id);
+    setMembers(updated);
+    if (updated.length === 1) {
+      setProjectMode('solo');
+    }
+  };
+
+  return (
+    <div className="h-full w-full overflow-y-auto bg-[#fbfbfb] p-8 lg:p-10 flex justify-center">
+      <div className="w-full max-w-4xl">
+        
+        {/* Cabecera */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
+            Gestión de Equipo
+          </h1>
+          <p className="text-sm text-gray-500">
+            {projectMode === 'solo' 
+              ? 'Actualmente estás trabajando en modo individual. Invita a otros para colaborar en tu entorno de laboratorio.'
+              : 'Administra los accesos y roles de los miembros de tu proyecto.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Formulario de Invitación */}
+          <div className="lg:col-span-1">
+            <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm sticky top-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-accent-light text-accent flex items-center justify-center text-xl">
+                  📨
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800">Invitar Miembro</h3>
+                  <span className="text-[10px] text-gray-500">Añadir al laboratorio</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleInvite} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Correo Electrónico</label>
+                  <input 
+                    type="email" 
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    placeholder="colega@universidad.edu"
+                    className="w-full px-3 py-2 border border-lab-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Rol en el proyecto</label>
+                  <select 
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as Role)}
+                    className="w-full px-3 py-2 border border-lab-border rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
+                  >
+                    <option value="Administrador">Administrador</option>
+                    <option value="Colaborador">Colaborador (Escritura)</option>
+                    <option value="Lector">Lector (Solo vista)</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dim transition-colors shadow-sm"
+                >
+                  Enviar Invitación
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Lista de Miembros */}
+          <div className="lg:col-span-2">
+            <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm">
+              <h3 className="text-[13px] font-bold uppercase text-gray-400 tracking-wider mb-4 border-b border-gray-100 pb-3 flex justify-between">
+                <span>Miembros Actuales ({members.length})</span>
+                {projectMode === 'solo' && <span className="bg-orange-100 text-orange-700 px-2 rounded-full normal-case text-[10px] flex items-center">Modo Solo</span>}
+                {projectMode === 'team' && <span className="bg-blue-100 text-blue-700 px-2 rounded-full normal-case text-[10px] flex items-center">Modo Equipo</span>}
+              </h3>
+
+              <div className="space-y-4">
+                {members.map(member => (
+                  <div key={member.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm ${member.color}`}>
+                        {member.initials}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-gray-800">{member.name}</p>
+                          {member.status === 'pending' && (
+                            <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">Pendiente</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 font-mono">{member.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-6">
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {member.role}
+                      </span>
+                      
+                      {member.name !== 'Tú' && (
+                        <button 
+                          onClick={() => removeMember(member.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          title="Eliminar miembro"
+                        >
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {projectMode === 'solo' && (
+                <div className="mt-8 p-6 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center bg-gray-50/50">
+                  <span className="text-4xl mb-3 opacity-80">👽</span>
+                  <p className="text-sm font-semibold text-gray-600">No hay nadie más por aquí</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Utiliza el formulario de la izquierda para invitar colaboradores y potenciar tu investigación.</p>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}

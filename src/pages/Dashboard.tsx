@@ -69,7 +69,7 @@ export default function Dashboard() {
                 </button>
                 <span className="text-xs text-gray-500 flex items-center gap-1">
                   <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  2 Retos pendientes
+                  2 Tareas pendientes
                 </span>
               </div>
             </div>
@@ -102,9 +102,9 @@ export default function Dashboard() {
           
           {/* Accesos Directos */}
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-            {/* Atajo 1: Docs */}
+            {/* Atajo 1: Protocolos */}
             <div 
-              onClick={() => navigate('/app/docs')}
+              onClick={() => navigate('/app/protocolos')}
               className="bg-white border border-lab-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col items-start"
             >
               <div className="w-10 h-10 rounded bg-green-50 flex items-center justify-center text-green-600 mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
@@ -112,14 +112,14 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-medium text-gray-800 mb-1">Documentación P.</h2>
-              <p className="text-xs text-gray-500 mb-4">Revisa la teoría del módulo, sube guías o explora ejemplos de código recomendados.</p>
-              <span className="text-xs font-semibold text-green-600 mt-auto group-hover:underline">Explorar biblioteca &rarr;</span>
+              <h2 className="text-lg font-medium text-gray-800 mb-1">Escáner de Seguridad</h2>
+              <p className="text-xs text-gray-500 mb-4">Revisa la teoría del módulo y pasa tus apuntes por la IA para detectar riesgos biológicos.</p>
+              <span className="text-xs font-semibold text-green-600 mt-auto group-hover:underline">Abrir escáner &rarr;</span>
             </div>
 
-            {/* Atajo 2: Retos */}
+            {/* Atajo 2: Tareas */}
             <div 
-              onClick={() => navigate('/app/retos')}
+              onClick={() => navigate('/app/tareas')}
               className="bg-white border border-lab-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col items-start"
             >
               <div className="w-10 h-10 rounded bg-orange-50 flex items-center justify-center text-orange-500 mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
@@ -127,7 +127,7 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-medium text-gray-800 mb-1">Centro de Retos</h2>
+              <h2 className="text-lg font-medium text-gray-800 mb-1">Centro de Tareas</h2>
               <p className="text-xs text-gray-500 mb-4">Tienes 2 entregas pendientes para subir a Vercel. Ve la rúbrica aquí.</p>
               <span className="text-xs font-semibold text-orange-500 mt-auto group-hover:underline">Ver entregas pendientes &rarr;</span>
             </div>

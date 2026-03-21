@@ -4,6 +4,11 @@ import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import LabWorkspace from './pages/LabWorkspace'
 import Dashboard from './pages/Dashboard'
+import DataAnalysis from './pages/DataAnalysis'
+import ProtocolScanner from './pages/ProtocolScanner'
+import Resources from './pages/Resources'
+import TasksAndEvaluation from './pages/Tasks'
+import Team from './pages/Team'
 import { ProjectProvider } from './context/ProjectContext'
 
 export default function App() {
@@ -17,12 +22,13 @@ export default function App() {
           
           <Route path="/app" element={<RootLayout><Dashboard /></RootLayout>} />
           <Route path="/app/lab" element={<RootLayout><LabWorkspace /></RootLayout>} />
+          <Route path="/app/resultados" element={<RootLayout><DataAnalysis /></RootLayout>} />
+          <Route path="/app/protocolos" element={<RootLayout><ProtocolScanner /></RootLayout>} />
           
-          {/* Placeholder para otras rutas */}
-          <Route path="/app/retos" element={<RootLayout><div className="p-8">Retos UI en construcción...</div></RootLayout>} />
-          <Route path="/app/equipo" element={<RootLayout><div className="p-8">Equipo UI en construcción...</div></RootLayout>} />
-          <Route path="/app/resultados" element={<RootLayout><div className="p-8">Resultados UI en construcción...</div></RootLayout>} />
-          <Route path="/app/docs" element={<RootLayout><div className="p-8">Docs UI en construcción...</div></RootLayout>} />
+          {/* Rutas adicionales de la aplicación */}
+          <Route path="/app/tareas" element={<RootLayout><TasksAndEvaluation /></RootLayout>} />
+          <Route path="/app/equipo" element={<RootLayout><Team /></RootLayout>} />
+          <Route path="/app/docs" element={<RootLayout><Resources /></RootLayout>} />
           
           {/* Redirigir la raíz al login */}
           <Route path="*" element={<Navigate to="/login" replace />} />

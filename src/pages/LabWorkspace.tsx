@@ -1,9 +1,14 @@
-import { useState } from 'react';
-import Editor from '@monaco-editor/react';
+import { useState, useRef } from 'react';
+import Editor, { type OnMount } from '@monaco-editor/react';
 import { useProject } from '../context/ProjectContext';
+import ChatAgent from '../components/laboratory/ChatAgent';
+import { aiService } from '../services/aiService';
 
 export default function LabWorkspace() {
   const { projectMode } = useProject();
+  const providerRef = useRef<any>(null);
+  const editorRef = useRef<any>(null); // Ref para el editor
+
   
   const initialCodeSolo = `// log: 2026-03-20 - Mi Proyecto Solo
 // Analizando y limpiando los datos del experimento.
@@ -33,10 +38,167 @@ export function processData(rawData) {
 `;
 
   const [code, setCode] = useState(projectMode === 'solo' ? initialCodeSolo : initialCodeTeam);
+  
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explanationResult, setExplanationResult] = useState<any>(null);
+
+  const handleExplainCode = async () => {
+    if (!editorRef.current) return;
+    
+    // Obtener texto seleccionado o todo el código si no hay selección
+    const selection = editorRef.current.getSelection();
+    const model = editorRef.current.getModel();
+    let targetCode = model.getValueInRange(selection);
+    
+    if (!targetCode.trim()) {
+      targetCode = model.getValue(); // Fallback a todo el código
+    }
+
+    setIsExplaining(true);
+    setExplanationResult(null);
+    try {
+      const result = await aiService.explainCode(targetCode, "Explica este código y sugiere mejoras", "index.js");
+      setExplanationResult(result);
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al explicar código: " + err.message);
+    } finally {
+      setIsExplaining(false);
+    }
+  };
+
+  const handleEditorDidMount: OnMount = (editor, monaco) => {
+    // Guardamos la instancia del editor
+    editorRef.current = editor;
+
+    // Evitar registrar múltiples veces en React Strict Mode
+    if (providerRef.current) {
+      providerRef.current.dispose();
+    }
+
+    providerRef.current = monaco.languages.registerInlineCompletionsProvider('javascript', {
+      provideInlineCompletions: async (model: any, position: any) => {
+        // Obtener prefijo (texto antes del cursor)
+        const prefix = model.getValueInRange({
+          startLineNumber: 1,
+          startColumn: 1,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column
+        });
+        
+        // Obtener sufijo (texto después del cursor)
+        const suffix = model.getValueInRange({
+          startLineNumber: position.lineNumber,
+          startColumn: position.column,
+          endLineNumber: model.getLineCount(),
+          endColumn: model.getLineMaxColumn(model.getLineCount())
+        });
+
+        try {
+          // Llamada al endpoint del backend enviando prefijo y sufijo
+          const response = await aiService.getCopilotCompletion(
+            'Completar el código actual', 
+            prefix, 
+            suffix
+          );
+
+          // Ajustar esto según la respuesta real del backend
+          // Por defecto la API de mistral/deepseek podría devolver { suggestions: [{ text: "..." }] } o algo similar
+          let suggestionText = '';
+          if (response.suggestions && response.suggestions.length > 0) {
+            suggestionText = response.suggestions[0].text;
+          } else if (typeof response === 'string') {
+            suggestionText = response; // Si devuelve solo texto
+          } else if (response.completion) {
+            suggestionText = response.completion;
+          } else if (response.choices && response.choices.length > 0) {
+            suggestionText = response.choices[0].text || response.choices[0].message?.content || '';
+          }
+
+          if (!suggestionText) {
+             return { items: [] };
+          }
+
+          return {
+            items: [
+              {
+                insertText: suggestionText,
+                range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+              }
+            ]
+          };
+        } catch (error) {
+          console.error("Error al obtener completado IA", error);
+          return { items: [] };
+        }
+      },
+      freeInlineCompletions: () => {}
+    });
+  };
 
   return (
-    <div className="h-full flex flex-col md:flex-row gap-4">
+    <div className="h-full flex flex-col md:flex-row gap-4 relative">
       
+      {/* Modal de Explicación */}
+      {explanationResult && (
+        <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[80%] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <span className="text-xl">💡</span> Análisis de Código
+              </h3>
+              <button 
+                onClick={() => setExplanationResult(null)}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+              >
+                ✕ Cerrar
+              </button>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto space-y-4">
+              {explanationResult.structured ? (
+                <>
+                  <div className="mb-4">
+                    <h4 className="text-sm font-bold text-gray-700 mb-1">Resumen:</h4>
+                    <p className="text-sm text-gray-600">{explanationResult.structured.summary}</p>
+                  </div>
+                  {explanationResult.structured.risks?.length > 0 && (
+                    <div className="mb-4 p-3 bg-red-50/50 rounded-lg border border-red-100">
+                      <h4 className="text-sm font-bold text-red-800 mb-1 flex items-center gap-1">⚠️ Riesgos detectados:</h4>
+                      <ul className="list-disc pl-4 text-xs text-red-700 space-y-1">
+                        {explanationResult.structured.risks.map((r: string, i: number) => <li key={i}>{r}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {explanationResult.structured.suggestedImprovements?.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-1">✨ Sugerencias:</h4>
+                      <ul className="list-disc pl-4 text-xs text-gray-600 space-y-1">
+                        {explanationResult.structured.suggestedImprovements.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-sm text-gray-600">
+                  <p className="font-semibold mb-2">Respuesta del Agente:</p>
+                  <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded text-xs font-mono border border-gray-100">
+                    {explanationResult.rawModelResponse || JSON.stringify(explanationResult, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button 
+                onClick={() => setExplanationResult(null)}
+                className="px-4 py-2 bg-accent text-white rounded text-sm font-medium hover:bg-accent-dim"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Panel Izquierdo: Log de Tareas / Comentarios */}
       <div className="w-full md:w-1/3 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm">
         <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center px-4 justify-between">
@@ -48,72 +210,10 @@ export function processData(rawData) {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
           </span>
         </div>
-        <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-4 text-sm font-sans bg-[#fbfbfb]">
-          
-          {projectMode === 'team' ? (
-            <>
-              {/* Mensaje 1 */}
-              <div className="bg-white border border-lab-border p-3 rounded shadow-sm relative">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-accent text-xs">Dr. A. Gómez</span>
-                  <span className="text-[10px] text-muted font-mono">08:42 AM</span>
-                </div>
-                <p className="text-gray-700 leading-relaxed text-sm">
-                  Las lecturas del sensor principal están llegando con ruido. Hay que crear un filtro pasa-bajos en <code className="bg-gray-100 px-1 py-0.5 rounded text-accent text-xs">processData</code>.
-                </p>
-              </div>
-
-              {/* Mensaje 2 (Tarea Activa) */}
-              <div className="bg-accent-light border border-accent p-3 rounded shadow-sm relative">
-                <div className="absolute -left-1 top-4 w-2 h-8 bg-accent rounded-r"></div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-accent text-xs">Sistema Central</span>
-                  <span className="text-[10px] text-accent font-mono">AHORA</span>
-                </div>
-                <div className="text-gray-800 leading-relaxed text-sm">
-                  <strong>Prioridad Alta:</strong>
-                  <ul className="list-disc pl-5 mt-1 space-y-1">
-                    <li>Limpiar nulos del arreglo <code className="bg-white px-1 py-0.5 rounded text-xs">rawData</code>.</li>
-                    <li>Aplicar la función <code className="bg-white px-1 py-0.5 rounded text-xs">analyzeSpectrum</code>.</li>
-                    <li>Retornar el objeto normalizado.</li>
-                  </ul>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Mensaje Solo */}
-              <div className="bg-accent-light border border-accent p-3 rounded shadow-sm relative">
-                <div className="absolute -left-1 top-4 w-2 h-8 bg-accent rounded-r"></div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-accent text-xs">Módulos de Sistema</span>
-                  <span className="text-[10px] text-accent font-mono">AHORA</span>
-                </div>
-                <div className="text-gray-800 leading-relaxed text-sm">
-                  <strong>Tus tareas activas:</strong>
-                  <ul className="list-disc pl-5 mt-1 space-y-1">
-                    <li>Filtrar y analizar matriz de variables independientes <code className="bg-white px-1 py-0.5 rounded text-xs">rawData</code>.</li>
-                    <li>Verificar la distribución de ruido.</li>
-                  </ul>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Input para nuevo log */}
-          <div className="mt-auto pt-4">
-            <textarea 
-              rows={2}
-              className="w-full px-3 py-2 border border-lab-border rounded focus:outline-none focus:border-accent text-xs resize-none"
-              placeholder="Añadir nota al log del equipo..."
-            />
-            <div className="flex justify-end mt-2">
-              <button className="px-3 py-1.5 bg-gray-800 text-white rounded text-xs font-medium hover:bg-black transition-colors">
-                Publicar
-              </button>
-            </div>
-          </div>
-
+        
+        {/* Cambiamos el Log estático por el Chat del Agente */}
+        <div className="flex-1 overflow-hidden">
+          <ChatAgent />
         </div>
       </div>
 
@@ -121,7 +221,7 @@ export function processData(rawData) {
       <div className="w-full md:w-2/3 flex flex-col gap-4">
         
         {/* Editor de Código */}
-        <div className="flex-1 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm min-h-[400px]">
+        <div className="flex-1 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm min-h-[300px]">
           <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center justify-between px-4">
             <div className="flex gap-2 items-center">
               <span className="text-xs font-mono font-semibold text-accent uppercase tracking-wider">
@@ -133,6 +233,17 @@ export function processData(rawData) {
             </div>
             {/* Botones de acción del editor */}
             <div className="flex gap-2">
+              <button 
+                onClick={handleExplainCode}
+                disabled={isExplaining}
+                className={`px-3 py-1 border border-lab-border text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
+                  isExplaining ? 'bg-muted text-white cursor-not-allowed' : 'bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1]'
+                }`}
+                title="Selecciona texto para explicar solo esa parte"
+              >
+                {isExplaining ? 'Pensando...' : '💡 Explicar'}
+              </button>
+
               <button className="px-3 py-1 bg-white border border-lab-border hover:bg-gray-50 text-gray-700 rounded text-xs font-medium transition-colors">
                 Restablecer
               </button>
@@ -153,6 +264,7 @@ export function processData(rawData) {
               theme="vs-light" // Se reemplazará con un tema personalizado después
               value={code}
               onChange={(val) => setCode(val || '')}
+              onMount={handleEditorDidMount}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
@@ -160,7 +272,8 @@ export function processData(rawData) {
                 padding: { top: 16 },
                 scrollBeyondLastLine: false,
                 lineNumbersMinChars: 3,
-                wordWrap: 'on'
+                wordWrap: 'on',
+                inlineSuggest: { enabled: true } // Habilitar sugerencias inline
               }}
             />
           </div>
