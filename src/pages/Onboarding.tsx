@@ -145,7 +145,7 @@ export default function Onboarding() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2.5 border border-lab-border rounded-full focus:outline-none focus:border-accent font-sans text-sm bg-gray-50 focus:bg-white"
-                placeholder="🔍 Buscar por nombre de proyecto o equipo..."
+                placeholder="Buscar por nombre de proyecto o equipo..."
               />
             </div>
             

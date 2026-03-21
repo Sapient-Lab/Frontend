@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiAlertTriangle, FiShield } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 
 export default function ProtocolScanner() {
@@ -114,7 +115,11 @@ export default function ProtocolScanner() {
                               <input type="checkbox" className="mt-1 w-4 h-4 text-accent rounded border-gray-300 focus:ring-accent" />
                               <div>
                                 <p className="text-sm font-semibold text-gray-800">{item.action}</p>
-                                {item.cautions && <p className="text-xs text-orange-600 mt-1">⚠️ {item.cautions}</p>}
+                                {item.cautions && (
+                                  <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                                    <FiAlertTriangle className="w-3.5 h-3.5" /> {item.cautions}
+                                  </p>
+                                )}
                                 {item.riskLevel && (
                                   <span className={`inline-block mt-1.5 px-2 py-0.5 text-[10px] uppercase font-bold rounded ${
                                     item.riskLevel === 'high' ? 'bg-red-100 text-red-700' :
@@ -143,7 +148,7 @@ export default function ProtocolScanner() {
               </div>
             ) : (
               <div className="bg-white border-2 border-dashed border-lab-border rounded-xl p-6 flex flex-col items-center justify-center h-full text-gray-400">
-                <span className="text-4xl mb-4">🛡️</span>
+                <FiShield className="w-10 h-10 mb-4" />
                 <p className="text-sm text-center">Aquí verás alertas de riesgo, controles sugeridos y una explicación base para cada recomendación.</p>
               </div>
             )}

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
@@ -86,7 +87,9 @@ export default function Dashboard() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-accent rounded-t-xl"></div>
             
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg">💡</div>
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg">
+                <FiZap className="w-4 h-4 text-blue-600" />
+              </div>
               <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">Insight del Agente IA</h2>
             </div>
             

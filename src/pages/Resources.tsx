@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { IconType } from 'react-icons';
+import { FiCode, FiFileText, FiLink2, FiPlayCircle, FiSearch } from 'react-icons/fi';
 
 type Resource = {
   id: string;
@@ -16,8 +18,11 @@ const mockResources: Resource[] = [
   { id: '5', title: 'Matriz de interpretación y límites de confianza', type: 'pdf', module: '5. Siguientes pasos', description: 'Criterios para decidir repetir, escalar o descartar hipótesis.' },
 ];
 
-const typeIcons = {
-  pdf: '📄', link: '🔗', video: '▶️', repo: '💻'
+const typeIcons: Record<Resource['type'], IconType> = {
+  pdf: FiFileText,
+  link: FiLink2,
+  video: FiPlayCircle,
+  repo: FiCode,
 };
 
 export default function Resources() {
@@ -48,7 +53,7 @@ export default function Resources() {
         {/* Buscador y Filtros */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="flex-1 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
               type="text" 
               placeholder="Buscar por protocolo, riesgo o palabra clave..." 
@@ -75,16 +80,21 @@ export default function Resources() {
           ) : (
             filtered.map(resource => (
               <div key={resource.id} className="bg-white border border-lab-border p-5 rounded-xl flex flex-col hover:shadow-md transition-shadow group">
+                {(() => {
+                  const ResourceIcon = typeIcons[resource.type];
+                  return (
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl bg-gray-50 w-10 h-10 flex items-center justify-center rounded-lg border border-gray-100 group-hover:scale-105 transition-transform">
-                      {typeIcons[resource.type]}
+                      <ResourceIcon className="w-5 h-5 text-gray-700" />
                     </span>
                   </div>
                   <span className="text-[10px] font-mono font-semibold bg-accent-light text-accent px-2 py-1 rounded">
                     {resource.type.toUpperCase()}
                   </span>
                 </div>
+                  );
+                })()}
                 
                 <h3 className="text-[15px] font-bold text-gray-800 leading-tight mb-1">
                   {resource.title}

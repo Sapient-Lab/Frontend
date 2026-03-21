@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
+import { FiAlertTriangle, FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 import ChatAgent from '../components/laboratory/ChatAgent';
 import { aiService } from '../services/aiService';
@@ -145,7 +146,7 @@ export function processData(rawData) {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[80%] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <span className="text-xl">💡</span> Análisis de Código
+                <FiZap className="w-5 h-5 text-yellow-500" /> Análisis de Código
               </h3>
               <button 
                 onClick={() => setExplanationResult(null)}
@@ -163,7 +164,9 @@ export function processData(rawData) {
                   </div>
                   {explanationResult.structured.risks?.length > 0 && (
                     <div className="mb-4 p-3 bg-red-50/50 rounded-lg border border-red-100">
-                      <h4 className="text-sm font-bold text-red-800 mb-1 flex items-center gap-1">⚠️ Riesgos detectados:</h4>
+                      <h4 className="text-sm font-bold text-red-800 mb-1 flex items-center gap-1">
+                        <FiAlertTriangle className="w-4 h-4" /> Riesgos detectados:
+                      </h4>
                       <ul className="list-disc pl-4 text-xs text-red-700 space-y-1">
                         {explanationResult.structured.risks.map((r: string, i: number) => <li key={i}>{r}</li>)}
                       </ul>
@@ -171,7 +174,9 @@ export function processData(rawData) {
                   )}
                   {explanationResult.structured.suggestedImprovements?.length > 0 && (
                     <div className="mb-4">
-                      <h4 className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-1">✨ Sugerencias:</h4>
+                      <h4 className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-1">
+                        <FiZap className="w-4 h-4" /> Sugerencias:
+                      </h4>
                       <ul className="list-disc pl-4 text-xs text-gray-600 space-y-1">
                         {explanationResult.structured.suggestedImprovements.map((s: string, i: number) => <li key={i}>{s}</li>)}
                       </ul>
@@ -241,7 +246,11 @@ export function processData(rawData) {
                 }`}
                 title="Selecciona texto para explicar solo esa parte"
               >
-                {isExplaining ? 'Pensando...' : '💡 Explicar'}
+                {isExplaining ? 'Pensando...' : (
+                  <>
+                    <FiZap className="w-3.5 h-3.5" /> Explicar
+                  </>
+                )}
               </button>
 
               <button className="px-3 py-1 bg-white border border-lab-border hover:bg-gray-50 text-gray-700 rounded text-xs font-medium transition-colors">
@@ -314,7 +323,9 @@ export function processData(rawData) {
               <p className="text-xs">at Object.&lt;anonymous&gt; (runner.js:22:3)</p>
             </div>
 
-            <p className="mt-3 text-yellow-500">⚠ Falla en la pre-validación de los test (0/3 completados).</p>
+            <p className="mt-3 text-yellow-500 flex items-center gap-1">
+              <FiAlertTriangle className="w-4 h-4" /> Falla en la pre-validación de los test (0/3 completados).
+            </p>
             
             <div className="flex mt-3 items-center">
               <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>

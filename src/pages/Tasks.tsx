@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiAlertTriangle, FiCalendar, FiCheckCircle, FiCpu, FiTarget } from 'react-icons/fi';
 
 type TaskStatus = 'pending' | 'evaluating' | 'approved' | 'rejected';
 
@@ -74,7 +75,7 @@ export default function TasksAndEvaluation() {
                 {task.title}
               </h3>
               <div className="mt-2 text-[10px] font-mono text-gray-400 flex items-center gap-1">
-                📅 Vence: {task.dueDate}
+                <FiCalendar className="w-3.5 h-3.5" /> Vence: {task.dueDate}
               </div>
             </button>
           ))}
@@ -104,7 +105,15 @@ export default function TasksAndEvaluation() {
             {selectedTask.feedback && (
               <div className={`p-5 rounded-lg border ${selectedTask.status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                 <h3 className={`text-sm font-bold flex items-center gap-2 mb-2 ${selectedTask.status === 'approved' ? 'text-green-800' : 'text-red-800'}`}>
-                  {selectedTask.status === 'approved' ? '🎉 IA: Excelente trabajo' : '⚠️ IA: Puntos de mejora'}
+                  {selectedTask.status === 'approved' ? (
+                    <>
+                      <FiCheckCircle className="w-4 h-4" /> IA: Excelente trabajo
+                    </>
+                  ) : (
+                    <>
+                      <FiAlertTriangle className="w-4 h-4" /> IA: Puntos de mejora
+                    </>
+                  )}
                 </h3>
                 <p className={`text-sm ${selectedTask.status === 'approved' ? 'text-green-700' : 'text-red-700'}`}>
                   {selectedTask.feedback}
@@ -116,7 +125,7 @@ export default function TasksAndEvaluation() {
             {(selectedTask.status === 'pending' || selectedTask.status === 'rejected') && (
               <div className="bg-white rounded-xl border border-lab-border shadow-sm flex flex-col overflow-hidden">
                 <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                  <span className="text-xl">🤖</span>
+                  <FiCpu className="w-5 h-5 text-gray-600" />
                   <h3 className="text-sm font-bold text-gray-700">Enviar a análisis asistido</h3>
                 </div>
                 
@@ -159,7 +168,7 @@ export default function TasksAndEvaluation() {
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-gray-400">
-            <span className="text-5xl mb-4">🎯</span>
+            <FiTarget className="w-12 h-12 mb-4" />
             <p className="text-sm">Selecciona una tarea de la lista para ver el detalle y entregar.</p>
           </div>
         )}

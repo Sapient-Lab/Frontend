@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiMail, FiUsers } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 type MemberStatus = 'active' | 'pending';
@@ -82,7 +83,7 @@ export default function Team() {
             <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm sticky top-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-accent-light text-accent flex items-center justify-center text-xl">
-                  📨
+                  <FiMail className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-800">Invitar Miembro</h3>
@@ -176,7 +177,7 @@ export default function Team() {
               
               {projectMode === 'solo' && (
                 <div className="mt-8 p-6 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center bg-gray-50/50">
-                  <span className="text-4xl mb-3 opacity-80">👽</span>
+                  <FiUsers className="w-10 h-10 mb-3 opacity-70 text-gray-400" />
                   <p className="text-sm font-semibold text-gray-600">No hay nadie más por aquí</p>
                   <p className="text-xs text-gray-400 mt-1 max-w-xs">Utiliza el formulario de la izquierda para invitar colaboradores y potenciar tu investigación.</p>
                 </div>

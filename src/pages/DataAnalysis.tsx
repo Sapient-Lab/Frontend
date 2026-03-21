@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiAlertTriangle, FiFileText, FiSearch, FiTarget } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 
 export default function DataAnalysis() {
@@ -118,7 +119,7 @@ export default function DataAnalysis() {
                   <div className="space-y-5">
                     <div>
                       <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <span className="text-accent">📝</span> Resumen Narrativo
+                        <FiFileText className="w-4 h-4 text-accent" /> Resumen Narrativo
                       </h3>
                       <p className="text-sm text-gray-600 leading-relaxed">
                         {analysisResult.structured.narrativeSummary || "Resumen no disponible."}
@@ -127,7 +128,7 @@ export default function DataAnalysis() {
 
                     <div>
                       <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <span className="text-green-600">🎯</span> Hallazgos Notables
+                        <FiTarget className="w-4 h-4 text-green-600" /> Hallazgos Notables
                       </h3>
                       <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
                         {(analysisResult.structured.notableFindings || []).map((find: string, i: number) => (
@@ -139,7 +140,7 @@ export default function DataAnalysis() {
                     {analysisResult.structured.qualityFlags && analysisResult.structured.qualityFlags.length > 0 && (
                       <div className="p-4 bg-orange-50/50 rounded-lg border border-orange-100">
                         <h3 className="text-sm font-bold text-orange-800 mb-2 flex items-center gap-2">
-                          <span className="text-orange-500">⚠️</span> Alertas de Calidad
+                          <FiAlertTriangle className="w-4 h-4 text-orange-500" /> Alertas de Calidad
                         </h3>
                         <ul className="list-disc pl-5 text-sm text-orange-700 space-y-1">
                           {analysisResult.structured.qualityFlags.map((flag: string, i: number) => (
@@ -151,7 +152,7 @@ export default function DataAnalysis() {
 
                     <div>
                       <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <span className="text-blue-500">🔍</span> Próximos Pasos Recomendados
+                        <FiSearch className="w-4 h-4 text-blue-500" /> Próximos Pasos Recomendados
                       </h3>
                       <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
                         {(analysisResult.structured.recommendedChecks || []).map((step: string, i: number) => (
