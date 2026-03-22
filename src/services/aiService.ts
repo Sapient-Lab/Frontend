@@ -166,6 +166,36 @@ export const aiService = {
       body: JSON.stringify({ protocolText, riskLevel: 'medium' })
     });
     if (!response.ok) throw new Error('Error al escanear el protocolo');
+    return response.json();  },
+
+  /**
+   * Transcribe un audio (Blob) dictado por el micrófono usando Azure Speech
+   */
+  async speechToText(audioBlob: Blob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'dictation.wav');
+
+    const response = await fetch('/api/ai/speech-to-text', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) throw new Error('Error al procesar el audio (Speech-to-Text)');
     return response.json();
-  }
+  },
+
+  /**
+   * Extrae información de documentos PDF o imágenes usando Azure Document Intelligence
+   */
+  async analyzeDocument(file: File) {
+    const formData = new FormData();
+    formData.append('document', file);
+
+    const response = await fetch('/api/ai/document/analyze', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) throw new Error('Error al analizar el documento (Azure Document)');
+    return response.json();  }
 };

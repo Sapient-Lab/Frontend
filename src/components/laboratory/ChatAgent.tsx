@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import RecordRTC from 'recordrtc';
 import { aiService, type ChatMessage } from '../../services/aiService';
 import { useProject } from '../../context/ProjectContext';
 
@@ -16,7 +17,9 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recorderRef = useRef<RecordRTC | null>(null);
 
   // Inyectar el projectGoal y projectDesc como mensaje de sistema
   useEffect(() => {
@@ -106,6 +109,112 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
     reader.readAsDataURL(file);
   };
 
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setMessages(prev => [...prev, { role: 'user', content: `📄 [Documento adjuntado: ${file.name}]` }]);
+    setIsLoading(true);
+
+    try {
+      const response = await aiService.analyzeDocument(file);
+      
+      let answerText = "Se ha analizado el documento con Azure Document Intelligence.\n\n";
+      if (response && response.content) {
+         answerText += `**Contenido extraído:**\n\n${response.content}`;
+      } else {
+         answerText += JSON.stringify(response);
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: answerText }]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al procesar el documento: ' + error.message }]);
+    } finally {
+      setIsLoading(false);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorderRef.current = new RecordRTC(stream, {
+        type: 'audio',
+        mimeType: 'audio/wav',
+        recorderType: RecordRTC.StereoAudioRecorder,
+        desiredSampRate: 16000,
+        numberOfAudioChannels: 1
+      });
+      recorderRef.current.startRecording();
+      // Guardo temporalmente la referencia del stream en recorderRef
+      (recorderRef.current as any).stream = stream;
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      alert("No se pudo acceder al micrófono. Asegúrate de dar los permisos correspondientes.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (!recorderRef.current) return;
+    
+    recorderRef.current.stopRecording(async () => {
+      setIsRecording(false);
+      setIsLoading(true);
+      
+      const audioBlob = recorderRef.current!.getBlob();
+      
+      // Stop stream tracks
+      const stream = (recorderRef.current as any).stream;
+      if (stream) {
+         stream.getTracks().forEach((track: any) => track.stop());
+      }
+      recorderRef.current!.destroy();
+      recorderRef.current = null;
+
+      try {
+        setMessages(prev => [...prev, { role: 'user', content: '🎤 [Procesando dictado...]' }]);
+        
+        // Usar AI Service de Speech
+        const response = await aiService.speechToText(audioBlob);
+        
+        const transcribedText = response.text || "No se detectó texto (Azure no devolvió palabras)";
+        
+        // Actualizar el mensaje de usuario que decía [Procesando dictado]
+        setMessages(prev => {
+           const newMsg = [...prev];
+           newMsg[newMsg.length - 1] = { role: 'user', content: `🎤 (Dictado): "${transcribedText}"` };
+           return newMsg;
+        });
+
+        if (transcribedText && transcribedText.length > 5 && !transcribedText.includes("No se detectó")) {
+          // Si hubo texto real, mandamos ese texto como input automático a la IA conversacional
+          const contextualizedMessage = editorContext 
+            ? `[Contexto actual del archivo abierto en el Editor:\n\`\`\`javascript\n${editorContext}\n\`\`\`]\n\nPregunta/Instrucción del usuario (Por Voz): ${transcribedText}`
+            : transcribedText;
+
+          const chatResponse = await aiService.sendMessage(contextualizedMessage, messages);
+          const answer = chatResponse.rawModelResponse || chatResponse.answer || chatResponse.text || chatResponse.content || JSON.stringify(chatResponse);
+          
+          setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
+        }
+
+      } catch (err: any) {
+         setMessages(prev => [...prev, { role: 'assistant', content: 'Error de dictado por voz: ' + err.message }]);
+      } finally {
+         setIsLoading(false);
+      }
+    });
+  };
+
+  const toggleRecording = () => {
+     if (isRecording) {
+        stopRecording();
+     } else {
+        startRecording();
+     }
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0 bg-[#fbfbfb]">
       {/* Zona de mensajes */}
@@ -180,12 +289,41 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
 
       {/* Input Form */}
       <form onSubmit={handleSend} className="p-3 bg-white border-t border-lab-border flex gap-2 items-center">
-        <label className="cursor-pointer text-gray-500 hover:text-accent p-2 rounded hover:bg-gray-50 transition-colors" title="Subir Imagen">
+        {/* Document (PDF) Upload */}
+        <label className="cursor-pointer text-gray-500 hover:text-accent p-2 rounded hover:bg-gray-50 transition-colors" title="Subir Reporte PDF (Azure Document)">
+          <input type="file" accept="application/pdf,image/*" className="hidden" onChange={handleDocumentUpload} disabled={isLoading} />
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             {/* Paperclip icon */}
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+        </label>
+
+        {/* Image / Vision Upload */}
+        <label className="cursor-pointer text-gray-500 hover:text-accent p-2 rounded hover:bg-gray-50 transition-colors" title="Subir Imagen (Azure Vision)">
           <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isLoading} />
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* Photograph icon */}
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </label>
+        
+        {/* Voice Dictation Button (Azure Speech) */}
+        <button
+          type="button"
+          onClick={toggleRecording}
+          disabled={isLoading && !isRecording}
+          className={`p-2 rounded transition-colors ${
+            isRecording 
+              ? 'text-red-500 bg-red-50 hover:bg-red-100 animate-pulse' 
+              : 'text-gray-500 hover:text-accent hover:bg-gray-50'
+          }`}
+          title="Dictar por voz (Azure Speech)"
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        </button>
+
         <input
           type="text"
           value={input}
