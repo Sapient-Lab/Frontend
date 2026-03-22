@@ -222,8 +222,8 @@ export function processData(rawData) {
       )}
 
       {/* Panel Izquierdo: Log de Tareas / Comentarios */}
-      <div className="w-full md:w-1/3 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm">
-        <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center px-4 justify-between">
+      <div className="w-full md:w-1/3 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm min-h-0">
+        <div className="h-10 shrink-0 bg-lab-bg border-b border-lab-border flex items-center px-4 justify-between">
           <h2 className="text-xs font-mono font-semibold text-accent uppercase tracking-wider">
             {projectMode === 'solo' ? 'Mi Registro' : 'Log de Equipo'}
           </h2>
@@ -234,7 +234,7 @@ export function processData(rawData) {
         </div>
         
         {/* Cambiamos el Log estático por el Chat del Agente */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <ChatAgent onInsertCode={handleInsertCode} editorContext={code} />
         </div>
       </div>

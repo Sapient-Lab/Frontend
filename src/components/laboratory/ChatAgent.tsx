@@ -99,9 +99,9 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#fbfbfb]">
+    <div className="flex flex-col h-full min-h-0 bg-[#fbfbfb]">
       {/* Zona de mensajes */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div 

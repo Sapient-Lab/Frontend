@@ -71,3 +71,5 @@ export default defineConfig([
   },
 ])
 ```
+
+2026
