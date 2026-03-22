@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
@@ -16,17 +17,23 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#fbfbfb] p-8 lg:p-10">
+    <div className="h-full w-full overflow-y-auto p-8 lg:p-10 page-fade-in">
       
       {/* Header Resumen */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
-          Hola, FC. Bienvenido a tu entorno.
+        <h1 className="text-3xl font-bold text-[#152536] tracking-tight mb-2">
+          Centro de Operaciones Científicas
         </h1>
-        <p className="text-sm text-gray-500 max-w-2xl">
+        <p className="text-sm text-gray-600 max-w-3xl leading-relaxed">
           {projectMode === 'solo' 
-            ? 'Este es tu espacio personal. Aquí puedes ver tu progreso, recomendaciones del agente y tus métricas.' 
-            : 'Este es el resumen de tu proyecto de equipo. Mantente al día con los avances y las notas de tu grupo.'}
+            ? 'Asistente de cuaderno para razonar experimentos sin reemplazar el juicio científico. Aquí verás progreso, alertas y recomendaciones explicables.'
+            : 'Resumen colaborativo del proyecto. Prioriza trazabilidad, decisiones justificadas y límites de seguridad en cada iteración.'}
+        </p>
+      </div>
+
+      <div className="mb-6 p-4 rounded-xl border border-[#d8e1ec] bg-white/80 backdrop-blur stagger-in">
+        <p className="text-xs text-[#4f6278] leading-relaxed">
+          Este asistente apoya el razonamiento experimental, no sustituye la supervisión técnica ni decisiones clínicas. Cada recomendación debe validarse por el equipo.
         </p>
       </div>
 
@@ -37,16 +44,16 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Tarjeta de Progreso del Curso */}
-          <div className="lg:col-span-2 bg-white border border-lab-border rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="lg:col-span-2 bg-white border border-lab-border rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden stagger-in">
             {/* Efecto de fondo sutil */}
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
+            <div className="absolute -right-16 -top-12 w-52 h-52 bg-accent/10 rounded-full blur-3xl"></div>
             
             <div className="z-10">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider mb-1 block">Proyecto Actual Activo</span>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-1">{projectName}</h2>
-                  <p className="text-sm text-gray-500">Módulo 1 de 10 • Setup del entorno iniciado</p>
+                  <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider mb-1 block">Proyecto / Módulo Activo</span>
+                  <h2 className="text-xl font-semibold mb-1 text-inherit">{projectName} - Interpretación de protocolos</h2>
+                  <p className="text-sm text-muted">Bloque 3 de 7 • Evidencia estructurada y checklist de bioseguridad</p>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-accent">5%</span>
@@ -69,30 +76,32 @@ export default function Dashboard() {
                 </button>
                 <span className="text-xs text-gray-500 flex items-center gap-1">
                   <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  2 Tareas pendientes
+                  2 verificaciones pendientes
                 </span>
               </div>
             </div>
           </div>
 
           {/* Tarjeta de Insights de IA */}
-          <div className="bg-[#F8FAFC] border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col relative">
+          <div className="bg-[#f7fbff] border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col relative stagger-in" style={{ animationDelay: '90ms' }}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-accent rounded-t-xl"></div>
             
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg">💡</div>
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg">
+                <FiZap className="w-4 h-4 text-blue-600" />
+              </div>
               <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">Insight del Agente IA</h2>
             </div>
             
             <p className="text-sm text-gray-700 leading-relaxed z-10 flex-1">
-              "He notado que en tu última sesión tuvimos errores de conexión a la base de datos tipo <code className="text-xs bg-white px-1 py-0.5 rounded text-red-500 border border-red-100 inline-block mt-0.5">ConnectionRefused</code>. Te sugiero revisar el archivo <code className="text-xs bg-white px-1 py-0.5 rounded text-gray-600 border border-gray-200">application.properties</code> para la próxima vez que entres."
+              "Se detectaron pasos con riesgo operativo medio en tu último protocolo. Recomiendo validar manipulación de reactivos corrosivos y documentar el porqué de cada variación antes de ejecutar."
             </p>
             
             <button 
               onClick={() => navigate('/app/lab')}
               className="mt-4 text-blue-600 text-xs font-semibold hover:underline flex items-center gap-1 group"
             >
-              Abrir chat con IA para resolverlo <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
+              Abrir asistente para revisar evidencia <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
             </button>
           </div>
         </div>
@@ -105,7 +114,8 @@ export default function Dashboard() {
             {/* Atajo 1: Protocolos */}
             <div 
               onClick={() => navigate('/app/protocolos')}
-              className="bg-white border border-lab-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col items-start"
+              className="bg-white border border-lab-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col items-start stagger-in"
+              style={{ animationDelay: '160ms' }}
             >
               <div className="w-10 h-10 rounded bg-green-50 flex items-center justify-center text-green-600 mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,14 +123,15 @@ export default function Dashboard() {
                 </svg>
               </div>
               <h2 className="text-lg font-medium text-gray-800 mb-1">Escáner de Seguridad</h2>
-              <p className="text-xs text-gray-500 mb-4">Revisa la teoría y pasa tus apuntes por la IA para detectar riesgos biológicos.</p>
+              <p className="text-xs text-muted mb-4">Interpreta protocolos, genera checklist trazable y destaca límites de seguridad en contextos biológicos o clínicos.</p>
               <span className="text-xs font-semibold text-green-600 mt-auto group-hover:underline">Abrir escáner &rarr;</span>
             </div>
 
             {/* Atajo 2: Tareas */}
             <div 
               onClick={() => navigate('/app/tareas')}
-              className="bg-white border border-lab-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col items-start"
+              className="bg-white border border-lab-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col items-start stagger-in"
+              style={{ animationDelay: '220ms' }}
             >
               <div className="w-10 h-10 rounded bg-orange-50 flex items-center justify-center text-orange-500 mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,13 +139,13 @@ export default function Dashboard() {
                 </svg>
               </div>
               <h2 className="text-lg font-medium text-gray-800 mb-1">Centro de Tareas</h2>
-              <p className="text-xs text-gray-500 mb-4">Tienes 2 entregas pendientes para subir a Vercel. Ve la rúbrica aquí.</p>
-              <span className="text-xs font-semibold text-orange-500 mt-auto group-hover:underline">Ver entregas pendientes &rarr;</span>
+              <p className="text-xs text-gray-500 mb-4">Gestiona evidencia experimental, revisiones del agente y estado de aprobación por calidad y seguridad.</p>
+              <span className="text-xs font-semibold text-orange-500 mt-auto group-hover:underline">Ver validaciones &rarr;</span>
             </div>
           </div>
 
           {/* Actividad Reciente */}
-          <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col">
+          <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '280ms' }}>
             <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
               {projectMode === 'solo' ? 'Tu Bitácora Reciente' : 'Actividad del Equipo'}
             </h2>

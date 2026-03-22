@@ -1,11 +1,14 @@
 import { useState, useRef } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
+import { FiAlertTriangle, FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
+import { useTheme } from '../context/ThemeContext';
 import ChatAgent from '../components/laboratory/ChatAgent';
 import { aiService } from '../services/aiService';
 
 export default function LabWorkspace() {
   const { projectMode } = useProject();
+  const { isDark } = useTheme();
   const providerRef = useRef<any>(null);
   const editorRef = useRef<any>(null); // Ref para el editor
 
@@ -160,7 +163,7 @@ export function processData(rawData) {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[80%] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <span className="text-xl">💡</span> Análisis de Código
+                <FiZap className="w-5 h-5 text-yellow-500" /> Análisis de Código
               </h3>
               <button 
                 onClick={() => setExplanationResult(null)}
@@ -178,7 +181,9 @@ export function processData(rawData) {
                   </div>
                   {explanationResult.structured.risks?.length > 0 && (
                     <div className="mb-4 p-3 bg-red-50/50 rounded-lg border border-red-100">
-                      <h4 className="text-sm font-bold text-red-800 mb-1 flex items-center gap-1">⚠️ Riesgos detectados:</h4>
+                      <h4 className="text-sm font-bold text-red-800 mb-1 flex items-center gap-1">
+                        <FiAlertTriangle className="w-4 h-4" /> Riesgos detectados:
+                      </h4>
                       <ul className="list-disc pl-4 text-xs text-red-700 space-y-1">
                         {explanationResult.structured.risks.map((r: string, i: number) => <li key={i}>{r}</li>)}
                       </ul>
@@ -186,7 +191,9 @@ export function processData(rawData) {
                   )}
                   {explanationResult.structured.suggestedImprovements?.length > 0 && (
                     <div className="mb-4">
-                      <h4 className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-1">✨ Sugerencias:</h4>
+                      <h4 className="text-sm font-bold text-blue-700 mb-1 flex items-center gap-1">
+                        <FiZap className="w-4 h-4" /> Sugerencias:
+                      </h4>
                       <ul className="list-disc pl-4 text-xs text-gray-600 space-y-1">
                         {explanationResult.structured.suggestedImprovements.map((s: string, i: number) => <li key={i}>{s}</li>)}
                       </ul>
@@ -252,14 +259,26 @@ export function processData(rawData) {
                 onClick={handleExplainCode}
                 disabled={isExplaining}
                 className={`px-3 py-1 border border-lab-border text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-                  isExplaining ? 'bg-muted text-white cursor-not-allowed' : 'bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1]'
+                  isExplaining
+                    ? 'bg-muted text-white cursor-not-allowed'
+                    : isDark
+                      ? 'bg-[#1d2b3f] text-blue-100 hover:bg-[#2a3d58]'
+                      : 'bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1]'
                 }`}
                 title="Selecciona texto para explicar solo esa parte"
               >
-                {isExplaining ? 'Pensando...' : '💡 Explicar'}
+                {isExplaining ? 'Pensando...' : (
+                  <>
+                    <FiZap className="w-3.5 h-3.5" /> Explicar
+                  </>
+                )}
               </button>
 
-              <button className="px-3 py-1 bg-white border border-lab-border hover:bg-gray-50 text-gray-700 rounded text-xs font-medium transition-colors">
+              <button
+                className={`px-3 py-1 border border-lab-border rounded text-xs font-medium transition-colors ${
+                  isDark ? 'bg-[#0f1724] text-blue-100 hover:bg-[#162338]' : 'bg-white hover:bg-gray-50 text-gray-700'
+                }`}
+              >
                 Restablecer
               </button>
               <button 
@@ -276,7 +295,7 @@ export function processData(rawData) {
             <Editor
               height="100%"
               language="javascript"
-              theme="vs-light" // Se reemplazará con un tema personalizado después
+              theme={isDark ? 'vs-dark' : 'vs-light'}
               value={code}
               onChange={(val) => setCode(val || '')}
               onMount={handleEditorDidMount}
@@ -329,7 +348,9 @@ export function processData(rawData) {
               <p className="text-xs">at Object.&lt;anonymous&gt; (runner.js:22:3)</p>
             </div>
 
-            <p className="mt-3 text-yellow-500">⚠ Falla en la pre-validación de los test (0/3 completados).</p>
+            <p className="mt-3 text-yellow-500 flex items-center gap-1">
+              <FiAlertTriangle className="w-4 h-4" /> Falla en la pre-validación de los test (0/3 completados).
+            </p>
             
             <div className="flex mt-3 items-center">
               <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>

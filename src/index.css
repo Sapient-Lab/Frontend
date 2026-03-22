@@ -1,22 +1,191 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  --color-accent: #1c3d6b;
-  --color-accent-light: #e8eef6;
-  --color-accent-dim: #4a6fa5;
+  --color-accent: #114370;
+  --color-accent-light: #e8f3ff;
+  --color-accent-dim: #2f6da6;
   --color-surface: #ffffff;
-  --color-lab-bg: #f4f4f0;
-  --color-lab-border: #ddddd8;
-  --color-muted: #a0a0a0;
+  --color-lab-bg: #f5f7fb;
+  --color-lab-border: #d8e1ec;
+  --color-muted: #6f7f93;
 
-  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-sans: 'Manrope', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
+:root {
+  --app-bg-gradient:
+    radial-gradient(circle at 10% -5%, rgba(17, 67, 112, 0.14), transparent 38%),
+    radial-gradient(circle at 88% 0%, rgba(47, 109, 166, 0.11), transparent 35%),
+    linear-gradient(180deg, #f9fbff 0%, #f3f6fb 70%, #eef3f8 100%);
+  --app-text: #162230;
+  --surface-soft: #ffffff;
+  --surface-subtle: #f8fafc;
+}
+
+:root[data-theme='dark'] {
+  --color-accent: #7cb7ff;
+  --color-accent-light: #13233a;
+  --color-accent-dim: #5ea5f5;
+  --color-surface: #0f1724;
+  --color-lab-bg: #0b1320;
+  --color-lab-border: #223349;
+  --color-muted: #9fb3ca;
+
+  --app-bg-gradient:
+    radial-gradient(circle at 12% -8%, rgba(69, 132, 207, 0.25), transparent 36%),
+    radial-gradient(circle at 92% 0%, rgba(34, 80, 138, 0.24), transparent 34%),
+    linear-gradient(180deg, #08101b 0%, #0b1320 55%, #0f1a2a 100%);
+  --app-text: #d9e7f9;
+  --app-text-soft: #b7c8dc;
+  --app-text-muted: #8ea4bc;
+  --surface-soft: #0f1724;
+  --surface-subtle: #111d2e;
+}
+
 body {
-  background-color: var(--color-lab-bg);
+  background: var(--app-bg-gradient);
   font-family: var(--font-sans);
-  color: #1a1a1a;
+  color: var(--app-text);
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b9c7d8 #eef3f9;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #b9c7d8;
+  border-radius: 999px;
+  border: 2px solid #eef3f9;
+}
+
+:root[data-theme='dark'] * {
+  scrollbar-color: #405672 #142133;
+}
+
+:root[data-theme='dark'] *::-webkit-scrollbar-thumb {
+  background: #405672;
+  border-color: #142133;
+}
+
+:root[data-theme='dark'] *::-webkit-scrollbar-track {
+  background: #0e1a2b;
+}
+
+/* Global dark-mode bridge for existing utility-heavy views. */
+:root[data-theme='dark'] .bg-white {
+  background-color: var(--surface-soft) !important;
+}
+
+:root[data-theme='dark'] .bg-lab-bg,
+:root[data-theme='dark'] .bg-\[\#fbfbfb\],
+:root[data-theme='dark'] .bg-gray-50 {
+  background-color: var(--surface-subtle) !important;
+}
+
+:root[data-theme='dark'] .bg-gray-100 {
+  background-color: #182538 !important;
+}
+
+:root[data-theme='dark'] .bg-gray-200 {
+  background-color: #223349 !important;
+}
+
+:root[data-theme='dark'] .text-gray-800,
+:root[data-theme='dark'] .text-gray-700,
+:root[data-theme='dark'] .text-gray-600,
+:root[data-theme='dark'] .text-\[\#152536\] {
+  color: var(--app-text) !important;
+}
+
+:root[data-theme='dark'] .text-gray-500,
+:root[data-theme='dark'] .text-gray-400 {
+  color: var(--app-text-soft) !important;
+}
+
+:root[data-theme='dark'] .text-gray-300 {
+  color: var(--app-text-muted) !important;
+}
+
+:root[data-theme='dark'] .text-muted {
+  color: var(--color-muted) !important;
+}
+
+:root[data-theme='dark'] .border-gray-100,
+:root[data-theme='dark'] .border-gray-200,
+:root[data-theme='dark'] .border-gray-300,
+:root[data-theme='dark'] .border-lab-border {
+  border-color: var(--color-lab-border) !important;
+}
+
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select {
+  color: var(--app-text);
+}
+
+:root[data-theme='dark'] input::placeholder,
+:root[data-theme='dark'] textarea::placeholder {
+  color: #8ea4bc;
+}
+
+:root[data-theme='dark'] .bg-\[\#e2e8f0\] {
+  background-color: #1d2b3f !important;
+}
+
+:root[data-theme='dark'] .hover\:bg-\[\#cbd5e1\]:hover {
+  background-color: #2a3d58 !important;
+}
+
+:root[data-theme='dark'] .from-\[\#f8fbff\] {
+  --tw-gradient-from: #132238 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(19 34 56 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+:root[data-theme='dark'] .to-\[\#f1f6fc\] {
+  --tw-gradient-to: #0f1c2f var(--tw-gradient-to-position) !important;
+}
+
+.page-fade-in {
+  animation: pageFadeIn 520ms ease-out both;
+}
+
+.stagger-in {
+  animation: cardLift 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardLift {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

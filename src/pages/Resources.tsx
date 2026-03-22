@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { IconType } from 'react-icons';
+import { FiCode, FiFileText, FiLink2, FiPlayCircle, FiSearch } from 'react-icons/fi';
 
 type Resource = {
   id: string;
@@ -9,15 +11,18 @@ type Resource = {
 };
 
 const mockResources: Resource[] = [
-  { id: '1', title: 'Guía de Bioseguridad BSL-2', type: 'pdf', module: '1. Introducción', description: 'Documento oficial con normativas de manipulación.' },
-  { id: '2', title: 'Tutorial: Primer Controller en Spring', type: 'video', module: '3. API REST', description: 'Paso a paso de cómo exponer un endpoint HTTP.' },
-  { id: '3', title: 'Documentación Oficial NestJS', type: 'link', module: '4. Microservicios', description: 'Referencia a la página principal de Nest.' },
-  { id: '4', title: 'Repositorio Plantilla Base', type: 'repo', module: '2. Setup', description: 'Código inicial del laboratorio para clonar.' },
-  { id: '5', title: 'Esquema de Bases de Datos Relacionales', type: 'pdf', module: '5. Base de datos', description: 'Diagramas entidad-relación de ejemplo.' },
+  { id: '1', title: 'Guía de Bioseguridad BSL-2', type: 'pdf', module: '1. Contexto del experimento', description: 'Normativas de manipulación, EPP y procedimientos de contingencia.' },
+  { id: '2', title: 'Video: Buenas prácticas de documentación de laboratorio', type: 'video', module: '2. Ingesta de protocolo', description: 'Cómo registrar método, lotes y observaciones sin ambiguedad.' },
+  { id: '3', title: 'Checklist de validación ética y regulatoria', type: 'link', module: '3. Evaluación de riesgo', description: 'Revisión previa para investigación con potencial impacto clínico.' },
+  { id: '4', title: 'Plantilla de cuaderno experimental reproducible', type: 'repo', module: '4. Análisis de resultados', description: 'Estructura recomendada para trazabilidad y comparación entre corridas.' },
+  { id: '5', title: 'Matriz de interpretación y límites de confianza', type: 'pdf', module: '5. Siguientes pasos', description: 'Criterios para decidir repetir, escalar o descartar hipótesis.' },
 ];
 
-const typeIcons = {
-  pdf: '📄', link: '🔗', video: '▶️', repo: '💻'
+const typeIcons: Record<Resource['type'], IconType> = {
+  pdf: FiFileText,
+  link: FiLink2,
+  video: FiPlayCircle,
+  repo: FiCode,
 };
 
 export default function Resources() {
@@ -38,20 +43,20 @@ export default function Resources() {
         
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
-            Centro de Recursos y Documentación
+            Biblioteca Científica y Cumplimiento
           </h1>
           <p className="text-sm text-gray-500">
-            Encuentra todo el material complementario, guías de estudio y referencias necesarias para completar tus módulos.
+            Material de referencia para bioseguridad, interpretación responsable y decisiones auditables.
           </p>
         </div>
 
         {/* Buscador y Filtros */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="flex-1 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
               type="text" 
-              placeholder="Buscar por título o palabra clave..." 
+              placeholder="Buscar por protocolo, riesgo o palabra clave..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-lab-border text-sm rounded-lg focus:outline-none focus:border-accent shadow-sm"
@@ -70,21 +75,26 @@ export default function Resources() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
           {filtered.length === 0 ? (
             <div className="col-span-full py-12 text-center text-gray-400">
-              No se encontraron recursos que coincidan con tu búsqueda.
+              No se encontraron recursos para los filtros seleccionados.
             </div>
           ) : (
             filtered.map(resource => (
               <div key={resource.id} className="bg-white border border-lab-border p-5 rounded-xl flex flex-col hover:shadow-md transition-shadow group">
+                {(() => {
+                  const ResourceIcon = typeIcons[resource.type];
+                  return (
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl bg-gray-50 w-10 h-10 flex items-center justify-center rounded-lg border border-gray-100 group-hover:scale-105 transition-transform">
-                      {typeIcons[resource.type]}
+                      <ResourceIcon className="w-5 h-5 text-gray-700" />
                     </span>
                   </div>
                   <span className="text-[10px] font-mono font-semibold bg-accent-light text-accent px-2 py-1 rounded">
                     {resource.type.toUpperCase()}
                   </span>
                 </div>
+                  );
+                })()}
                 
                 <h3 className="text-[15px] font-bold text-gray-800 leading-tight mb-1">
                   {resource.title}

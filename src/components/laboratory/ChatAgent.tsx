@@ -68,7 +68,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Error al conectar con el backend. ¿Seguro que el servidor NestJS está corriendo en el puerto 3000?' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend. Verifica que el servidor NestJS esté corriendo en el puerto 3000.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +83,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
     reader.onload = async () => {
       const base64String = reader.result?.toString().replace(/^data:image\/[a-z]+;base64,/, '');
       if (base64String) {
-        setMessages(prev => [...prev, { role: 'user', content: '[🖼️ Imagen adjuntada]' }]);
+        setMessages(prev => [...prev, { role: 'user', content: '[Imagen adjuntada]' }]);
         setIsLoading(true);
         try {
           // Llama al endpoint de visión
@@ -91,7 +91,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
           const answerText = response.structured?.narrativeSummary || response.rawModelResponse || JSON.stringify(response);
           setMessages(prev => [...prev, { role: 'assistant', content: answerText }]);
         } catch (error: any) {
-           setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Error al procesar la imagen: ' + error.message}]);
+           setMessages(prev => [...prev, { role: 'assistant', content: 'Error al procesar la imagen: ' + error.message}]);
         } finally {
           setIsLoading(false);
         }
