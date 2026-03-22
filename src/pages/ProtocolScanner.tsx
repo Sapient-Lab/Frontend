@@ -4,7 +4,6 @@ import { aiService } from '../services/aiService';
 
 export default function ProtocolScanner() {
   const [protocolText, setProtocolText] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -14,7 +13,6 @@ export default function ProtocolScanner() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result as string);
@@ -24,7 +22,6 @@ export default function ProtocolScanner() {
   };
 
   const clearImage = () => {
-    setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
