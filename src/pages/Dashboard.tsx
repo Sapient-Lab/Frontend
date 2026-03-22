@@ -37,9 +37,9 @@ export default function Dashboard() {
     const load = async () => {
       let hasActivity = false;
       try {
-        const progressPromise = fetch('http://localhost:3000/api/platform/users/me/progress');
+        const progressPromise = fetch('/api/platform/users/me/progress');
         const logsPromise = projectId
-          ? fetch(`http://localhost:3000/api/platform/projects/${projectId}/logs`)
+          ? fetch(`/api/platform/projects/${projectId}/logs`)
           : null;
 
         const [progressRes, logsRes] = await Promise.all([progressPromise, logsPromise]);

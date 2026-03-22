@@ -27,7 +27,9 @@ export default function Topbar() {
       if (user.email) userEmail = user.email;
       if (user.name) userInitials = user.name.substring(0, 2).toUpperCase();
     }
-  } catch(e) {}
+  } catch (error) {
+    console.error('No se pudo leer el usuario de localStorage', error);
+  }
 
   return (
     <header className={`h-[64px] backdrop-blur-md border-b flex items-center px-6 gap-8 sticky top-0 z-50 transition-colors ${
