@@ -94,7 +94,7 @@ export default function Dashboard() {
             </div>
             
             <p className="text-sm text-gray-700 leading-relaxed z-10 flex-1">
-              "Se detectaron pasos con riesgo operativo medio en tu último protocolo. Recomiendo validar manipulación de reactivos corrosivos y documentar el porqué de cada variación antes de ejecutar."
+              { dashboardData.logs.length === 0 ? "Estoy listo para ayudarle a coordinar el proyecto. Los datos se actualizan en base al progreso de las verificaciones." : "El proyecto está avanzando. Revise los paneles para ver la actividad y progreso." }
             </p>
             
             <button 
