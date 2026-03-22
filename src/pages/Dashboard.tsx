@@ -1,20 +1,92 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { projectMode, projectName } = useProject();
+  const { projectMode, projectName, projectId } = useProject();
 
-  const recentActivity = projectMode === 'team' ? [
-    { id: 1, time: 'Hace 10 min', text: 'Dr. A. Gómez subió un nuevo recurso a la guía.', user: 'AG', color: 'bg-blue-500' },
-    { id: 2, time: 'Hace 2 hrs', text: 'Elena R. resolvió 3 warnings en el microservicio.', user: 'ER', color: 'bg-green-500' },
-    { id: 3, time: 'Ayer', text: 'Tú completaste la "Introducción".', user: 'FC', color: 'bg-accent' },
-  ] : [
-    { id: 1, time: 'Hace 10 min', text: 'Iniciaste el entorno de pruebas local.', user: 'FC', color: 'bg-accent' },
-    { id: 2, time: 'Hace 2 hrs', text: 'Guardaste 2 archivos nuevos en Documentos.', user: 'FC', color: 'bg-accent' },
-    { id: 3, time: 'Ayer', text: 'Completaste la "Introducción".', user: 'FC', color: 'bg-accent' },
-  ];
+  const [aiMessage, setAiMessage] = useState(
+    'Análisis pendiente: carga un protocolo o evidencia para generar recomendaciones de seguridad.'
+  );
+  const [recentActivity, setRecentActivity] = useState<Array<{ id: string | number; time: string; text: string; user: string; color: string }>>(
+    []
+  );
+
+  const palette = useMemo(
+    () => ['bg-blue-500', 'bg-green-500', 'bg-accent', 'bg-purple-500', 'bg-amber-500'],
+    []
+  );
+
+  const relativeTime = (isoDate: string) => {
+    const target = new Date(isoDate).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, now - target);
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Ahora';
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours} hrs`;
+    const days = Math.floor(hours / 24);
+    return days === 1 ? 'Ayer' : `Hace ${days} días`;
+  };
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      let hasActivity = false;
+      try {
+        const progressPromise = fetch('http://localhost:3000/api/platform/users/me/progress');
+        const logsPromise = projectId
+          ? fetch(`http://localhost:3000/api/platform/projects/${projectId}/logs`)
+          : null;
+
+        const [progressRes, logsRes] = await Promise.all([progressPromise, logsPromise]);
+
+        if (progressRes.ok) {
+          const progress = await progressRes.json();
+          if (active && progress?.recentActivity?.length) {
+            setAiMessage(progress.recentActivity[0].text);
+          }
+        }
+
+        if (logsRes && logsRes.ok) {
+          const logs = await logsRes.json();
+          if (active && Array.isArray(logs)) {
+            const mapped = logs.slice(0, 6).map((log: any, idx: number) => {
+              const initials = (log.author || 'Equipo').substring(0, 2).toUpperCase();
+              const color = palette[idx % palette.length];
+              return {
+                id: log.id,
+                time: log.createdAt ? relativeTime(log.createdAt) : 'Hace un momento',
+                text: log.message,
+                user: initials,
+                color,
+              };
+            });
+            setRecentActivity(mapped);
+            hasActivity = mapped.length > 0;
+          }
+        }
+
+        // Fallback if no activity yet
+        if (active && !hasActivity) {
+          setRecentActivity([
+            { id: 'fallback-1', time: 'Hace 10 min', text: 'Carga tus primeros logs para ver actividad aquí.', user: 'AI', color: 'bg-blue-500' },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error cargando datos del dashboard', error);
+      }
+    };
+
+    load();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, projectMode]);
 
   return (
     <div className="h-full w-full overflow-y-auto p-8 lg:p-10 page-fade-in">
@@ -94,7 +166,7 @@ export default function Dashboard() {
             </div>
             
             <p className="text-sm text-gray-700 leading-relaxed z-10 flex-1">
-              "Se detectaron pasos con riesgo operativo medio en tu último protocolo. Recomiendo validar manipulación de reactivos corrosivos y documentar el porqué de cada variación antes de ejecutar."
+              “{aiMessage}”
             </p>
             
             <button 

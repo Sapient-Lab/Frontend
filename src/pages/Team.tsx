@@ -14,41 +14,101 @@ interface TeamMember {
   status: MemberStatus;
   color: string;
 }
-
-const mockTeamMembers: TeamMember[] = [
-  { id: '1', name: 'Tú', initials: 'FC', email: 'tu@email.com', role: 'Administrador', status: 'active', color: 'bg-accent' },
-  { id: '2', name: 'Dr. A. Gómez', initials: 'AG', email: 'agomez@universidad.edu', role: 'Colaborador', status: 'active', color: 'bg-blue-500' },
-  { id: '3', name: 'Elena R.', initials: 'ER', email: 'elena@email.com', role: 'Colaborador', status: 'pending', color: 'bg-green-500' },
-];
-
 export default function Team() {
   const { projectId, projectMode, setProjectMode } = useProject();
-  const [members, setMembers] = useState<TeamMember[]>(
-    projectMode === 'team' ? mockTeamMembers : [mockTeamMembers[0]]
-  );
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
 
   const [pendingRequests, setPendingRequests] = useState<{id: string, name: string, email: string}[]>([]);
 
+  // Fetch miembros actuales y solicitudes pendientes desde el backend real
   useEffect(() => {
-    if (projectId) {
-      fetch(`/api/projects/${projectId}/requests`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setPendingRequests(data.map(d => ({ id: String(d.id), name: d.name, email: d.email })));
-          } else if (data?.data && Array.isArray(data.data)) {
-            setPendingRequests(data.data.map((d: any) => ({ id: String(d.id), name: d.name, email: d.email })));
+    const localUser = () => {
+      try {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const name = parsed.name || parsed.username || 'Tú';
+          return {
+            id: parsed.id ? String(parsed.id) : 'me',
+            name,
+            initials: name.substring(0, 2).toUpperCase(),
+            email: parsed.email || 'usuario@sapientlab.dev',
+            role: 'Administrador' as Role,
+            status: 'active' as MemberStatus,
+            color: 'bg-accent',
+          };
+        }
+      } catch (e) {
+        console.error('Error leyendo user local', e);
+      }
+      return {
+        id: 'me',
+        name: 'Tú',
+        initials: 'TU',
+        email: 'tu@email.com',
+        role: 'Administrador' as Role,
+        status: 'active' as MemberStatus,
+        color: 'bg-accent',
+      };
+    };
+
+    const loadMembers = async () => {
+      const base = localUser();
+      let list: TeamMember[] = [base];
+
+      if (projectId) {
+        try {
+          const res = await fetch(`http://localhost:3000/api/platform/projects/${projectId}/members`);
+          if (res.ok) {
+            const data = await res.json();
+            const mapped = data.map((m: any, idx: number) => {
+              const name = m.name || m.username || 'Miembro';
+              return {
+                id: String(m.id),
+                name,
+                initials: name.substring(0, 2).toUpperCase(),
+                email: m.email || 'sin-correo@lab.dev',
+                role: (m.role || 'Colaborador') as Role,
+                status: (m.status === 'active' ? 'active' : 'pending') as MemberStatus,
+                color: ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500'][idx % 4],
+              };
+            });
+            // Evitar duplicar al usuario local si ya vino del backend
+            list = [base, ...mapped.filter((m: TeamMember) => m.id !== base.id)];
+            if (mapped.length > 0) setProjectMode('team');
           }
-        })
-        .catch(console.error);
-    }
-  }, [projectId]);
+        } catch (e) {
+          console.error('Error cargando miembros', e);
+        }
+      }
+
+      setMembers(list);
+    };
+
+    const loadRequests = async () => {
+      if (!projectId) return;
+      try {
+        const res = await fetch(`http://localhost:3000/api/platform/projects/${projectId}/requests`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setPendingRequests(data.map((d: any) => ({ id: String(d.id), name: d.name, email: d.email })));
+          }
+        }
+      } catch (e) {
+        console.error('Error cargando solicitudes', e);
+      }
+    };
+
+    loadMembers();
+    loadRequests();
+  }, [projectId, setProjectMode]);
 
   const handleAcceptRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`/api/projects/${projectId}/requests/resolve`, {
+      await fetch(`http://localhost:3000/api/platform/projects/${projectId}/requests/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(reqId), action: 'accept' })
@@ -75,7 +135,7 @@ export default function Team() {
   const handleDeclineRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`/api/projects/${projectId}/requests/resolve`, {
+      await fetch(`http://localhost:3000/api/platform/projects/${projectId}/requests/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(reqId), action: 'reject' })

@@ -3,50 +3,73 @@ import { useProject } from '../../context/ProjectContext';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function TeamPanel() {
-  const { projectMode, currentProject } = useProject();
-  const [teamMembers, setTeamMembers] = useState([]);
-
-  useEffect(() => {
-    const fetchMembers = async () => {
-      if (!currentProject) return;
-      try {
-        const response = await fetch('http://localhost:3000/api/platform/projects/' + currentProject.id + '/members');
-        if (response.ok) {
-          const data = await response.json();
-          setTeamMembers(data.map((m) => ({
-            id: m.id.toString(),
-            name: m.name,
-            role: m.role || 'Member',
-            avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(m.name) + '&background=random',
-            status: 'online'
-          })));
-        }
-      } catch (error) {
-        console.error('Error fetching members:', error);
-      }
-    };
-    fetchMembers();
-  }, [currentProject]);
+  const { projectMode, projectId } = useProject();
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const { isDark } = useTheme();
   const [open, setOpen] = useState(true);
-  const [user, setUser] = useState<{name: string, initials: string, role: string} | null>(null);
+  const [user, setUser] = useState<{ name: string; initials: string; role: string; id: string } | null>(null);
 
   useEffect(() => {
+    let localUser = { name: 'Tú', initials: 'TU', role: 'Usuario', id: 'me' };
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
         const name = parsed.name || parsed.username || 'Usuario';
         const initials = name.substring(0, 2).toUpperCase();
-        setUser({ name, initials, role: parsed.role || 'Investigador' });
-      } catch(e) {
-        setUser({ name: 'Tú', initials: 'TU', role: 'Usuario' });
+        localUser = { name, initials, role: parsed.role || 'Investigador', id: parsed.id?.toString() || 'me' };
+      } catch (e) {
+        // fallback already set
       }
-    } else {
-      setUser({ name: 'Tú', initials: 'TU', role: 'Usuario' });
     }
+    setUser(localUser);
   }, []);
 
+  useEffect(() => {
+    const fetchMembers = async () => {
+      let members: any[] = [];
+      if (user) {
+        members.push({
+          id: user.id,
+          name: user.name + ' (Tú)',
+          role: user.role,
+          initials: user.initials,
+          status: 'online',
+        });
+      }
+
+      if (projectId) {
+        try {
+          const response = await fetch('http://localhost:3000/api/platform/projects/' + projectId + '/members');
+          if (response.ok) {
+            const data = await response.json();
+            const fetchedMembers = data.map((m: any) => {
+              const name = m.name || m.username || 'Usuario';
+              const status = m.status === 'active' ? 'online' : 'away';
+              return {
+                id: m.id.toString(),
+                name,
+                role: m.role || 'Member',
+                initials: name.substring(0, 2).toUpperCase(),
+                status,
+              };
+            });
+
+            const filteredFetched = fetchedMembers.filter((fm: any) => fm.id !== user?.id);
+            members = [...members, ...filteredFetched];
+          }
+        } catch (error) {
+          console.error('Error fetching members:', error);
+        }
+      }
+
+      setTeamMembers(members);
+    };
+
+    if (user) {
+      fetchMembers();
+    }
+  }, [projectId, user]);
   
 
   return (
