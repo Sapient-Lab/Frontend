@@ -17,10 +17,12 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contextInjectedRef = useRef(false);
 
-  // Inyectar el projectGoal y projectDesc como mensaje de sistema
+  // Inyectar el projectGoal y projectDesc como mensaje de sistema (solo una vez)
   useEffect(() => {
-    if ((projectGoal || projectDesc) && messages.length === 1) {
+    if ((projectGoal || projectDesc) && !contextInjectedRef.current && messages.length === 1) {
+      contextInjectedRef.current = true;
       setMessages(prev => [
         { role: 'system', content: `Contexto del Proyecto del usuario:\nDescripción: ${projectDesc}\nObjetivo: ${projectGoal}\n` },
         ...prev
@@ -72,7 +74,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
       }
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend. Verifica que el servidor NestJS esté corriendo en el puerto 3000.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend de IA. Verifica que ambos servidores (frontend y backend) estén corriendo correctamente.' }]);
     } finally {
       setIsLoading(false);
     }

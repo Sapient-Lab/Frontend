@@ -60,7 +60,7 @@ export default function TeamPanel() {
       if (effectiveProjectId) {
         console.log('[TeamPanel] Fetching members for project:', effectiveProjectId);
         try {
-          const url = '/api/platform/projects/' + effectiveProjectId + '/members';
+          const url = '/api/projects/' + effectiveProjectId + '/members';
           console.log('[TeamPanel] Fetching from URL:', url);
           
           const response = await fetch(url);

@@ -44,6 +44,8 @@ export function processData(rawData) {
   
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanationResult, setExplanationResult] = useState<any>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionOutput, setExecutionOutput] = useState<string>('');
 
   const handleInsertCode = (newCode: string) => {
     if (!editorRef.current) return;
@@ -94,9 +96,37 @@ export function processData(rawData) {
       setExplanationResult(result);
     } catch (err: any) {
       console.error(err);
-      alert("Error al explicar código: " + err.message);
+      setExplanationResult({ rawModelResponse: 'Error al explicar código: ' + (err.message || 'Error desconocido') });
     } finally {
       setIsExplaining(false);
+    }
+  };
+
+  const handleExecuteCode = async () => {
+    if (!editorRef.current) return;
+    
+    const model = editorRef.current.getModel();
+    const codeToExecute = model.getValue();
+    
+    setIsExecuting(true);
+    setExecutionOutput('Ejecutando código...');
+    
+    try {
+      const response = await fetch('/api/ai/execute-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: codeToExecute, language: 'javascript' })
+      });
+      
+      if (!response.ok) throw new Error('Failed to execute code');
+      
+      const result = await response.json();
+      setExecutionOutput(result.output || result.message || 'Código ejecutado correctamente');
+    } catch (err: any) {
+      console.error(err);
+      setExecutionOutput('Error al ejecutar: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setIsExecuting(false);
     }
   };
 
@@ -297,11 +327,12 @@ export function processData(rawData) {
                 Restablecer
               </button>
               <button 
-                className="px-3 py-1 bg-accent text-white rounded text-xs font-medium hover:bg-accent-dim transition-colors flex gap-1.5 items-center"
-                onClick={() => console.log('Ejecutando código...')}
+                className="px-3 py-1 bg-accent text-white rounded text-xs font-medium hover:bg-accent-dim transition-colors flex gap-1.5 items-center disabled:opacity-50"
+                onClick={handleExecuteCode}
+                disabled={isExecuting}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                Ejecutar
+                {isExecuting ? 'Ejecutando...' : 'Ejecutar'}
               </button>
             </div>
           </div>
@@ -335,25 +366,36 @@ export function processData(rawData) {
               <button className="text-[11px] font-mono font-medium text-gray-300 uppercase tracking-widest border-b-2 border-accent transition-colors">
                 Terminal
               </button>
-              <button className="text-[11px] font-mono font-medium text-gray-500 hover:text-gray-300 uppercase tracking-widest transition-colors">
-                Tests
-              </button>
-              <button className="text-[11px] font-mono font-medium text-gray-500 hover:text-gray-300 uppercase tracking-widest transition-colors">
-                Problemas
-              </button>
             </div>
             <div className="flex gap-2">
-              <button className="text-gray-400 hover:text-white transition-colors" title="Limpiar Terminal">
+              <button 
+                onClick={() => setExecutionOutput('')}
+                className="text-gray-400 hover:text-white transition-colors" 
+                title="Limpiar Terminal"
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
               </button>
             </div>
           </div>
           <div className="p-4 overflow-y-auto text-[13px] font-mono text-gray-300 flex-1 custom-scrollbar">
-            <p className="text-blue-400 font-semibold mb-1">SapientLab OS v1.0.4</p>
-            <div className="flex mt-3 items-center">
-              <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>
-              <span className="animate-pulse w-2 h-4 bg-gray-400 block"></span>
-            </div>
+            {executionOutput ? (
+              <>
+                <p className="text-blue-400 font-semibold mb-1">Output:</p>
+                <div className="whitespace-pre-wrap text-green-400 mb-2">{executionOutput}</div>
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>
+                  <span className="animate-pulse w-2 h-4 bg-gray-400 block"></span>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-blue-400 font-semibold mb-1">SapientLab OS v1.0.4</p>
+                <div className="flex mt-3 items-center">
+                  <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>
+                  <span className="animate-pulse w-2 h-4 bg-gray-400 block"></span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
