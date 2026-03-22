@@ -64,6 +64,12 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
       const answer = response.rawModelResponse || response.answer || response.text || response.content || JSON.stringify(response);
 
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
+
+      // Auto-insertar el primer bloque de código JS/TS detectado
+      const codeMatch = answer.match(/```(?:javascript|js|typescript|ts)\n([\s\S]*?)```/);
+      if (codeMatch && codeMatch[1] && onInsertCode) {
+        onInsertCode(codeMatch[1].trimEnd());
+      }
     } catch (error) {
       console.error(error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend. Verifica que el servidor NestJS esté corriendo en el puerto 3000.' }]);

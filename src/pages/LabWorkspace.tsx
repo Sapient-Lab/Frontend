@@ -44,21 +44,36 @@ export function processData(rawData) {
   
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanationResult, setExplanationResult] = useState<any>(null);
+
   const handleInsertCode = (newCode: string) => {
     if (!editorRef.current) return;
     const editor = editorRef.current;
-    
-    // Obtenemos la selección del usuario
-    const selection = editor.getSelection();
-    
-    // Ejecutamos la edición (reemplaza selección si hay, sino inserta)
-    editor.executeEdits("ai-agent", [
-      {
-        range: selection,
-        text: newCode,
-        forceMoveMarkers: true,
+    const model = editor.getModel();
+    if (!model) return;
+
+    // Limpiar todo el contenido actual
+    const fullRange = model.getFullModelRange();
+    editor.executeEdits('ai-agent', [{ range: fullRange, text: '' }]);
+    setCode('');
+
+    // Efecto Copilot: escribir carácter a carácter
+    let i = 0;
+    let accumulated = '';
+    const interval = setInterval(() => {
+      if (i >= newCode.length) {
+        clearInterval(interval);
+        return;
       }
-    ]);
+      // Añadir de a 3 caracteres por tick para que sea fluido pero rápido
+      const chunk = newCode.slice(i, i + 3);
+      accumulated += chunk;
+      i += 3;
+      setCode(accumulated);
+      // Mover cursor al final
+      const lastLineCount = model.getLineCount();
+      const lastCol = model.getLineMaxColumn(lastLineCount);
+      editor.setPosition({ lineNumber: lastLineCount, column: lastCol });
+    }, 16); // ~60fps
   };
   const handleExplainCode = async () => {
     if (!editorRef.current) return;
