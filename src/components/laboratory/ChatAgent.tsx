@@ -61,9 +61,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
       // Pasamos el historial completo de mensajes al backend para mantener contexto
       const response = await aiService.sendMessage(contextualizedMessage, updatedMessages);
 
-      // Aqui dependemos de cómo responda tu backend, asumimos un response.answer o response.text
-      // Si el backend devuelve un string directo, pones response
-      const answer = response.answer || response.text || response.content || JSON.stringify(response);
+      const answer = response.rawModelResponse || response.answer || response.text || response.content || JSON.stringify(response);
 
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
     } catch (error) {
