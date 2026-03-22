@@ -12,7 +12,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
   const { projectGoal, projectDesc } = useProject();
 
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: 'Hola. Soy tu Agente IA alojado en Mistral/DeepSeek. ¿En qué te puedo ayudar hoy con tu proyecto?' }
+    { role: 'assistant', content: 'Hola. Soy tu Agente IA en Azure AI. ¿En qué te puedo ayudar hoy con tu proyecto?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
