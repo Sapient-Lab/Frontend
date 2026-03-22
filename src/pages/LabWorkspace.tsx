@@ -350,23 +350,6 @@ export function processData(rawData) {
           </div>
           <div className="p-4 overflow-y-auto text-[13px] font-mono text-gray-300 flex-1 custom-scrollbar">
             <p className="text-blue-400 font-semibold mb-1">SapientLab OS v1.0.4</p>
-            <p className="text-gray-500 mb-2">Conectando instancia remota... OK.</p>
-            
-            <p className="text-gray-400 mt-2">~/sapientlab/espectrometro-core $ <span className="text-gray-100">npm run analyze</span></p>
-            
-            <p className="text-gray-400 mt-1">&gt; Iniciando análisis de espectro...</p>
-            <p className="text-gray-400">&gt; Cargando <span className="text-yellow-200">./core/spectrometer.js</span></p>
-            
-            <div className="mt-2 p-2 bg-red-900/30 border-l-2 border-red-500 text-red-200">
-              <p className="font-semibold text-red-400">Error: Datos nulos encontrados en la muestra [índice: 4]</p>
-              <p className="text-xs mt-1">at processData (index.js:8:15)</p>
-              <p className="text-xs">at Object.&lt;anonymous&gt; (runner.js:22:3)</p>
-            </div>
-
-            <p className="mt-3 text-yellow-500 flex items-center gap-1">
-              <FiAlertTriangle className="w-4 h-4" /> Falla en la pre-validación de los test (0/3 completados).
-            </p>
-            
             <div className="flex mt-3 items-center">
               <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>
               <span className="animate-pulse w-2 h-4 bg-gray-400 block"></span>
