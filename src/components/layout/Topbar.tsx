@@ -18,6 +18,17 @@ export default function Topbar() {
   const navigate = useNavigate()
   const { isDark, toggleTheme } = useTheme()
 
+  let userEmail = 'usuario@email.com';
+  let userInitials = 'FC';
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user.email) userEmail = user.email;
+      if (user.name) userInitials = user.name.substring(0, 2).toUpperCase();
+    }
+  } catch(e) {}
+
   return (
     <header className={`h-[64px] backdrop-blur-md border-b flex items-center px-6 gap-8 sticky top-0 z-50 transition-colors ${
       isDark
@@ -82,11 +93,18 @@ export default function Topbar() {
           Session segura
         </div>
 
+        <div className="flex flex-col items-end mr-1">
+          <span className={`text-[11px] font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{userEmail}</span>
+        </div>
         <div className="w-[32px] h-[32px] bg-accent rounded-full flex items-center justify-center text-white text-xs font-semibold">
-          FC
+          {userInitials}
         </div>
         <button 
-          onClick={() => navigate('/login')}
+          onClick={() => {
+            sessionStorage.removeItem('active_session');
+            localStorage.removeItem('user');
+            navigate('/login');
+          }}
           className="ml-1 text-[12px] font-mono text-muted hover:text-accent underline transition-colors"
         >
           Cerrar sesión

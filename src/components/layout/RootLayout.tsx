@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import Topbar from './Topbar'
 import Sidebar from './Sidebar'
@@ -8,6 +10,18 @@ type Props = {
 }
 
 export default function RootLayout({ children }: Props) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Si se cerró la pestaña, redirigir a login
+    if (!sessionStorage.getItem('active_session')) {
+      localStorage.removeItem('sapientlab_user_id');
+      localStorage.removeItem('sapientlab_user_name');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
+  }, [navigate]);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <Topbar />

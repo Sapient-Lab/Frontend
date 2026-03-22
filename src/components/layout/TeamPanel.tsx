@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProject } from '../../context/ProjectContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -6,16 +6,32 @@ export default function TeamPanel() {
   const { projectMode } = useProject();
   const { isDark } = useTheme();
   const [open, setOpen] = useState(true);
+  const [user, setUser] = useState<{name: string, initials: string, role: string} | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        const name = parsed.name || parsed.username || 'Usuario';
+        const initials = name.substring(0, 2).toUpperCase();
+        setUser({ name, initials, role: parsed.role || 'Investigador' });
+      } catch(e) {
+        setUser({ name: 'Tú', initials: 'TU', role: 'Usuario' });
+      }
+    } else {
+      setUser({ name: 'Tú', initials: 'TU', role: 'Usuario' });
+    }
+  }, []);
 
   const teamMembers = [
-    { id: 1, name: 'Tú', initials: 'FC', role: 'Desarrollador', status: 'online' },
-    ...((projectMode === 'team') ? [
+    ...(user ? [{ id: 1, name: user.name, initials: user.initials, role: user.role, status: 'online' }] : []),
+    ...(projectMode === 'team' ? [
       { id: 2, name: 'Dr. A. Gómez', initials: 'AG', role: 'Investigador Principal', status: 'online' },
-      { id: 3, name: 'Elena R.', initials: 'ER', role: 'Especialista Datos', status: 'away' },
-      { id: 4, name: 'Sistema Central', initials: 'Sys', role: 'Bot Automático', status: 'online' },
-    ] : [
-      { id: 4, name: 'Sistema Central', initials: 'Sys', role: 'Asistente IA', status: 'online' }
-    ])
+      { id: 3, name: 'Elena R.', initials: 'ER', role: 'Especialista Datos', status: 'away' }
+    ] : []),
+    { id: 4, name: 'Sistema Central AI', initials: 'IA', role: 'Orquestador OpenAI', status: 'online' },
+    { id: 5, name: 'Analista DeepSeek', initials: 'DS', role: 'Asistente Lógico', status: 'online' },
   ];
 
   return (
@@ -68,13 +84,13 @@ export default function TeamPanel() {
                 isDark ? 'bg-gradient-to-br from-[#132238] to-[#0f1c2f]' : 'bg-gradient-to-br from-[#f8fbff] to-[#f1f6fc]'
               }`}>
                 <div className="flex justify-between text-xs mb-1 font-mono">
-                  <span className="text-gray-600">Fase de validación</span>
-                  <span className="text-accent font-semibold">65%</span>
+                  <span className="text-gray-600">Nuevo Proyecto</span>
+                  <span className="text-accent font-semibold">0%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
-                  <div className="bg-accent h-1.5 rounded-full" style={{ width: '65%' }}></div>
+                  <div className="bg-accent h-1.5 rounded-full" style={{ width: '0%' }}></div>
                 </div>
-                <p className="text-[10px] text-gray-500">2 de 3 bloques experimentales completados</p>
+                <p className="text-[10px] text-gray-500">0 bloques completados</p>
               </div>
             </div>
 
@@ -103,33 +119,6 @@ export default function TeamPanel() {
               </div>
             </div>
 
-            {/* Estado del Sistema */}
-            <div>
-              <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">Estado del Sistema</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  <span className="text-gray-600">Conexión a base de datos estable</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  <span className="text-gray-600">Registro de laboratorio sincronizado</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <svg className="w-3.5 h-3.5 text-accent animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                  <span className="text-gray-600">Evaluando recomendaciones seguras...</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="p-4 border-t border-lab-border bg-lab-bg shrink-0">
-            <button className={`w-full py-2 border border-lab-border text-accent font-mono text-sm font-semibold rounded-lg transition-colors shadow-sm ${
-              isDark ? 'bg-[#0f1724] hover:bg-[#162338]' : 'bg-white hover:bg-gray-50'
-            }`}>
-              Validar bitácora
-            </button>
           </div>
         </aside>
       )}
