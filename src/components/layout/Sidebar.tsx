@@ -3,11 +3,11 @@ import type { SidebarModule } from '../../types/navigation'
 const modules: SidebarModule[] = [
   { id: '1', label: 'Introducción',          status: 'done'   },
   { id: '2', label: 'Setup del entorno',      status: 'done'   },
-  { id: '3', label: 'API REST con Spring',    status: 'active' },
-  { id: '4', label: 'Microservicios',         status: 'locked' },
+  { id: '3', label: 'Desarrollo de Proyecto', status: 'active' },
+  { id: '4', label: 'Pruebas',                status: 'locked' },
   { id: '5', label: 'Base de datos',          status: 'locked' },
-  { id: '6', label: 'React + Consumo API',    status: 'locked' },
-  { id: '7', label: 'Despliegue / Vercel',    status: 'locked' },
+  { id: '6', label: 'Revisión Final',         status: 'locked' },
+  { id: '7', label: 'Despliegue',             status: 'locked' },
 ]
 
 const resources = ['Documentación', 'Ejemplos de código', 'Guía de entrega']

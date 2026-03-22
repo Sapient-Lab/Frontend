@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { aiService, type ChatMessage } from '../../services/aiService';
 import { useProject } from '../../context/ProjectContext';
 
-export default function ChatAgent() {
+interface ChatAgentProps {
+  onInsertCode?: (code: string) => void;
+  editorContext?: string;
+}
+
+export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProps) {
   const { projectGoal, projectDesc } = useProject();
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -16,7 +22,7 @@ export default function ChatAgent() {
   useEffect(() => {
     if ((projectGoal || projectDesc) && messages.length === 1) {
       setMessages(prev => [
-        { role: 'system', content: `Contexto del Proyecto del usuario:\nDescripción: ${projectDesc}\nObjetivo: ${projectGoal}\nUsa esto como tu memoria principal para ayudar al usuario.` },
+        { role: 'system', content: `Contexto del Proyecto del usuario:\nDescripción: ${projectDesc}\nObjetivo: ${projectGoal}\n` },
         ...prev
       ]);
     }
@@ -39,14 +45,21 @@ export default function ChatAgent() {
     const userMessage = input.trim();
     setInput('');
     const newChatMsg: ChatMessage = { role: 'user', content: userMessage };
-    const updatedMessages = [...messages, newChatMsg];
-    setMessages(updatedMessages);
+    
+    // Si hay código en el editor, mandamos un mensaje contextual "invisible" o extendemos el prompt
+    let contextualizedMessage = userMessage;
+    if (editorContext) {
+      contextualizedMessage = `[Contexto actual del archivo abierto en el Editor:\n\`\`\`javascript\n${editorContext}\n\`\`\`]\n\nPregunta/Instrucción del usuario: ${userMessage}`;
+    }
+
+    const updatedMessages = [...messages, { role: 'user', content: contextualizedMessage } as ChatMessage];
+    
+    setMessages([...messages, newChatMsg]); // Mostramos el msj limpio en UI
     setIsLoading(true);
 
     try {
-      // Llamada real al backend NestJS a través de nuestro proxy de Vite
       // Pasamos el historial completo de mensajes al backend para mantener contexto
-      const response = await aiService.sendMessage(userMessage, updatedMessages);
+      const response = await aiService.sendMessage(contextualizedMessage, updatedMessages);
 
       // Aqui dependemos de cómo responda tu backend, asumimos un response.answer o response.text
       // Si el backend devuelve un string directo, pones response
@@ -105,7 +118,46 @@ export default function ChatAgent() {
                   <span className="text-[10px] uppercase font-bold text-accent">Agente IA</span>
                 </div>
               )}
-              <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              {msg.role === 'assistant' ? (
+                <div className="text-sm prose max-w-none prose-pre:bg-[#0d1117] prose-pre:text-gray-300 prose-p:leading-relaxed">
+                  <ReactMarkdown
+                    components={{
+                      code({ node, inline, className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const codeString = String(children).replace(/\n$/, '');
+                        return !inline && match ? (
+                          <div className="relative mt-2 mb-4 group shadow-sm border border-gray-200 rounded-md overflow-hidden">
+                            <div className="flex justify-between items-center text-xs py-1.5 px-3 bg-gray-100 border-b border-gray-200">
+                              <span className="font-mono text-[10px] uppercase font-bold text-gray-700">
+                                {match[1]}
+                              </span>
+                              <button
+                                onClick={() => onInsertCode && onInsertCode(codeString)}
+                                className="bg-accent text-white px-2 py-1 rounded-sm text-[10px] hover:bg-accent-dim transition-colors"
+                              >
+                                Insertar al Editor
+                              </button>
+                            </div>
+                            <pre className="bg-[#0d1117] text-gray-300 p-3 overflow-x-auto text-[13px] m-0">
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                          </div>
+                        ) : (
+                          <code className="bg-gray-100 text-[#0366d6] px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              )}
             </div>
           </div>
         ))}

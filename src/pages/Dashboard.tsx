@@ -3,7 +3,7 @@ import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { projectMode } = useProject();
+  const { projectMode, projectName } = useProject();
 
   const recentActivity = projectMode === 'team' ? [
     { id: 1, time: 'Hace 10 min', text: 'Dr. A. Gómez subió un nuevo recurso a la guía.', user: 'AG', color: 'bg-blue-500' },
@@ -44,18 +44,18 @@ export default function Dashboard() {
             <div className="z-10">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider mb-1 block">Módulo Actual Activo</span>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-1">API REST con Spring</h2>
-                  <p className="text-sm text-gray-500">Módulo 3 de 7 • Setup del entorno completado</p>
+                  <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider mb-1 block">Proyecto Actual Activo</span>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-1">{projectName}</h2>
+                  <p className="text-sm text-gray-500">Módulo 1 de 10 • Setup del entorno iniciado</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-bold text-accent">28%</span>
+                  <span className="text-2xl font-bold text-accent">5%</span>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide">Completado</p>
                 </div>
               </div>
 
               <div className="w-full bg-gray-100 rounded-full h-2.5 mb-6">
-                <div className="bg-accent h-2.5 rounded-full relative" style={{width: '28%'}}>
+                <div className="bg-accent h-2.5 rounded-full relative" style={{width: '5%'}}>
                   <div className="absolute -right-1.5 -top-1 w-4 h-4 bg-white border-2 border-accent rounded-full shadow"></div>
                 </div>
               </div>

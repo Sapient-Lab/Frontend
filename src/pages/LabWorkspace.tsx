@@ -41,7 +41,22 @@ export function processData(rawData) {
   
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanationResult, setExplanationResult] = useState<any>(null);
-
+  const handleInsertCode = (newCode: string) => {
+    if (!editorRef.current) return;
+    const editor = editorRef.current;
+    
+    // Obtenemos la selección del usuario
+    const selection = editor.getSelection();
+    
+    // Ejecutamos la edición (reemplaza selección si hay, sino inserta)
+    editor.executeEdits("ai-agent", [
+      {
+        range: selection,
+        text: newCode,
+        forceMoveMarkers: true,
+      }
+    ]);
+  };
   const handleExplainCode = async () => {
     if (!editorRef.current) return;
     
@@ -213,7 +228,7 @@ export function processData(rawData) {
         
         {/* Cambiamos el Log estático por el Chat del Agente */}
         <div className="flex-1 overflow-hidden">
-          <ChatAgent />
+          <ChatAgent onInsertCode={handleInsertCode} editorContext={code} />
         </div>
       </div>
 

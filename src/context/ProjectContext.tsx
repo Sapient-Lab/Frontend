@@ -5,6 +5,8 @@ type ProjectMode = 'solo' | 'team';
 interface ProjectContextType {
   projectMode: ProjectMode;
   setProjectMode: (mode: ProjectMode) => void;
+  projectName: string;
+  setProjectName: (name: string) => void;
   projectGoal: string;
   setProjectGoal: (goal: string) => void;
   projectDesc: string;
@@ -31,6 +33,10 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       return localStorage.getItem('sapientlab_goal') || '';
   });
 
+  const [projectName, setProjectName] = useState<string>(() => {
+      return localStorage.getItem('sapientlab_name') || 'Nuevo Proyecto';
+  });
+
   const [projectDesc, setProjectDesc] = useState<string>(() => {
       return localStorage.getItem('sapientlab_desc') || '';
   });
@@ -38,6 +44,10 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
       localStorage.setItem('sapientlab_goal', projectGoal);
   }, [projectGoal]);
+
+  useEffect(() => {
+      localStorage.setItem('sapientlab_name', projectName);
+  }, [projectName]);
 
   useEffect(() => {
       localStorage.setItem('sapientlab_desc', projectDesc);
@@ -54,7 +64,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProjectContext.Provider value={{ projectMode, setProjectMode, projectGoal, setProjectGoal, projectDesc, setProjectDesc }}>
+    <ProjectContext.Provider value={{ projectMode, setProjectMode, projectName, setProjectName, projectGoal, setProjectGoal, projectDesc, setProjectDesc }}>
       {children}
     </ProjectContext.Provider>
   );

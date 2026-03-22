@@ -23,7 +23,7 @@ export default function Onboarding() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const navigate = useNavigate();
-  const { setProjectMode, setProjectGoal, setProjectDesc } = useProject();
+  const { setProjectMode, setProjectName: setGlobalProjectName, setProjectGoal, setProjectDesc } = useProject();
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +32,7 @@ export default function Onboarding() {
     try {
       console.log('Proyecto creado:', { projectName, projectDescInput, projectGoalInput });
       setProjectMode('solo');
+      setGlobalProjectName(projectName);
       setProjectDesc(projectDescInput);
       setProjectGoal(projectGoalInput);
 
