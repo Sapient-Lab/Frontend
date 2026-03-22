@@ -23,6 +23,7 @@ export interface AuthResponse {
   token?: string;
   message?: string;
   user?: {
+    id?: number;
     name: string;
     email: string;
   };
@@ -52,6 +53,7 @@ export const authService = {
         success: true,
         token: data.access_token || data.token,
         user: {
+          id: data.user?.id,
           name: data.user?.name || 'Usuario',
           email: payload.email
         }
@@ -83,6 +85,7 @@ export const authService = {
         success: true,
         token: data.access_token || data.token,
         user: {
+          id: data.user?.id,
           name: payload.name,
           email: payload.email
         }
