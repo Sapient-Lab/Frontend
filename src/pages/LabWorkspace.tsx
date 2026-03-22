@@ -136,7 +136,7 @@ export function processData(rawData) {
           );
 
           // Ajustar esto según la respuesta real del backend
-          // Por defecto la API de mistral/deepseek podría devolver { suggestions: [{ text: "..." }] } o algo similar
+          // El backend puede devolver distintas estructuras de sugerencias según proveedor/modelo
           let suggestionText = '';
           if (response.suggestions && response.suggestions.length > 0) {
             suggestionText = response.suggestions[0].text;
