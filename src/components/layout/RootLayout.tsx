@@ -9,11 +9,11 @@ type Props = {
 
 export default function RootLayout({ children }: Props) {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       <Topbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-hidden p-0 bg-lab-bg">
+        <main className="flex-1 h-full overflow-hidden p-0 bg-lab-bg">
           {children}
         </main>
         <TeamPanel />
