@@ -44,21 +44,36 @@ export function processData(rawData) {
   
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanationResult, setExplanationResult] = useState<any>(null);
+
   const handleInsertCode = (newCode: string) => {
     if (!editorRef.current) return;
     const editor = editorRef.current;
-    
-    // Obtenemos la selección del usuario
-    const selection = editor.getSelection();
-    
-    // Ejecutamos la edición (reemplaza selección si hay, sino inserta)
-    editor.executeEdits("ai-agent", [
-      {
-        range: selection,
-        text: newCode,
-        forceMoveMarkers: true,
+    const model = editor.getModel();
+    if (!model) return;
+
+    // Limpiar todo el contenido actual
+    const fullRange = model.getFullModelRange();
+    editor.executeEdits('ai-agent', [{ range: fullRange, text: '' }]);
+    setCode('');
+
+    // Efecto Copilot: escribir carácter a carácter
+    let i = 0;
+    let accumulated = '';
+    const interval = setInterval(() => {
+      if (i >= newCode.length) {
+        clearInterval(interval);
+        return;
       }
-    ]);
+      // Añadir de a 3 caracteres por tick para que sea fluido pero rápido
+      const chunk = newCode.slice(i, i + 3);
+      accumulated += chunk;
+      i += 3;
+      setCode(accumulated);
+      // Mover cursor al final
+      const lastLineCount = model.getLineCount();
+      const lastCol = model.getLineMaxColumn(lastLineCount);
+      editor.setPosition({ lineNumber: lastLineCount, column: lastCol });
+    }, 16); // ~60fps
   };
   const handleExplainCode = async () => {
     if (!editorRef.current) return;
@@ -222,8 +237,8 @@ export function processData(rawData) {
       )}
 
       {/* Panel Izquierdo: Log de Tareas / Comentarios */}
-      <div className="w-full md:w-1/3 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm">
-        <div className="h-10 bg-lab-bg border-b border-lab-border flex items-center px-4 justify-between">
+      <div className="w-full md:w-1/3 bg-surface border border-lab-border rounded-lg flex flex-col overflow-hidden shadow-sm min-h-0">
+        <div className="h-10 shrink-0 bg-lab-bg border-b border-lab-border flex items-center px-4 justify-between">
           <h2 className="text-xs font-mono font-semibold text-accent uppercase tracking-wider">
             {projectMode === 'solo' ? 'Mi Registro' : 'Log de Equipo'}
           </h2>
@@ -234,7 +249,7 @@ export function processData(rawData) {
         </div>
         
         {/* Cambiamos el Log estático por el Chat del Agente */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <ChatAgent onInsertCode={handleInsertCode} editorContext={code} />
         </div>
       </div>
@@ -335,23 +350,6 @@ export function processData(rawData) {
           </div>
           <div className="p-4 overflow-y-auto text-[13px] font-mono text-gray-300 flex-1 custom-scrollbar">
             <p className="text-blue-400 font-semibold mb-1">SapientLab OS v1.0.4</p>
-            <p className="text-gray-500 mb-2">Conectando instancia remota... OK.</p>
-            
-            <p className="text-gray-400 mt-2">~/sapientlab/espectrometro-core $ <span className="text-gray-100">npm run analyze</span></p>
-            
-            <p className="text-gray-400 mt-1">&gt; Iniciando análisis de espectro...</p>
-            <p className="text-gray-400">&gt; Cargando <span className="text-yellow-200">./core/spectrometer.js</span></p>
-            
-            <div className="mt-2 p-2 bg-red-900/30 border-l-2 border-red-500 text-red-200">
-              <p className="font-semibold text-red-400">Error: Datos nulos encontrados en la muestra [índice: 4]</p>
-              <p className="text-xs mt-1">at processData (index.js:8:15)</p>
-              <p className="text-xs">at Object.&lt;anonymous&gt; (runner.js:22:3)</p>
-            </div>
-
-            <p className="mt-3 text-yellow-500 flex items-center gap-1">
-              <FiAlertTriangle className="w-4 h-4" /> Falla en la pre-validación de los test (0/3 completados).
-            </p>
-            
             <div className="flex mt-3 items-center">
               <span className="text-green-500 mr-2">~/sapientlab/espectrometro-core $</span>
               <span className="animate-pulse w-2 h-4 bg-gray-400 block"></span>

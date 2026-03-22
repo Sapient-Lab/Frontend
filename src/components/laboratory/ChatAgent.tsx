@@ -61,11 +61,15 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
       // Pasamos el historial completo de mensajes al backend para mantener contexto
       const response = await aiService.sendMessage(contextualizedMessage, updatedMessages);
 
-      // Aqui dependemos de cómo responda tu backend, asumimos un response.answer o response.text
-      // Si el backend devuelve un string directo, pones response
-      const answer = response.answer || response.text || response.content || JSON.stringify(response);
+      const answer = response.rawModelResponse || response.answer || response.text || response.content || JSON.stringify(response);
 
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
+
+      // Auto-insertar el primer bloque de código JS/TS detectado
+      const codeMatch = answer.match(/```(?:javascript|js|typescript|ts)\n([\s\S]*?)```/);
+      if (codeMatch && codeMatch[1] && onInsertCode) {
+        onInsertCode(codeMatch[1].trimEnd());
+      }
     } catch (error) {
       console.error(error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend. Verifica que el servidor NestJS esté corriendo en el puerto 3000.' }]);
@@ -87,7 +91,9 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
         setIsLoading(true);
         try {
           // Llama al endpoint de visión
-          const response = await aiService.analyzeImage(base64String, "Revisa esta imagen del laboratorio y detecta anomalías o peligros.");
+          // Reconstruir data URL completa para el endpoint
+          const dataUrl = `data:image/jpeg;base64,${base64String}`;
+          const response = await aiService.analyzeImage(dataUrl, "Revisa esta imagen del laboratorio y detecta anomalías o peligros.");
           const answerText = response.structured?.narrativeSummary || response.rawModelResponse || JSON.stringify(response);
           setMessages(prev => [...prev, { role: 'assistant', content: answerText }]);
         } catch (error: any) {
@@ -101,9 +107,9 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#fbfbfb]">
+    <div className="flex flex-col h-full min-h-0 bg-[#fbfbfb]">
       {/* Zona de mensajes */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div 
