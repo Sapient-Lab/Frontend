@@ -39,6 +39,8 @@
     radial-gradient(circle at 92% 0%, rgba(34, 80, 138, 0.24), transparent 34%),
     linear-gradient(180deg, #08101b 0%, #0b1320 55%, #0f1a2a 100%);
   --app-text: #d9e7f9;
+  --app-text-soft: #b7c8dc;
+  --app-text-muted: #8ea4bc;
   --surface-soft: #0f1724;
   --surface-subtle: #111d2e;
 }
@@ -105,11 +107,17 @@ body {
 :root[data-theme='dark'] .text-gray-800,
 :root[data-theme='dark'] .text-gray-700,
 :root[data-theme='dark'] .text-gray-600,
-:root[data-theme='dark'] .text-gray-500,
-:root[data-theme='dark'] .text-gray-400,
-:root[data-theme='dark'] .text-gray-300,
 :root[data-theme='dark'] .text-\[\#152536\] {
   color: var(--app-text) !important;
+}
+
+:root[data-theme='dark'] .text-gray-500,
+:root[data-theme='dark'] .text-gray-400 {
+  color: var(--app-text-soft) !important;
+}
+
+:root[data-theme='dark'] .text-gray-300 {
+  color: var(--app-text-muted) !important;
 }
 
 :root[data-theme='dark'] .text-muted {
@@ -132,6 +140,24 @@ body {
 :root[data-theme='dark'] input::placeholder,
 :root[data-theme='dark'] textarea::placeholder {
   color: #8ea4bc;
+}
+
+:root[data-theme='dark'] .bg-\[\#e2e8f0\] {
+  background-color: #1d2b3f !important;
+}
+
+:root[data-theme='dark'] .hover\:bg-\[\#cbd5e1\]:hover {
+  background-color: #2a3d58 !important;
+}
+
+:root[data-theme='dark'] .from-\[\#f8fbff\] {
+  --tw-gradient-from: #132238 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(19 34 56 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+:root[data-theme='dark'] .to-\[\#f1f6fc\] {
+  --tw-gradient-to: #0f1c2f var(--tw-gradient-to-position) !important;
 }
 
 .page-fade-in {

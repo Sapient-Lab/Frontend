@@ -1,7 +1,9 @@
 import { useProject } from '../../context/ProjectContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function TeamPanel() {
   const { projectMode } = useProject();
+  const { isDark } = useTheme();
 
   const teamMembers = [
     { id: 1, name: 'Tú', initials: 'FC', role: 'Desarrollador', status: 'online' },
@@ -29,7 +31,9 @@ export default function TeamPanel() {
           <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">
             {projectMode === 'solo' ? 'Mi Progreso' : 'Progreso Actual'}
           </h3>
-          <div className="bg-gradient-to-br from-[#f8fbff] to-[#f1f6fc] rounded-lg border border-lab-border p-3">
+          <div className={`rounded-lg border border-lab-border p-3 ${
+            isDark ? 'bg-gradient-to-br from-[#132238] to-[#0f1c2f]' : 'bg-gradient-to-br from-[#f8fbff] to-[#f1f6fc]'
+          }`}>
             <div className="flex justify-between text-xs mb-1 font-mono">
               <span className="text-gray-600">Fase de validación</span>
               <span className="text-accent font-semibold">65%</span>
@@ -53,7 +57,9 @@ export default function TeamPanel() {
                   <div className="w-8 h-8 rounded bg-gray-100 border border-lab-border flex items-center justify-center text-xs font-semibold text-gray-600">
                     {member.initials}
                   </div>
-                  <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${member.status === 'online' ? 'bg-green-500' : 'bg-yellow-400'}`} />
+                  <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 ${
+                    isDark ? 'border-[#0f1724]' : 'border-white'
+                  } ${member.status === 'online' ? 'bg-green-500' : 'bg-yellow-400'}`} />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-gray-800 leading-tight">
@@ -90,7 +96,9 @@ export default function TeamPanel() {
       </div>
 
       <div className="p-4 border-t border-lab-border bg-lab-bg">
-        <button className="w-full py-2 bg-white border border-lab-border text-accent font-mono text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+        <button className={`w-full py-2 border border-lab-border text-accent font-mono text-sm font-semibold rounded-lg transition-colors shadow-sm ${
+          isDark ? 'bg-[#0f1724] hover:bg-[#162338]' : 'bg-white hover:bg-gray-50'
+        }`}>
           Validar bitácora
         </button>
       </div>

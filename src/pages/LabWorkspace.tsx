@@ -244,7 +244,11 @@ export function processData(rawData) {
                 onClick={handleExplainCode}
                 disabled={isExplaining}
                 className={`px-3 py-1 border border-lab-border text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-                  isExplaining ? 'bg-muted text-white cursor-not-allowed' : 'bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1]'
+                  isExplaining
+                    ? 'bg-muted text-white cursor-not-allowed'
+                    : isDark
+                      ? 'bg-[#1d2b3f] text-blue-100 hover:bg-[#2a3d58]'
+                      : 'bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1]'
                 }`}
                 title="Selecciona texto para explicar solo esa parte"
               >
@@ -255,7 +259,11 @@ export function processData(rawData) {
                 )}
               </button>
 
-              <button className="px-3 py-1 bg-white border border-lab-border hover:bg-gray-50 text-gray-700 rounded text-xs font-medium transition-colors">
+              <button
+                className={`px-3 py-1 border border-lab-border rounded text-xs font-medium transition-colors ${
+                  isDark ? 'bg-[#0f1724] text-blue-100 hover:bg-[#162338]' : 'bg-white hover:bg-gray-50 text-gray-700'
+                }`}
+              >
                 Restablecer
               </button>
               <button 
