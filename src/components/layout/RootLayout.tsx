@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import Topbar from './Topbar'
 import Sidebar from './Sidebar'
 import TeamPanel from './TeamPanel'
+import AIToolsPanel from '../AIToolsPanel'
 
 type Props = {
   children: ReactNode
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: Props) {
           {children}
         </main>
         <TeamPanel />
+        <AIToolsPanel />
       </div>
     </div>
   )

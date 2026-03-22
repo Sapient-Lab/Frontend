@@ -46,6 +46,8 @@ export function processData(rawData) {
   const [explanationResult, setExplanationResult] = useState<any>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionOutput, setExecutionOutput] = useState<string>('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleInsertCode = (newCode: string) => {
     if (!editorRef.current) return;
@@ -127,6 +129,35 @@ export function processData(rawData) {
       setExecutionOutput('Error al ejecutar: ' + (err.message || 'Error desconocido'));
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const handleReadAloud = async () => {
+    if (!editorRef.current) return;
+    
+    const model = editorRef.current.getModel();
+    const textToRead = model.getValue();
+    
+    setIsSpeaking(true);
+    
+    try {
+      const audioBase64 = await aiService.textToSpeech(textToRead);
+      
+      // Crear un elemento de audio y reproducirlo
+      const audio = new Audio(`data:audio/wav;base64,${audioBase64}`);
+      audioRef.current = audio;
+      
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => {
+        console.error('Error reproduciendo audio');
+        setIsSpeaking(false);
+      };
+      
+      await audio.play();
+    } catch (err: any) {
+      console.error(err);
+      alert('Error al leer en voz: ' + (err.message || 'Error desconocido'));
+      setIsSpeaking(false);
     }
   };
 
@@ -326,6 +357,20 @@ export function processData(rawData) {
               >
                 Restablecer
               </button>
+
+              <button 
+                className={`px-3 py-1 border border-lab-border text-xs font-medium rounded transition-colors flex gap-1.5 items-center ${
+                  isSpeaking
+                    ? 'bg-blue-500 text-white cursor-not-allowed'
+                    : isDark ? 'bg-[#0f1724] text-blue-100 hover:bg-[#162338]' : 'bg-white hover:bg-gray-50 text-gray-700'
+                }`}
+                onClick={handleReadAloud}
+                disabled={isSpeaking}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a7 7 0 0 1 0 9.9M23 9s-4 3.5-4 6 4 6 4 6"></path></svg>
+                {isSpeaking ? 'Reproduciendo...' : '🔊 Leer en Voz'}
+              </button>
+
               <button 
                 className="px-3 py-1 bg-accent text-white rounded text-xs font-medium hover:bg-accent-dim transition-colors flex gap-1.5 items-center disabled:opacity-50"
                 onClick={handleExecuteCode}

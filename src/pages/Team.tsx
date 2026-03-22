@@ -164,11 +164,25 @@ export default function Team() {
     }
   };
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
 
-    alert(`¡Solicitud enviada! Se ha enviado una notificación a ${inviteEmail} para que acepte unirse al proyecto.`);
+    // Validar que el usuario a invitar no esté ya en un proyecto grupal
+    try {
+      const response = await fetch(`/api/users/check-project-status?email=${encodeURIComponent(inviteEmail)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.hasTeamProject) {
+          alert(`❌ No se puede invitar a ${inviteEmail}.\n\nEste usuario ya forma parte de un proyecto grupal. Solo puedes invitar a usuarios que tengan proyectos individuales.`);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('No se pudo validar el estado del usuario, continuando...', e);
+    }
+
+    alert(`✅ ¡Invitación enviada! Se ha enviado un correo de invitación a ${inviteEmail}.\n\nEste usuario debe aceptar la invitación desde su correo para unirse al proyecto.`);
 
     const newMember: TeamMember = {
       id: `invite-${inviteEmail}`,
@@ -224,13 +238,13 @@ export default function Team() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-800">Invitar Miembro</h3>
-                  <span className="text-[10px] text-gray-500">Añadir al laboratorio</span>
+                  <span className="text-[10px] text-gray-500">Solo usuarios con proyectos individuales</span>
                 </div>
               </div>
 
               <form onSubmit={handleInvite} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Correo Electrónico</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">Correo Electrónico</label>
                   <input 
                     type="email" 
                     value={inviteEmail}
@@ -239,6 +253,9 @@ export default function Team() {
                     className="w-full px-3 py-2 border border-lab-border rounded-lg text-sm focus:outline-none focus:border-accent"
                     required
                   />
+                  <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
+                    💌 La invitación será enviada al correo. El usuario debe aceptarla para unirse al proyecto.
+                  </p>
                 </div>
                 
                 <button
