@@ -56,13 +56,13 @@ export default function Dashboard() {
                   <p className="text-sm text-muted">Bloque 3 de 7 • Evidencia estructurada y checklist de bioseguridad</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-bold text-accent">5%</span>
+                  <span className="text-2xl font-bold text-accent">0%</span>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide">Completado</p>
                 </div>
               </div>
 
               <div className="w-full bg-gray-100 rounded-full h-2.5 mb-6">
-                <div className="bg-accent h-2.5 rounded-full relative" style={{width: '5%'}}>
+                <div className="bg-accent h-2.5 rounded-full relative" style={{width: '0%'}}>
                   <div className="absolute -right-1.5 -top-1 w-4 h-4 bg-white border-2 border-accent rounded-full shadow"></div>
                 </div>
               </div>
@@ -76,7 +76,7 @@ export default function Dashboard() {
                 </button>
                 <span className="text-xs text-gray-500 flex items-center gap-1">
                   <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  2 verificaciones pendientes
+                   verificaciones pendientes
                 </span>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function Dashboard() {
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg">
                 <FiZap className="w-4 h-4 text-blue-600" />
               </div>
-              <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">Insight del Agente IA</h2>
+              <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">EN QUE PUEDO AYUDARTE</h2>
             </div>
             
             <p className="text-sm text-gray-700 leading-relaxed z-10 flex-1">
@@ -151,7 +151,7 @@ export default function Dashboard() {
             </h2>
             
             <div className="flex-1 space-y-5">
-              {recentActivity.map((activity, index) => (
+              {(dashboardData.logs.length ? dashboardData.logs : []).map((activity, index) => (
                 <div key={activity.id} className="flex gap-4 relative">
                   {/* Linea conectora de timeline si no es el último */}
                   {index !== recentActivity.length - 1 && (
@@ -159,11 +159,11 @@ export default function Dashboard() {
                   )}
                   
                   <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white z-10 ${activity.color}`}>
-                    {activity.user}
+                    {activity.description}
                   </div>
                   <div>
                     <p className="text-xs text-gray-700 leading-tight mb-1">{activity.text}</p>
-                    <span className="text-[10px] text-gray-400 font-mono">{activity.time}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">{new Date(activity.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               ))}

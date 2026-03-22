@@ -24,15 +24,7 @@ export default function TeamPanel() {
     }
   }, []);
 
-  const teamMembers = [
-    ...(user ? [{ id: 1, name: user.name, initials: user.initials, role: user.role, status: 'online' }] : []),
-    ...(projectMode === 'team' ? [
-      { id: 2, name: 'Dr. A. Gómez', initials: 'AG', role: 'Investigador Principal', status: 'online' },
-      { id: 3, name: 'Elena R.', initials: 'ER', role: 'Especialista Datos', status: 'away' }
-    ] : []),
-    { id: 4, name: 'Sistema Central AI', initials: 'IA', role: 'Orquestador OpenAI', status: 'online' },
-    { id: 5, name: 'Analista DeepSeek', initials: 'DS', role: 'Asistente Lógico', status: 'online' },
-  ];
+  
 
   return (
     <>
