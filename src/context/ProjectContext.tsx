@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type ProjectMode = 'solo' | 'team';
 
 interface ProjectContextType {
+  projectId: number | null;
+  setProjectId: (id: number | null) => void;
   projectMode: ProjectMode;
   setProjectMode: (mode: ProjectMode) => void;
   projectName: string;
@@ -15,7 +17,12 @@ interface ProjectContextType {
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-export function ProjectProvider({ children }: { children: ReactNode }) {        
+export function ProjectProvider({ children }: { children: ReactNode }) {
+  const [projectId, setProjectId] = useState<number | null>(() => {
+    const savedId = localStorage.getItem('sapientlab_project_id');
+    return savedId ? parseInt(savedId, 10) : null;
+  });
+
   // Inicializamos el estado leyendo el localStorage
   const [projectMode, setProjectModeState] = useState<ProjectMode>(() => {      
     try {
@@ -64,7 +71,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProjectContext.Provider value={{ projectMode, setProjectMode, projectName, setProjectName, projectGoal, setProjectGoal, projectDesc, setProjectDesc }}>
+    <ProjectContext.Provider value={{ projectId, setProjectId, projectMode, setProjectMode, projectName, setProjectName, projectGoal, setProjectGoal, projectDesc, setProjectDesc }}>
       {children}
     </ProjectContext.Provider>
   );

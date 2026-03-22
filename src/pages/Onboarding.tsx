@@ -2,10 +2,35 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 
-interface ProjectData { id: number; name: string; owner: string; desc: string; }
+interface Project {
+  id: number;
+  name: string;
+  owner: string;
+  desc: string;
+}
 
 export default function Onboarding() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!sessionStorage.getItem('active_session')) {
+      localStorage.removeItem('sapientlab_user_id');
+      localStorage.removeItem('sapientlab_user_name');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const [view, setView] = useState<'choice' | 'create' | 'join'>('choice');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [requestedProjects, setRequestedProjects] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem('sapientlab_requested_projects');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   
   // States para crear
   const [projectName, setProjectName] = useState('');
@@ -16,44 +41,51 @@ export default function Onboarding() {
   
   // State para buscar
   const [searchTerm, setSearchTerm] = useState('');
-  const [projectsList, setProjectsList] = useState<ProjectData[]>([]);
+  
+  const { setProjectId, setProjectMode, setProjectName: setGlobalProjectName, setProjectGoal, setProjectDesc } = useProject();
 
   useEffect(() => {
-    fetch('/api/projects')
-      .then(res => res.json())
-      .then(data => setProjectsList(Array.isArray(data) ? data : (data && Array.isArray((data as any).data) ? (data as any).data : [])))
-      .catch(err => console.error('Error fetching projects:', err));
-  }, []);
-  
-  const navigate = useNavigate();
-  const { setProjectMode, setProjectName: setGlobalProjectName, setProjectGoal, setProjectDesc } = useProject();
+    if (view === 'join') {
+        fetch(`/api/projects?userId=${localStorage.getItem('sapientlab_user_id') || ''}`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setProjects(data);
+                }
+            })
+            .catch(err => console.error('Error fetching projects:', err));
+    }
+  }, [view]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
 
     try {
-      console.log('Proyecto creado:', { projectName, projectDescInput, projectGoalInput });
+      const owner = localStorage.getItem('sapientlab_user_name') || 'Usuario Demo';
+      
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectName, projectDesc: projectDescInput, owner })
+      });
+      
+      const data = await res.json();
+      
+      if (data?.project?.id) {
+        setProjectId(data.project.id);
+        localStorage.setItem('sapientlab_project_id', data.project.id.toString());
+      }
+      
       setProjectMode('solo');
       setGlobalProjectName(projectName);
       setProjectDesc(projectDescInput);
       setProjectGoal(projectGoalInput);
-      
-      // Guardar el proyecto nuevo en el backend para que otros lo vean
-      try {
-        await fetch('/api/projects', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ projectName, projectDesc: projectDescInput })
-        });
-      } catch (err) {
-        console.error('Error enviando el proyecto al backend', err);
-      }
 
       // Si hay archivos, enviarlos al Backend
       if (projectFiles.length > 0) {
         const { aiService } = await import('../services/aiService');
-        await aiService.uploadProjectDocuments(projectFiles, 'nuevo_proyecto_id');
+        await aiService.uploadProjectDocuments(projectFiles, data?.project?.id || 'nuevo_proyecto_id');
         console.log('Documentos subidos y procesados correctamente.');
       }
 
@@ -66,16 +98,31 @@ export default function Onboarding() {
     }
   };
 
-  const handleJoinProject = (projectId: number) => {
+  const handleJoinProject = async (projectId: number) => {
     console.log('Solicitud enviada al proyecto id:', projectId);
-    alert('¡Tu solicitud ha sido enviada con éxito! Serás notificado cuando sea aprobada por el creador del proyecto.');
-    setView('choice');
+    try {
+        const userId = Number(localStorage.getItem('sapientlab_user_id')) || 1;
+        await fetch(`/api/projects/${projectId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+        
+        // Save to local storage to remember pending state
+        const newRequested = [...requestedProjects, projectId];
+        setRequestedProjects(newRequested);
+        localStorage.setItem('sapientlab_requested_projects', JSON.stringify(newRequested));
+        
+        alert('¡Tu solicitud ha sido enviada con éxito! Has quedado en estado PENDIENTE. No puedes acceder hasta que el administrador te apruebe.');
+    } catch (e) {
+        console.error('Error al solicitar unirse', e);
+        alert('Hubo un problema al enviar la solicitud.');
+    }
   };
 
-  const projectArr = Array.isArray(projectsList) ? projectsList : (projectsList && Array.isArray((projectsList as any).data) ? (projectsList as any).data : []);
-  const filteredProjects = projectArr.filter((p: any) =>
-    (p?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p?.owner || '').toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProjects = projects.filter((p) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.owner.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -219,19 +266,39 @@ export default function Onboarding() {
               {filteredProjects.length === 0 ? (
                 <p className="text-center text-muted py-8 italic text-sm">No se encontraron proyectos.</p>
               ) : (
-                filteredProjects.map((project: any) => (
+                filteredProjects.map(project => (
                   <div key={project.id} className="p-4 border border-lab-border flex items-center justify-between rounded hover:border-accent group transition-all bg-white hover:shadow-sm">
                     <div className="flex-1 pr-4">
                       <h4 className="font-semibold text-gray-800 text-[15px]">{project.name}</h4>
                       <p className="text-[11px] font-mono text-accent mb-1.5">Lead: {project.owner}</p>
                       <p className="text-xs text-muted leading-relaxed line-clamp-2">{project.desc}</p>
                     </div>
-                    <button 
-                      onClick={() => handleJoinProject(project.id)}
-                      className="whitespace-nowrap px-4 py-1.5 border border-accent text-accent rounded text-sm font-medium hover:bg-accent hover:text-white transition-colors"
-                    >
-                      Solicitar
-                    </button>
+                    {project.status === 'active' ? (
+                      <button 
+                         onClick={() => {
+                           localStorage.setItem('sapientlab_project_id', project.id.toString());
+                           setProjectId(project.id);
+                           setGlobalProjectName(project.name);
+                           setProjectDesc(project.desc || '');
+                           setProjectMode('team');
+                           navigate('/app');
+                         }}
+                         className="whitespace-nowrap px-4 py-1.5 border border-green-500 text-green-600 bg-green-50 rounded text-sm font-medium hover:bg-green-100 transition-colors">
+                        Entrar
+                      </button>
+                    ) : project.status === 'requested' || requestedProjects.includes(project.id) ? (
+                      <button 
+                        disabled
+                        className="whitespace-nowrap px-4 py-1.5 border border-amber-500 text-amber-600 bg-amber-50 rounded text-sm font-medium opacity-80 cursor-not-allowed">
+                        Pendiente
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleJoinProject(project.id)}
+                        className="whitespace-nowrap px-4 py-1.5 border border-accent text-accent rounded text-sm font-medium hover:bg-accent hover:text-white transition-colors">
+                        Solicitar
+                      </button>
+                    )}
                   </div>
                 ))
               )}

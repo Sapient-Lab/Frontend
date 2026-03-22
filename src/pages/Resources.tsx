@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { IconType } from 'react-icons';
 import { FiCode, FiFileText, FiLink2, FiPlayCircle, FiSearch } from 'react-icons/fi';
 
@@ -8,15 +8,8 @@ type Resource = {
   type: 'pdf' | 'link' | 'video' | 'repo';
   description: string;
   module: string;
+  url?: string;
 };
-
-const mockResources: Resource[] = [
-  { id: '1', title: 'Guía de Bioseguridad BSL-2', type: 'pdf', module: '1. Contexto del experimento', description: 'Normativas de manipulación, EPP y procedimientos de contingencia.' },
-  { id: '2', title: 'Video: Buenas prácticas de documentación de laboratorio', type: 'video', module: '2. Ingesta de protocolo', description: 'Cómo registrar método, lotes y observaciones sin ambiguedad.' },
-  { id: '3', title: 'Checklist de validación ética y regulatoria', type: 'link', module: '3. Evaluación de riesgo', description: 'Revisión previa para investigación con potencial impacto clínico.' },
-  { id: '4', title: 'Plantilla de cuaderno experimental reproducible', type: 'repo', module: '4. Análisis de resultados', description: 'Estructura recomendada para trazabilidad y comparación entre corridas.' },
-  { id: '5', title: 'Matriz de interpretación y límites de confianza', type: 'pdf', module: '5. Siguientes pasos', description: 'Criterios para decidir repetir, escalar o descartar hipótesis.' },
-];
 
 const typeIcons: Record<Resource['type'], IconType> = {
   pdf: FiFileText,
@@ -26,12 +19,29 @@ const typeIcons: Record<Resource['type'], IconType> = {
 };
 
 export default function Resources() {
+  const [resources, setResources] = useState<Resource[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterModule, setFilterModule] = useState('Todos');
+  const [loading, setLoading] = useState(true);
 
-  const modules = ['Todos', ...Array.from(new Set(mockResources.map(r => r.module)))];
+  useEffect(() => {
+    fetch('http://localhost:3000/api/platform/resources')
+      .then(res => res.json())
+      .then(data => {
+        const mapped = data.map((item: any) => ({
+          ...item,
+          module: \`Módulo \${item.module}\`,
+          description: Array.isArray(item.tags) ? item.tags.join(', ') : 'Sin descripción'
+        }));
+        setResources(mapped);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
-  const filtered = mockResources.filter(r => {
+  const modules = ['Todos', ...Array.from(new Set(resources.map(r => r.module)))];
+
+  const filtered = resources.filter(r => {
     const matchSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) || r.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchModule = filterModule === 'Todos' || r.module === filterModule;
     return matchSearch && matchModule;
@@ -73,7 +83,11 @@ export default function Resources() {
 
         {/* Grid de Recursos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="col-span-full py-12 text-center text-gray-500">
+              Cargando recursos...
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="col-span-full py-12 text-center text-gray-400">
               No se encontraron recursos para los filtros seleccionados.
             </div>
@@ -81,7 +95,7 @@ export default function Resources() {
             filtered.map(resource => (
               <div key={resource.id} className="bg-white border border-lab-border p-5 rounded-xl flex flex-col hover:shadow-md transition-shadow group">
                 {(() => {
-                  const ResourceIcon = typeIcons[resource.type];
+                  const ResourceIcon = typeIcons[resource.type] || FiFileText;
                   return (
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -107,7 +121,10 @@ export default function Resources() {
                   {resource.description}
                 </p>
 
-                <button className="w-full mt-auto py-2 border border-accent text-accent text-xs font-semibold rounded-lg hover:bg-accent hover:text-white transition-colors">
+                  <button 
+                    onClick={() => resource.url && window.open(resource.url, '_blank')}
+                    className="w-full mt-auto py-2 border border-accent text-accent text-xs font-semibold rounded-lg hover:bg-accent hover:text-white transition-colors"
+                  >
                   Abrir Recurso
                 </button>
               </div>

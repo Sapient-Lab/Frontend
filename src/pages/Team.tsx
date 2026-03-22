@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiMail, FiUsers } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
@@ -22,11 +22,70 @@ const mockTeamMembers: TeamMember[] = [
 ];
 
 export default function Team() {
-  const { projectMode, setProjectMode } = useProject();
+  const { projectId, projectMode, setProjectMode } = useProject();
   const [members, setMembers] = useState<TeamMember[]>(
     projectMode === 'team' ? mockTeamMembers : [mockTeamMembers[0]]
   );
   const [inviteEmail, setInviteEmail] = useState('');
+
+  const [pendingRequests, setPendingRequests] = useState<{id: string, name: string, email: string}[]>([]);
+
+  useEffect(() => {
+    if (projectId) {
+      fetch(`/api/projects/${projectId}/requests`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setPendingRequests(data.map(d => ({ id: String(d.id), name: d.name, email: d.email })));
+          } else if (data?.data && Array.isArray(data.data)) {
+            setPendingRequests(data.data.map((d: any) => ({ id: String(d.id), name: d.name, email: d.email })));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [projectId]);
+
+  const handleAcceptRequest = async (reqId: string) => {
+    if (!projectId) return;
+    try {
+      await fetch(`/api/projects/${projectId}/requests/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: Number(reqId), action: 'accept' })
+      });
+      const req = pendingRequests.find(r => r.id === reqId);
+      if (!req) return;
+      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
+      setMembers([...members, {
+        id: Date.now().toString(),
+        name: req.name,
+        initials: req.name.substring(0, 2).toUpperCase(),
+        email: req.email,
+        role: 'Colaborador',
+        status: 'active',
+        color: 'bg-green-600'
+      }]);
+      setProjectMode('team');
+    } catch (e) {
+      console.error(e);
+      alert('Error aceptando solicitud');
+    }
+  };
+
+  const handleDeclineRequest = async (reqId: string) => {
+    if (!projectId) return;
+    try {
+      await fetch(`/api/projects/${projectId}/requests/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: Number(reqId), action: 'reject' })
+      });
+      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
+    } catch (e) {
+      console.error(e);
+      alert('Error rechazando solicitud');
+    }
+  };
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,6 +231,49 @@ export default function Team() {
               )}
 
             </div>
+
+            {/* Panel de Solicitudes Entrantes */}
+            <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm mt-8">
+              <h3 className="text-[13px] font-bold uppercase text-gray-400 tracking-wider mb-4 border-b border-gray-100 pb-3 flex items-center justify-between">
+                <span>Solicitudes de unión ({pendingRequests.length})</span>
+                {pendingRequests.length > 0 && <span className="bg-red-100 text-red-700 px-2 rounded-full normal-case text-[10px] flex items-center shadow-sm">Nuevas</span>}
+              </h3>
+
+              <div className="space-y-4">
+                {pendingRequests.length === 0 ? (
+                  <p className="text-sm font-medium text-gray-400 text-center py-4">No tienes solicitudes pendientes.</p>
+                ) : (
+                  pendingRequests.map(req => (
+                    <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                          {req.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">{req.name}</p>
+                          <p className="text-xs text-gray-500 font-mono">{req.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleAcceptRequest(req.id)}
+                          className="px-3 py-1.5 bg-accent text-white text-xs font-semibold rounded hover:bg-accent-dim transition-colors"
+                        >
+                          Aceptar
+                        </button>
+                        <button
+                          onClick={() => handleDeclineRequest(req.id)}
+                          className="px-3 py-1.5 bg-white border border-gray-300 text-gray-600 text-xs font-semibold rounded hover:bg-red-50 hover:text-red-600 transition-colors"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
           </div>
 
         </div>

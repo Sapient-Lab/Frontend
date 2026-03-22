@@ -56,13 +56,27 @@ export default function Login() {
           return;
         }
         
-        await authService.register({ name, email, password });
+        const res = await authService.register({ name, email, password });
+        if (res.user?.id) localStorage.setItem('sapientlab_user_id', res.user.id.toString());
+        if (res.user?.name) localStorage.setItem('sapientlab_user_name', res.user.name);
+        if (res.user) {
+          localStorage.setItem('user', JSON.stringify({ ...res.user, email }));
+          localStorage.setItem('sapientlab_login_time', Date.now().toString());
+          sessionStorage.setItem('active_session', 'true');
+        }
         console.log('Registro exitoso. Token fake guardado en fondo.');
         navigate('/onboarding');
         
       } else {
         // mode === 'login'
-        await authService.login({ email, password });
+        const res = await authService.login({ email, password });
+        if (res.user?.id) localStorage.setItem('sapientlab_user_id', res.user.id.toString());
+        if (res.user?.name) localStorage.setItem('sapientlab_user_name', res.user.name);
+        if (res.user) {
+          localStorage.setItem('user', JSON.stringify({ ...res.user, email }));
+          localStorage.setItem('sapientlab_login_time', Date.now().toString());
+          sessionStorage.setItem('active_session', 'true');
+        }
         console.log('Login exitoso. Token fake guardado en fondo.');
         navigate('/app'); 
       }
