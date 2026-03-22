@@ -16,11 +16,14 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [provider, setProvider] = useState<'azure' | 'mistral' | 'deepseek'>('azure');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contextInjectedRef = useRef(false);
 
-  // Inyectar el projectGoal y projectDesc como mensaje de sistema
+  // Inyectar el projectGoal y projectDesc como mensaje de sistema (solo una vez)
   useEffect(() => {
-    if ((projectGoal || projectDesc) && messages.length === 1) {
+    if ((projectGoal || projectDesc) && !contextInjectedRef.current && messages.length === 1) {
+      contextInjectedRef.current = true;
       setMessages(prev => [
         { role: 'system', content: `Contexto del Proyecto del usuario:\nDescripción: ${projectDesc}\nObjetivo: ${projectGoal}\n` },
         ...prev
@@ -59,7 +62,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
 
     try {
       // Pasamos el historial completo de mensajes al backend para mantener contexto
-      const response = await aiService.sendMessage(contextualizedMessage, updatedMessages);
+      const response = await aiService.sendMessage(contextualizedMessage, updatedMessages, provider);
 
       const answer = response.rawModelResponse || response.answer || response.text || response.content || JSON.stringify(response);
 
@@ -72,7 +75,7 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
       }
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend. Verifica que el servidor NestJS esté corriendo en el puerto 3000.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al conectar con el backend de IA. Verifica que ambos servidores (frontend y backend) estén corriendo correctamente.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +111,41 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-[#fbfbfb]">
+      {/* Provider Selector */}
+      <div className="px-4 py-3 border-b border-lab-border bg-white flex gap-2 flex-wrap">
+        <span className="text-xs font-bold text-gray-600 self-center">Proveedor IA:</span>
+        <button
+          onClick={() => setProvider('azure')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            provider === 'azure'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+          }`}
+        >
+          🔷 Azure GPT-4o
+        </button>
+        <button
+          onClick={() => setProvider('mistral')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            provider === 'mistral'
+              ? 'bg-orange-500 text-white shadow-sm'
+              : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+          }`}
+        >
+          ⚡ Mistral
+        </button>
+        <button
+          onClick={() => setProvider('deepseek')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            provider === 'deepseek'
+              ? 'bg-purple-500 text-white shadow-sm'
+              : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+          }`}
+        >
+          🔍 DeepSeek
+        </button>
+      </div>
+
       {/* Zona de mensajes */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.map((msg, idx) => (

@@ -5,6 +5,21 @@ import { useProject } from '../context/ProjectContext';
 type MemberStatus = 'active' | 'pending';
 type Role = 'Administrador' | 'Colaborador' | 'Lector';
 
+interface PlatformMember {
+  id: number | string;
+  name?: string;
+  username?: string;
+  email?: string;
+  role?: Role;
+  status?: string;
+}
+
+interface PendingRequestApi {
+  id: number | string;
+  name: string;
+  email: string;
+}
+
 interface TeamMember {
   id: string;
   name: string;
@@ -14,7 +29,6 @@ interface TeamMember {
   status: MemberStatus;
   color: string;
 }
-
 export default function Team() {
   const { projectId, projectMode, setProjectMode } = useProject();
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -60,10 +74,10 @@ export default function Team() {
 
       if (projectId) {
         try {
-          const res = await fetch(`http://localhost:3000/api/platform/projects/${projectId}/members`);
+          const res = await fetch(`/api/projects/${projectId}/members`);
           if (res.ok) {
             const data = await res.json();
-            const mapped = data.map((m: any, idx: number) => {
+            const mapped = (data as PlatformMember[]).map((m: PlatformMember, idx: number) => {
               const name = m.name || m.username || 'Miembro';
               return {
                 id: String(m.id),
@@ -78,6 +92,8 @@ export default function Team() {
             // Evitar duplicar al usuario local si ya vino del backend
             list = [base, ...mapped.filter((m: TeamMember) => m.id !== base.id)];
             if (mapped.length > 0) setProjectMode('team');
+          } else {
+            console.error('Error cargando miembros - Status:', res.status, res.statusText);
           }
         } catch (e) {
           console.error('Error cargando miembros', e);
@@ -90,11 +106,11 @@ export default function Team() {
     const loadRequests = async () => {
       if (!projectId) return;
       try {
-        const res = await fetch(`http://localhost:3000/api/platform/projects/${projectId}/requests`);
+        const res = await fetch(`/api/projects/${projectId}/requests`);
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
-            setPendingRequests(data.map((d: any) => ({ id: String(d.id), name: d.name, email: d.email })));
+            setPendingRequests((data as PendingRequestApi[]).map((d: PendingRequestApi) => ({ id: String(d.id), name: d.name, email: d.email })));
           }
         }
       } catch (e) {
@@ -109,7 +125,7 @@ export default function Team() {
   const handleAcceptRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`http://localhost:3000/api/platform/projects/${projectId}/requests/resolve`, {
+      await fetch(`/api/projects/${projectId}/requests/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(reqId), action: 'accept' })
@@ -118,7 +134,7 @@ export default function Team() {
       if (!req) return;
       setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
       setMembers([...members, {
-        id: Date.now().toString(),
+        id: reqId,
         name: req.name,
         initials: req.name.substring(0, 2).toUpperCase(),
         email: req.email,
@@ -136,7 +152,7 @@ export default function Team() {
   const handleDeclineRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`http://localhost:3000/api/platform/projects/${projectId}/requests/resolve`, {
+      await fetch(`/api/projects/${projectId}/requests/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(reqId), action: 'reject' })
@@ -148,14 +164,28 @@ export default function Team() {
     }
   };
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
 
-    alert(`¡Solicitud enviada! Se ha enviado una notificación a ${inviteEmail} para que acepte unirse al proyecto.`);
+    // Validar que el usuario a invitar no esté ya en un proyecto grupal
+    try {
+      const response = await fetch(`/api/users/check-project-status?email=${encodeURIComponent(inviteEmail)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.hasTeamProject) {
+          alert(`❌ No se puede invitar a ${inviteEmail}.\n\nEste usuario ya forma parte de un proyecto grupal. Solo puedes invitar a usuarios que tengan proyectos individuales.`);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('No se pudo validar el estado del usuario, continuando...', e);
+    }
+
+    alert(`✅ ¡Invitación enviada! Se ha enviado un correo de invitación a ${inviteEmail}.\n\nEste usuario debe aceptar la invitación desde su correo para unirse al proyecto.`);
 
     const newMember: TeamMember = {
-      id: Date.now().toString(),
+      id: `invite-${inviteEmail}`,
       name: inviteEmail.split('@')[0],
       initials: inviteEmail.substring(0, 2).toUpperCase(),
       email: inviteEmail,
@@ -208,13 +238,13 @@ export default function Team() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-800">Invitar Miembro</h3>
-                  <span className="text-[10px] text-gray-500">Añadir al laboratorio</span>
+                  <span className="text-[10px] text-gray-500">Solo usuarios con proyectos individuales</span>
                 </div>
               </div>
 
               <form onSubmit={handleInvite} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Correo Electrónico</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">Correo Electrónico</label>
                   <input 
                     type="email" 
                     value={inviteEmail}
@@ -223,6 +253,9 @@ export default function Team() {
                     className="w-full px-3 py-2 border border-lab-border rounded-lg text-sm focus:outline-none focus:border-accent"
                     required
                   />
+                  <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
+                    💌 La invitación será enviada al correo. El usuario debe aceptarla para unirse al proyecto.
+                  </p>
                 </div>
                 
                 <button

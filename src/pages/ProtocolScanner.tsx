@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FiAlertTriangle, FiShield, FiUploadCloud, FiImage, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiShield, FiUploadCloud, FiImage, FiX, FiMic, FiMicOff } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 
 export default function ProtocolScanner() {
@@ -9,7 +9,10 @@ export default function ProtocolScanner() {
   const [isLoading, setIsLoading] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -27,6 +30,61 @@ export default function ProtocolScanner() {
     setImagePreview(null);
     setImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleStartListening = async () => {
+    if (isListening) {
+      // Detener grabación
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+      return;
+    }
+
+    setIsListening(true);
+    setError('');
+
+    try {
+      // Solicitar acceso al micrófono
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(mediaStream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        
+        // Detener stream
+        mediaStream.getTracks().forEach(track => track.stop());
+        setIsListening(false);
+
+        // Enviar al backend para transcribir
+        try {
+          const transcribedText = await aiService.speechToText(audioBlob);
+          setProtocolText(prev => prev + (prev ? '\n' : '') + transcribedText);
+        } catch (err: any) {
+          setError('Error al transcribir: ' + (err.message || 'Error desconocido'));
+          setIsListening(false);
+        }
+      };
+
+      mediaRecorder.start();
+
+      // Detener grabación después de 30 segundos
+      setTimeout(() => {
+        if (mediaRecorderRef.current && isListening) {
+          mediaRecorderRef.current.stop();
+        }
+      }, 30000);
+    } catch (err: any) {
+      setIsListening(false);
+      setError('Acceso al micrófono denegado. Verifica los permisos del navegador.');
+      console.error(err);
+    }
   };
 
   const normalizeResult = (result: any) => {
@@ -180,10 +238,32 @@ export default function ProtocolScanner() {
               />
             </div>
             
-            <h2 className="text-sm font-bold text-gray-700 mb-3 block">2. Instrucciones / Contexto Adicional</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-gray-700">2. Instrucciones / Contexto Adicional</h2>
+              <button
+                onClick={handleStartListening}
+                disabled={isLoading}
+                className={`px-3 py-1.5 rounded text-xs font-medium flex items-center gap-2 transition-colors ${
+                  isListening
+                    ? 'bg-red-500 text-white hover:bg-red-600'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
+                title="Dictar protocolo (máx 30s)"
+              >
+                {isListening ? (
+                  <>
+                    <FiMicOff className="w-4 h-4" /> Detener
+                  </>
+                ) : (
+                  <>
+                    <FiMic className="w-4 h-4" /> 🎙️ Dictar
+                  </>
+                )}
+              </button>
+            </div>
             <textarea
               className="w-full flex-1 min-h-[160px] p-4 text-sm font-sans bg-gray-50 border border-lab-border rounded-lg resize-none focus:outline-none focus:border-accent"
-              placeholder="Pega texto del protocolo aquí, o escribe detalles descriptivos sobre la imagen arriba adjuntada..."
+              placeholder="Pega texto del protocolo aquí, o presiona 🎙️ para dictar con tu voz..."
               value={protocolText}
               onChange={(e) => setProtocolText(e.target.value)}
             />
