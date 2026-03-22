@@ -90,13 +90,41 @@ export const aiService = {
   },
 
   /**
-   * Visión Artificial para imágenes del laboratorio
+   * Visión Artificial para imágenes del laboratorio.
+   * Modo 3 — File local → multipart/form-data { image, prompt }
+   * Modo 2 — data URL base64  → JSON { base64Image, prompt }
+   * Modo 1 — URL pública      → JSON { imageUrl, prompt }
    */
-  async analyzeImage(base64Image: string, prompt?: string) {
-    const response = await fetch('/api/ai/images/analyze', {
+  async analyzeImage(imageData: string | File, prompt?: string) {
+    // Modo 3: archivo local como multipart/form-data
+    if (imageData instanceof File) {
+      const formData = new FormData();
+      formData.append('image', imageData);
+      if (prompt) formData.append('prompt', prompt);
+      const response = await fetch('/api/ai/analyze-image', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Error al analizar la imagen');
+      return response.json();
+    }
+
+    // Modo 2: data URL base64
+    if (imageData.startsWith('data:')) {
+      const response = await fetch('/api/ai/analyze-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Image: imageData, prompt }),
+      });
+      if (!response.ok) throw new Error('Error al analizar la imagen');
+      return response.json();
+    }
+
+    // Modo 1: URL pública
+    const response = await fetch('/api/ai/analyze-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64Image, prompt })
+      body: JSON.stringify({ imageUrl: imageData, prompt }),
     });
     if (!response.ok) throw new Error('Error al analizar la imagen');
     return response.json();

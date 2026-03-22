@@ -91,7 +91,9 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
         setIsLoading(true);
         try {
           // Llama al endpoint de visión
-          const response = await aiService.analyzeImage(base64String, "Revisa esta imagen del laboratorio y detecta anomalías o peligros.");
+          // Reconstruir data URL completa para el endpoint
+          const dataUrl = `data:image/jpeg;base64,${base64String}`;
+          const response = await aiService.analyzeImage(dataUrl, "Revisa esta imagen del laboratorio y detecta anomalías o peligros.");
           const answerText = response.structured?.narrativeSummary || response.rawModelResponse || JSON.stringify(response);
           setMessages(prev => [...prev, { role: 'assistant', content: answerText }]);
         } catch (error: any) {
