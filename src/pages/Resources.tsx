@@ -30,7 +30,7 @@ export default function Resources() {
       .then(data => {
         const mapped = data.map((item: any) => ({
           ...item,
-          module: \`Módulo \${item.module}\`,
+          module: `Módulo ${item.module}`,
           description: Array.isArray(item.tags) ? item.tags.join(', ') : 'Sin descripción'
         }));
         setResources(mapped);
