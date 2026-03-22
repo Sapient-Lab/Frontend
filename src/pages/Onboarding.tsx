@@ -7,6 +7,8 @@ interface Project {
   name: string;
   owner: string;
   desc: string;
+  status?: string;
+  role?: string;
 }
 
 export default function Onboarding() {

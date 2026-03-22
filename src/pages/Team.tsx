@@ -17,8 +17,6 @@ interface TeamMember {
 
 const mockTeamMembers: TeamMember[] = [
   { id: '1', name: 'Tú', initials: 'FC', email: 'tu@email.com', role: 'Administrador', status: 'active', color: 'bg-accent' },
-  { id: '2', name: 'Dr. A. Gómez', initials: 'AG', email: 'agomez@universidad.edu', role: 'Colaborador', status: 'active', color: 'bg-blue-500' },
-  { id: '3', name: 'Elena R.', initials: 'ER', email: 'elena@email.com', role: 'Colaborador', status: 'pending', color: 'bg-green-500' },
 ];
 
 export default function Team() {

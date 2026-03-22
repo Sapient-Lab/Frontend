@@ -3,7 +3,7 @@ import { useProject } from '../../context/ProjectContext';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function TeamPanel() {
-  const { projectMode, currentProject } = useProject();
+  const { projectMode, projectId } = useProject();
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const { isDark } = useTheme();
   const [open, setOpen] = useState(true);
@@ -37,9 +37,9 @@ export default function TeamPanel() {
         });
       }
 
-      if (currentProject) {
+      if (projectId) {
         try {
-          const response = await fetch('http://localhost:3000/api/platform/projects/' + currentProject.id + '/members');
+          const response = await fetch('http://localhost:3000/api/platform/projects/' + projectId + '/members');
           if (response.ok) {
             const data = await response.json();
             const fetchedMembers = data.map((m: any) => {
@@ -67,7 +67,7 @@ export default function TeamPanel() {
     if (user) { // Esperar a que el usuario se haya seteado
       fetchMembers();
     }
-  }, [currentProject, user]);
+  }, [projectId, user]);
 
   
 
