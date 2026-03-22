@@ -28,7 +28,7 @@ export default function TeamPanel() {
       let members: any[] = [];
       // Siempre añadir al usuario actual a la lista de conectados
       if (user) {
-        members.push({
+          members.push({
           id: user.id,
           name: user.name + ' (Tú)',
           role: user.role,
@@ -44,12 +44,13 @@ export default function TeamPanel() {
             const data = await response.json();
             const fetchedMembers = data.map((m: any) => {
               const name = m.name || m.username || 'Usuario';
+              const status = m.status === 'active' ? 'online' : 'away';
               return {
                 id: m.id.toString(),
                 name: name,
                 role: m.role || 'Member',
                 initials: name.substring(0, 2).toUpperCase(),
-                status: 'online'
+                status,
               };
             });
             
