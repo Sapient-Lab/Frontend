@@ -3,7 +3,30 @@ import { useProject } from '../../context/ProjectContext';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function TeamPanel() {
-  const { projectMode } = useProject();
+  const { projectMode, currentProject } = useProject();
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!currentProject) return;
+      try {
+        const response = await fetch('http://localhost:3000/api/platform/projects/' + currentProject.id + '/members');
+        if (response.ok) {
+          const data = await response.json();
+          setTeamMembers(data.map((m) => ({
+            id: m.id.toString(),
+            name: m.name,
+            role: m.role || 'Member',
+            avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(m.name) + '&background=random',
+            status: 'online'
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching members:', error);
+      }
+    };
+    fetchMembers();
+  }, [currentProject]);
   const { isDark } = useTheme();
   const [open, setOpen] = useState(true);
   const [user, setUser] = useState<{name: string, initials: string, role: string} | null>(null);

@@ -1,10 +1,25 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { projectMode, projectName } = useProject();
+  const { projectMode, projectName, currentProject } = useProject();
+  const [dashboardData, setDashboardData] = useState({ logs: [], progress: 0, blocks: 0, pending: 0, total: 0 });
+
+  useEffect(() => {
+    if (!currentProject) return;
+    const fetchDashboard = async () => {
+      try {
+        const resLogs = await fetch('http://localhost:3000/api/platform/projects/' + currentProject.id + '/logs');
+        let logs = [];
+        if (resLogs.ok) logs = await resLogs.json();
+        setDashboardData({ logs, progress: 0, blocks: 0, pending: 0, total: 0 });
+      } catch (e) { console.error('Error fetching dashboard data:', e); }
+    };
+    fetchDashboard();
+  }, [currentProject]);
 
   const recentActivity = projectMode === 'team' ? [
     { id: 1, time: 'Hace 10 min', text: 'Dr. A. Gómez subió un nuevo recurso a la guía.', user: 'AG', color: 'bg-blue-500' },
