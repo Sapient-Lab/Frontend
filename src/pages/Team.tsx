@@ -15,55 +15,114 @@ interface TeamMember {
   color: string;
 }
 
-const mockTeamMembers: TeamMember[] = [
-  { id: '1', name: 'Tú', initials: 'FC', email: 'tu@email.com', role: 'Administrador', status: 'active', color: 'bg-accent' },
-];
+interface PendingInvitation {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function Team() {
   const { projectId, projectMode, setProjectMode } = useProject();
-  const [members, setMembers] = useState<TeamMember[]>(
-    projectMode === 'team' ? mockTeamMembers : [mockTeamMembers[0]]
-  );
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
 
-  const [pendingRequests, setPendingRequests] = useState<{id: string, name: string, email: string}[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
+
+  const toInitials = (nameOrEmail: string) =>
+    nameOrEmail
+      .split(' ')
+      .map((part) => part.trim().charAt(0))
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'NA';
+
+  const getMemberColor = (index: number) => {
+    const colors = ['bg-accent', 'bg-blue-600', 'bg-green-600', 'bg-cyan-600', 'bg-indigo-600'];
+    return colors[index % colors.length];
+  };
+
+  const loadMembers = async () => {
+    if (!projectId) {
+      setMembers([]);
+      return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/members`);
+    if (!response.ok) {
+      throw new Error('No se pudieron obtener los miembros del proyecto');
+    }
+
+    const data = await response.json();
+    const normalized = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+
+    const mapped = normalized.map((member: any, index: number) => ({
+      id: String(member.id),
+      name: member.name || (member.email ? String(member.email).split('@')[0] : 'Integrante'),
+      initials: toInitials(member.name || member.email),
+      email: member.email,
+      role: member.role === 'owner' || member.role === 'admin' ? 'Administrador' : 'Colaborador',
+      status: 'active' as MemberStatus,
+      color: getMemberColor(index),
+    }));
+
+    setMembers(mapped);
+    setProjectMode(mapped.length > 1 ? 'team' : 'solo');
+  };
+
+  const loadPendingInvitations = async () => {
+    if (!projectId) {
+      setPendingRequests([]);
+      return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/invitations?status=pending`);
+    if (!response.ok) {
+      throw new Error('No se pudieron obtener las invitaciones pendientes');
+    }
+
+    const data = await response.json();
+    const normalized = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+
+    setPendingRequests(
+      normalized.map((inv: any) => ({
+        id: String(inv.id),
+        name: inv.name || (inv.email ? String(inv.email).split('@')[0] : 'Invitado'),
+        email: inv.email,
+      })),
+    );
+  };
+
+  const reloadTeamData = async () => {
+    try {
+      await Promise.all([loadMembers(), loadPendingInvitations()]);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
-    if (projectId) {
-      fetch(`/api/projects/${projectId}/requests`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setPendingRequests(data.map(d => ({ id: String(d.id), name: d.name, email: d.email })));
-          } else if (data?.data && Array.isArray(data.data)) {
-            setPendingRequests(data.data.map((d: any) => ({ id: String(d.id), name: d.name, email: d.email })));
-          }
-        })
-        .catch(console.error);
-    }
+    reloadTeamData();
   }, [projectId]);
 
   const handleAcceptRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`/api/projects/${projectId}/requests/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: Number(reqId), action: 'accept' })
-      });
       const req = pendingRequests.find(r => r.id === reqId);
       if (!req) return;
-      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
-      setMembers([...members, {
-        id: Date.now().toString(),
-        name: req.name,
-        initials: req.name.substring(0, 2).toUpperCase(),
-        email: req.email,
-        role: 'Colaborador',
-        status: 'active',
-        color: 'bg-green-600'
-      }]);
-      setProjectMode('team');
+
+      const response = await fetch(`/api/projects/${projectId}/invitations/${reqId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: req.name })
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo aceptar la invitacion');
+      }
+
+      await reloadTeamData();
     } catch (e) {
       console.error(e);
       alert('Error aceptando solicitud');
@@ -73,40 +132,48 @@ export default function Team() {
   const handleDeclineRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`/api/projects/${projectId}/requests/resolve`, {
+      const response = await fetch(`/api/projects/${projectId}/invitations/${reqId}/decline`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: Number(reqId), action: 'reject' })
+        headers: { 'Content-Type': 'application/json' }
       });
-      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
+
+      if (!response.ok) {
+        throw new Error('No se pudo rechazar la invitacion');
+      }
+
+      await reloadTeamData();
     } catch (e) {
       console.error(e);
       alert('Error rechazando solicitud');
     }
   };
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail) return;
+    if (!inviteEmail || !projectId || isSubmittingInvite) return;
 
-    alert(`¡Solicitud enviada! Se ha enviado una notificación a ${inviteEmail} para que acepte unirse al proyecto.`);
+    setIsSubmittingInvite(true);
 
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: inviteEmail.split('@')[0],
-      initials: inviteEmail.substring(0, 2).toUpperCase(),
-      email: inviteEmail,
-      role: 'Colaborador',
-      status: 'pending',
-      color: 'bg-gray-400'
-    };
+    try {
+      const response = await fetch(`/api/projects/${projectId}/invitations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim(), invitedByUserId: 1 }),
+      });
 
-    setMembers([...members, newMember]);
-    setInviteEmail('');
-    
-    // Si estaba en modo solo y acaba de invitar a alguien, lo pasamos a equipo
-    if (projectMode === 'solo') {
-      setProjectMode('team');
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.message || 'No se pudo crear la invitacion');
+      }
+
+      setInviteEmail('');
+      await reloadTeamData();
+      alert('Invitacion enviada correctamente');
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message || 'Error al crear la invitacion');
+    } finally {
+      setIsSubmittingInvite(false);
     }
   };
 
@@ -164,9 +231,10 @@ export default function Team() {
                 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dim transition-colors shadow-sm"
+                  disabled={isSubmittingInvite}
+                  className="w-full py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dim transition-colors shadow-sm disabled:opacity-60"
                 >
-                  Enviar Invitación
+                  {isSubmittingInvite ? 'Enviando...' : 'Enviar Invitación'}
                 </button>
               </form>
             </div>
