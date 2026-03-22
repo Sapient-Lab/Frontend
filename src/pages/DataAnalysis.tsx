@@ -19,7 +19,7 @@ export default function DataAnalysis() {
     setAnalysisResult(null);
 
     try {
-      // Usamos el servicio de ai que conecta con Mistral/DeepSeek
+      // Usamos el servicio de IA conectado al backend (Azure AI)
       const result = await aiService.analyzeResults(csvData, 'csv');
       setAnalysisResult(result);
     } catch (err: any) {

@@ -7,7 +7,11 @@ export default function TeamPanel() {
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const { isDark } = useTheme();
   const [open, setOpen] = useState(true);
+<<<<<<< HEAD
   const [user, setUser] = useState<{ name: string; initials: string; role: string; id: string } | null>(null);
+=======
+  const [user, setUser] = useState<{name: string, initials: string, role: string, id: string} | null>(null);
+>>>>>>> origin/main
 
   useEffect(() => {
     let localUser = { name: 'Tú', initials: 'TU', role: 'Usuario', id: 'me' };
@@ -15,12 +19,16 @@ export default function TeamPanel() {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        const name = parsed.name || parsed.username || 'Usuario';
-        const initials = name.substring(0, 2).toUpperCase();
+      } catch (e) {}
         localUser = { name, initials, role: parsed.role || 'Investigador', id: parsed.id?.toString() || 'me' };
+<<<<<<< HEAD
       } catch (e) {
         // fallback already set
       }
+=======
+      } catch(e) {}
+      // Siempre añadir al usuario actual a la lista de conectados
+>>>>>>> origin/main
     }
     setUser(localUser);
   }, []);
@@ -28,13 +36,21 @@ export default function TeamPanel() {
   useEffect(() => {
     const fetchMembers = async () => {
       let members: any[] = [];
+<<<<<<< HEAD
+=======
+      // Siempre añadir al usuario actual a la lista de conectados
+>>>>>>> origin/main
       if (user) {
         members.push({
           id: user.id,
           name: user.name + ' (Tú)',
           role: user.role,
           initials: user.initials,
+<<<<<<< HEAD
           status: 'online',
+=======
+          status: 'online'
+>>>>>>> origin/main
         });
       }
 
@@ -45,6 +61,7 @@ export default function TeamPanel() {
             const data = await response.json();
             const fetchedMembers = data.map((m: any) => {
               const name = m.name || m.username || 'Usuario';
+<<<<<<< HEAD
               const status = m.status === 'active' ? 'online' : 'away';
               return {
                 id: m.id.toString(),
@@ -55,6 +72,18 @@ export default function TeamPanel() {
               };
             });
 
+=======
+              return {
+                id: m.id.toString(),
+                name: name,
+                role: m.role || 'Member',
+                initials: name.substring(0, 2).toUpperCase(),
+                status: 'online'
+              };
+            });
+            
+            // FIltrar para no duplicar al propio usuario si viniera en la query agregándolo
+>>>>>>> origin/main
             const filteredFetched = fetchedMembers.filter((fm: any) => fm.id !== user?.id);
             members = [...members, ...filteredFetched];
           }
@@ -62,6 +91,7 @@ export default function TeamPanel() {
           console.error('Error fetching members:', error);
         }
       }
+<<<<<<< HEAD
 
       setTeamMembers(members);
     };
@@ -70,6 +100,16 @@ export default function TeamPanel() {
       fetchMembers();
     }
   }, [projectId, user]);
+=======
+      
+      setTeamMembers(members);
+    };
+    if (user) { // Esperar a que el usuario se haya seteado
+      fetchMembers();
+    }
+  }, [projectId, user]);
+
+>>>>>>> origin/main
   
 
   return (
