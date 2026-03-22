@@ -1,25 +1,10 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { projectMode, projectName, currentProject } = useProject();
-  const [dashboardData, setDashboardData] = useState({ logs: [], progress: 0, blocks: 0, pending: 0, total: 0 });
-
-  useEffect(() => {
-    if (!currentProject) return;
-    const fetchDashboard = async () => {
-      try {
-        const resLogs = await fetch('http://localhost:3000/api/platform/projects/' + currentProject.id + '/logs');
-        let logs = [];
-        if (resLogs.ok) logs = await resLogs.json();
-        setDashboardData({ logs, progress: 0, blocks: 0, pending: 0, total: 0 });
-      } catch (e) { console.error('Error fetching dashboard data:', e); }
-    };
-    fetchDashboard();
-  }, [currentProject]);
+  const { projectMode, projectName } = useProject();
 
   const recentActivity = projectMode === 'team' ? [
     { id: 1, time: 'Hace 10 min', text: 'Dr. A. Gómez subió un nuevo recurso a la guía.', user: 'AG', color: 'bg-blue-500' },
@@ -68,7 +53,7 @@ export default function Dashboard() {
                 <div>
                   <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider mb-1 block">Proyecto / Módulo Activo</span>
                   <h2 className="text-xl font-semibold mb-1 text-inherit">{projectName} - Interpretación de protocolos</h2>
-                  <p className="text-sm text-muted">Bloque 3 de 7 • Evidencia estructurada y checklist de bioseguridad</p>
+                  <p className="text-sm text-muted"></p>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-accent">0%</span>
@@ -109,7 +94,7 @@ export default function Dashboard() {
             </div>
             
             <p className="text-sm text-gray-700 leading-relaxed z-10 flex-1">
-              { dashboardData.logs.length === 0 ? "Estoy listo para ayudarle a coordinar el proyecto. Los datos se actualizan en base al progreso de las verificaciones." : "El proyecto está avanzando. Revise los paneles para ver la actividad y progreso." }
+              "Se detectaron pasos con riesgo operativo medio en tu último protocolo. Recomiendo validar manipulación de reactivos corrosivos y documentar el porqué de cada variación antes de ejecutar."
             </p>
             
             <button 
@@ -166,7 +151,7 @@ export default function Dashboard() {
             </h2>
             
             <div className="flex-1 space-y-5">
-              {(dashboardData.logs.length ? dashboardData.logs : []).map((activity, index) => (
+              {recentActivity.map((activity, index) => (
                 <div key={activity.id} className="flex gap-4 relative">
                   {/* Linea conectora de timeline si no es el último */}
                   {index !== recentActivity.length - 1 && (
@@ -174,11 +159,11 @@ export default function Dashboard() {
                   )}
                   
                   <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white z-10 ${activity.color}`}>
-                    {activity.description}
+                    {activity.user}
                   </div>
                   <div>
                     <p className="text-xs text-gray-700 leading-tight mb-1">{activity.text}</p>
-                    <span className="text-[10px] text-gray-400 font-mono">{new Date(activity.createdAt).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">{activity.time}</span>
                   </div>
                 </div>
               ))}
