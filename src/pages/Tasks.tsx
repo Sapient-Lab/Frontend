@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiAlertTriangle, FiCalendar, FiCheckCircle, FiCpu, FiTarget } from 'react-icons/fi';
 
 type TaskStatus = 'pending' | 'evaluating' | 'approved' | 'rejected';
@@ -10,33 +10,75 @@ type Task = {
   dueDate: string;
   status: TaskStatus;
   feedback?: string;
+  submission?: string;
 };
 
-const mockTasks: Task[] = [
-  { id: 't1', title: 'Registrar protocolo y controles negativos', module: '2. Ingesta de protocolo', dueDate: 'Hoy, 23:59', status: 'pending' },
-  { id: 't2', title: 'Clasificar nivel de riesgo del ensayo', module: '3. Evaluación de riesgo', dueDate: 'Mañana, 20:00', status: 'pending' },
-  { id: 't3', title: 'Normalizar datos de corrida piloto', module: '1. Contexto del experimento', dueDate: 'Hace 2 días', status: 'approved', feedback: 'Buena estandarización de unidades y trazabilidad consistente entre muestras.' },
-  { id: 't4', title: 'Justificar recomendación de siguiente paso', module: '5. Siguientes pasos', dueDate: 'La próxima semana', status: 'rejected', feedback: 'La evidencia es insuficiente para concluir; agrega controles y explicación de incertidumbre.' },
-];
-
 export default function TasksAndEvaluation() {
-  const [selectedTask, setSelectedTask] = useState<Task | null>(mockTasks[0]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [fileOrLink, setFileOrLink] = useState('');
 
-  const handleSimulateSubmit = () => {
-    if (!fileOrLink) return;
-    setIsEvaluating(true);
-    
-    // Simulamos que el evaluador tarda en procesar
-    setTimeout(() => {
-      setIsEvaluating(false);
-      alert('¡Módulo evaluado automáticamente por la IA! Resultado guardado.');
-      if (selectedTask) {
-        // En una app real actualizamos el estado, aquí solo vaciamos el input
-        setFileOrLink('');
+  useEffect(() => { fetchTasks(); }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('http://localhost:3000/api/platform/tasks');
+      if (res.ok) {
+        const data = await res.json();
+        const mappedData = data.map((t: any) => ({
+          id: t.id.toString(),
+          title: t.title,
+          module: t.module,
+          dueDate: t.due_date || t.dueDate || 'Sin fecha',
+          status: t.status,
+          feedback: t.feedback,
+          submission: t.submission
+        }));
+        setTasks(mappedData);
+        if (mappedData.length > 0) {
+          setSelectedTask(current => {
+            if (current) {
+               const updated = mappedData.find((t: any) => t.id === current.id);
+               return updated || mappedData[0];
+            }
+            return mappedData[0];
+          });
+        }
       }
-    }, 2000);
+    } catch (e) {
+      console.error('Error fetching tasks', e);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTask && selectedTask.submission) {
+      setFileOrLink(selectedTask.submission);
+    } else {
+      setFileOrLink('');
+    }
+  }, [selectedTask]);
+
+  const handleSimulateSubmit = async () => {
+    if (!fileOrLink || !selectedTask) return;
+    setIsEvaluating(true);
+    try {
+      const res = await fetch('http://localhost:3000/api/platform/tasks/' + selectedTask.id + '/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: fileOrLink })
+      });
+      if (res.ok) {
+        alert('Enviado a análisis asistido con éxito.');
+        await fetchTasks();
+      } else {
+        alert('Error al enviar.');
+      }
+    } catch (e) {
+      console.error('Submit error:', e);
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
   const getStatusChip = (status: TaskStatus) => {
@@ -49,131 +91,109 @@ export default function TasksAndEvaluation() {
   };
 
   return (
-    <div className="h-full w-full overflow-hidden bg-[#fbfbfb] flex flex-col sm:flex-row">
-      
-      {/* Sidebar de Tareas */}
-      <div className="w-full sm:w-1/3 max-w-[320px] bg-white border-r border-lab-border overflow-y-auto flex flex-col">
-        <div className="p-5 border-b border-lab-border sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-gray-800">Centro de Validación</h2>
-          <p className="text-xs text-gray-500 mt-1">Selecciona una evidencia para revisar detalle</p>
-        </div>
-        
-        <div className="flex-1 p-3 space-y-2">
-          {mockTasks.map(task => (
-            <button 
-              key={task.id} 
+    <div className="max-w-6xl mx-auto space-y-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Centro de Validación</h1>
+        <p className="text-gray-600 mb-6">Selecciona una evidencia para revisar detalle</p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Lista de tareas */}
+        <div className="lg:col-span-1 space-y-4 max-h-[800px] overflow-y-auto pr-2">
+          {tasks.map(task => (
+            <div 
+              key={task.id}
               onClick={() => setSelectedTask(task)}
-              className={`w-full text-left p-4 rounded-lg border transition-all ${
-                selectedTask?.id === task.id ? 'bg-accent-light/50 border-accent shadow-sm' : 'bg-white border-gray-100 hover:border-gray-300'
-              }`}
+              className={"bg-white border rounded-xl p-4 cursor-pointer transition-all hover:border-accent " + (selectedTask?.id === task.id ? 'border-accent shadow-md' : 'border-gray-200')}
             >
-              <div className="flex justify-between items-start mb-1">
-                <span className="text-[10px] font-mono text-gray-500">{task.module}</span>
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-gray-500 font-mono tracking-wider truncate mr-2">{task.module}</span>
                 {getStatusChip(task.status)}
               </div>
-              <h3 className={`font-semibold text-[13px] ${selectedTask?.id === task.id ? 'text-accent' : 'text-gray-800'}`}>
-                {task.title}
-              </h3>
-              <div className="mt-2 text-[10px] font-mono text-gray-400 flex items-center gap-1">
-                <FiCalendar className="w-3.5 h-3.5" /> Vence: {task.dueDate}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Detalle y Evaluador */}
-      <div className="flex-1 bg-lab-bg p-6 lg:p-10 overflow-y-auto">
-        {selectedTask ? (
-          <div className="max-w-3xl mx-auto space-y-6 animate-in slide-in-from-right-4">
-            
-            {/* Header Detalle */}
-            <div className="bg-white rounded-xl p-6 border border-lab-border shadow-sm flex justify-between items-start">
-              <div>
-                <span className="text-xs font-bold text-accent uppercase tracking-widest mb-1 block">
-                  {selectedTask.module}
-                </span>
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">{selectedTask.title}</h1>
-                <p className="text-sm text-gray-500">Fecha límite: <span className="font-mono bg-gray-100 px-1 rounded">{selectedTask.dueDate}</span></p>
-              </div>
-              <div className="scale-125">
-                {getStatusChip(selectedTask.status)}
+              <h3 className="font-semibold text-gray-800 text-sm mb-2">{task.title}</h3>
+              <div className="flex items-center text-xs text-gray-500">
+                <FiCalendar className="mr-1.5" /> Vence: {task.dueDate}
               </div>
             </div>
+          ))}
+          {tasks.length === 0 && <p className="text-sm text-gray-500">No hay tareas disponibles.</p>}
+        </div>
 
-            {/* Panel de Retroalimentacion si ya fue evaluado */}
-            {selectedTask.feedback && (
-              <div className={`p-5 rounded-lg border ${selectedTask.status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                <h3 className={`text-sm font-bold flex items-center gap-2 mb-2 ${selectedTask.status === 'approved' ? 'text-green-800' : 'text-red-800'}`}>
-                  {selectedTask.status === 'approved' ? (
-                    <>
-                      <FiCheckCircle className="w-4 h-4" /> IA: Excelente trabajo
-                    </>
-                  ) : (
-                    <>
-                      <FiAlertTriangle className="w-4 h-4" /> IA: Puntos de mejora
-                    </>
-                  )}
-                </h3>
-                <p className={`text-sm ${selectedTask.status === 'approved' ? 'text-green-700' : 'text-red-700'}`}>
-                  {selectedTask.feedback}
-                </p>
-              </div>
-            )}
-
-            {/* Consola de Entrega / Evaluador */}
-            {(selectedTask.status === 'pending' || selectedTask.status === 'rejected') && (
-              <div className="bg-white rounded-xl border border-lab-border shadow-sm flex flex-col overflow-hidden">
-                <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                  <FiCpu className="w-5 h-5 text-gray-600" />
-                  <h3 className="text-sm font-bold text-gray-700">Enviar a análisis asistido</h3>
+        {/* Detalle y envio */}
+        <div className="lg:col-span-2 space-y-6">
+          {selectedTask ? (
+            <>
+              {/* Card superior similar al diseno */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">{selectedTask.module}</span>
+                  {getStatusChip(selectedTask.status)}
                 </div>
-                
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">{selectedTask.title}</h2>
+                <div className="inline-flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-md">
+                   Fecha límite:&nbsp;<span className="font-medium ml-1">{selectedTask.dueDate}</span>
+                </div>
+              </div>
+
+              {/* Card de accion */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center">
+                   <FiCpu className="text-gray-500 mr-2" /> <span className="font-semibold text-gray-700">Enviar a análisis asistido</span>
+                </div>
                 <div className="p-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Adjunta un enlace o pega evidencia experimental para analizar:
-                  </label>
-                  <textarea 
+                  <p className="text-sm text-gray-600 mb-4">Adjunta un enlace o pega evidencia experimental para analizar:</p>
+                  <textarea
                     value={fileOrLink}
                     onChange={(e) => setFileOrLink(e.target.value)}
-                    className="w-full min-h-[120px] p-3 text-sm font-mono bg-gray-50 border border-lab-border rounded-lg focus:outline-none focus:border-accent resize-none mb-4"
-                    placeholder="https://drive.google.com/...&#10;o pega tus observaciones y resultados aquí..."
-                  />
-                  
-                  <div className="flex justify-end gap-3">
-                    <button className="px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded hover:bg-gray-50 transition-colors">
+                    className="w-full border border-gray-200 rounded-lg p-4 text-sm h-32 focus:ring-accent focus:border-accent resize-none placeholder-gray-400 font-mono"
+                    placeholder="https://drive.google.com/... 
+o pega tus observaciones y resultados aquí..."
+                    disabled={selectedTask.status === 'approved' || selectedTask.status === 'evaluating'}
+                  ></textarea>
+
+                  {selectedTask.status === 'rejected' && selectedTask.feedback && (
+                    <div className="mt-4 bg-red-50 border border-red-100 p-4 rounded-lg flex items-start">
+                      <FiAlertTriangle className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-red-800 mb-1">Feedback del Agente:</p>
+                        <p className="text-sm text-red-600">{selectedTask.feedback}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTask.status === 'approved' && (
+                    <div className="mt-4 bg-green-50 border border-green-100 p-4 rounded-lg flex items-start">
+                      <FiCheckCircle className="text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                      <div>
+                         <p className="text-sm font-semibold text-green-800 mb-1">Validación Exitosa</p>
+                         <p className="text-sm text-green-600">{selectedTask.feedback || 'Evidencia aprobada.'}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button className="px-5 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors" disabled={selectedTask.status === 'approved' || selectedTask.status === 'evaluating'}>
                       Guardar Borrador
                     </button>
-                    <button 
+                    <button
                       onClick={handleSimulateSubmit}
-                      disabled={isEvaluating || !fileOrLink}
-                      className={`px-5 py-2 rounded text-sm font-medium text-white transition-colors flex items-center gap-2 ${
-                        isEvaluating || !fileOrLink ? 'bg-muted cursor-not-allowed' : 'bg-accent hover:bg-accent-dim'
-                      }`}
+                      disabled={!fileOrLink || ['approved','evaluating'].includes(selectedTask.status) || isEvaluating}
+                      className={"px-5 py-2 text-sm font-semibold text-white rounded-lg transition-colors flex items-center " + ( !fileOrLink || ['approved','evaluating'].includes(selectedTask.status) ? 'bg-gray-400 cursor-not-allowed' : 'bg-slate-500 hover:bg-slate-600')}
                     >
-                      {isEvaluating ? (
-                        <>
-                          <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
-                          Analizando evidencia...
-                        </>
-                      ) : (
-                        'Enviar para revisión'
-                      )}
+                      {isEvaluating ? 'Enviando...' : 'Enviar para revisión'}
                     </button>
                   </div>
                 </div>
               </div>
-            )}
-
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
-            <FiTarget className="w-12 h-12 mb-4" />
-            <p className="text-sm">Selecciona una tarea de la lista para ver el detalle y entregar.</p>
-          </div>
-        )}
+            </>
+          ) : (
+            <div className="bg-white border text-center rounded-xl p-10 h-full flex flex-col items-center justify-center text-gray-500">
+               <FiTarget className="text-4xl text-gray-300 mb-4" />
+               <p>Selecciona una tarea para ver detalles</p>
+            </div>
+          )}
+        </div>
       </div>
-
     </div>
   );
 }
