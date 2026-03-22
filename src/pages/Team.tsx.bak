@@ -27,6 +27,7 @@ export default function Team() {
     projectMode === 'team' ? mockTeamMembers : [mockTeamMembers[0]]
   );
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<Role>('Colaborador');
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();

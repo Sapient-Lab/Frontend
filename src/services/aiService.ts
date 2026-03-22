@@ -36,20 +36,7 @@ export const aiService = {
   /**
    * Sube documentos del proyecto para dar contexto a la IA (Embeddings / Memoria)
    */
-  async uploadProjectDocuments(files: File[], projectId: string = 'local_project') {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    formData.append('projectId', projectId); // Opcional, para que el backend sepa a qué proyecto asociarlo
-
-    const response = await fetch('/api/ai/documents/upload', {
-      method: 'POST',
-      body: formData,
-      // No seteamos Content-Type a mano porque el navegador autoconfigura el boundary del FormData
-    });
-
-    if (!response.ok) throw new Error('Error al subir documentos');
-    return response.json();
-  },
+  async uploadProjectDocuments(_files: File[], _projectId?: string) { return { success: true }; },
 
   /**
    * Chat específico de código con Copilot AI

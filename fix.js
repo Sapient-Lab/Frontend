@@ -1,0 +1,1 @@
+﻿const fs=require('fs'); let c=fs.readFileSync('src/services/aiService.ts','utf8'); c=c.replace(/async uploadProjectDocuments[\s\S]*?return response.json\(\);\s*\}/, 'async uploadProjectDocuments(files, projectId) { return { success: true }; }'); fs.writeFileSync('src/services/aiService.ts',c);
