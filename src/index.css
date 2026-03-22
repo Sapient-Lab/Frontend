@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode - Textos oscuros, fondo claro */
+    --background: 0 0% 100%;
+    --foreground: 222 84% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 5%;
+    --primary: 185 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 25% 40%;
+    --accent: 160 84% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 185 100% 45%;
+    --radius: 0.75rem;
+
+    --scientific-cyan: 185 100% 45%;
+    --scientific-blue: 210 100% 50%;
+    
+    --neon-glow: 0 0 20px hsl(185 100% 45% / 0.3);
+    --neon-glow-strong: 0 0 30px hsl(185 100% 45% / 0.4);
+    --glass-bg: hsl(0 0% 100% / 0.7);
+    --glass-border: hsl(214 32% 91% / 0.8);
+  }
+
+  .dark {
+    /* Dark Mode - Textos claros, fondo oscuro */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 224 50% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 50% 6%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 185 100% 50%;
+    --primary-foreground: 224 71% 4%;
+    --secondary: 224 40% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 224 40% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 160 84% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 224 30% 20%;
+    --input: 224 30% 20%;
+    --ring: 185 100% 50%;
+
+    --scientific-cyan: 185 100% 50%;
+    --scientific-blue: 210 100% 55%;
+    
+    --neon-glow: 0 0 20px hsl(185 100% 50% / 0.4);
+    --neon-glow-strong: 0 0 30px hsl(185 100% 50% / 0.6);
+    --glass-bg: hsl(224 50% 8% / 0.6);
+    --glass-border: hsl(185 100% 50% / 0.15);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Orbitron', sans-serif;
+  }
+  .font-body {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .glass-scientific {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .neon-text {
+    color: hsl(var(--scientific-cyan));
+    text-shadow: var(--neon-glow);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--scientific-cyan)), hsl(var(--scientific-blue)));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  
+  /* Light mode specific - textos oscuros */
+  .text-muted {
+    color: hsl(215 25% 40%);
+  }
+  
+  .dark .text-muted {
+    color: hsl(215 20% 65%);
+  }
+  
+  /* Grid científico */
+  .scientific-grid {
+    background-image: 
+      linear-gradient(hsl(var(--scientific-cyan) / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--scientific-cyan) / 0.08) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  
+  .dark .scientific-grid {
+    background-image: 
+      linear-gradient(hsl(var(--scientific-cyan) / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--scientific-cyan) / 0.1) 1px, transparent 1px);
+  }
+  
+  /* Animaciones */
+  @keyframes orbit-3d {
+    0% {
+      transform: rotate(var(--start-angle, 0deg)) translateX(var(--radius, 80px)) rotate(0deg);
+    }
+    100% {
+      transform: rotate(calc(var(--start-angle, 0deg) + 360deg)) translateX(var(--radius, 80px)) rotate(-360deg);
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(2deg); }
+  }
+  
+  @keyframes float-particle {
+    0% {
+      transform: translateY(0) translateX(0) scale(1);
+      opacity: 0;
+    }
+    25% {
+      opacity: 0.6;
+    }
+    75% {
+      opacity: 0.3;
+    }
+    100% {
+      transform: translateY(-40px) translateX(calc(20px - 40px * var(--direction, 0.5))) scale(0);
+      opacity: 0;
+    }
+  }
+  
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  .animate-float-particle {
+    animation: float-particle 3s ease-out infinite;
+  }
+  
+  .card-scientific {
+    transition: all 0.3s ease;
+  }
+  
+  .card-scientific:hover {
+    transform: translateY(-4px);
+    border-color: hsl(var(--scientific-cyan) / 0.5);
+    box-shadow: 0 8px 32px hsl(var(--scientific-cyan) / 0.1);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--scientific-cyan) / 0.5);
+  border-radius: 4px;
+}
