@@ -1,0 +1,80 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+
+type ProjectMode = 'solo' | 'team';
+
+interface ProjectContextType {
+  projectMode: ProjectMode;
+  setProjectMode: (mode: ProjectMode) => void;
+  projectName: string;
+  setProjectName: (name: string) => void;
+  projectGoal: string;
+  setProjectGoal: (goal: string) => void;
+  projectDesc: string;
+  setProjectDesc: (desc: string) => void;
+}
+
+const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+
+export function ProjectProvider({ children }: { children: ReactNode }) {        
+  // Inicializamos el estado leyendo el localStorage
+  const [projectMode, setProjectModeState] = useState<ProjectMode>(() => {      
+    try {
+      const savedMode = localStorage.getItem('sapientlab_mode');
+      if (savedMode === 'solo' || savedMode === 'team') {
+        return savedMode;
+      }
+    } catch (e) {
+      console.warn('No se pudo leer localStorage', e);
+    }
+    return 'solo';
+  });
+
+  const [projectGoal, setProjectGoal] = useState<string>(() => {
+      return localStorage.getItem('sapientlab_goal') || '';
+  });
+
+  const [projectName, setProjectName] = useState<string>(() => {
+      return localStorage.getItem('sapientlab_name') || 'Nuevo Proyecto';
+  });
+
+  const [projectDesc, setProjectDesc] = useState<string>(() => {
+      return localStorage.getItem('sapientlab_desc') || '';
+  });
+
+  useEffect(() => {
+      localStorage.setItem('sapientlab_goal', projectGoal);
+  }, [projectGoal]);
+
+  useEffect(() => {
+      localStorage.setItem('sapientlab_name', projectName);
+  }, [projectName]);
+
+  useEffect(() => {
+      localStorage.setItem('sapientlab_desc', projectDesc);
+  }, [projectDesc]);
+
+  // Cada vez que cambie, lo guardamos en localStorage
+  const setProjectMode = (mode: ProjectMode) => {
+    try {
+      localStorage.setItem('sapientlab_mode', mode);
+    } catch (e) {
+      console.warn('No se pudo escribir en localStorage', e);
+    }
+    setProjectModeState(mode);
+  };
+
+  return (
+    <ProjectContext.Provider value={{ projectMode, setProjectMode, projectName, setProjectName, projectGoal, setProjectGoal, projectDesc, setProjectDesc }}>
+      {children}
+    </ProjectContext.Provider>
+  );
+}
+
+export function useProject() {
+  const context = useContext(ProjectContext);
+  if (!context) {
+    throw new Error('useProject debe usarse dentro de un ProjectProvider');
+  }
+  return context;
+}
