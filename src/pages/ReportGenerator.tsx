@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FiDownload, FiEye, FiX, FiUploadCloud, FiFileText, FiImage } from 'react-icons/fi';
+import { FiDownload, FiEye, FiX, FiUploadCloud, FiFileText, FiImage, FiInfo, FiEdit, FiBarChart2, FiCheckCircle } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 interface ReportData {
@@ -187,8 +187,8 @@ export default function ReportGenerator() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            📄 Generador de Reportes IA
+          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <FiFileText className="w-8 h-8" /> Generador de Reportes IA
           </h1>
           <p className="text-gray-600">
             Crea reportes científicos profesionales con análisis automático de Azure AI
@@ -199,24 +199,24 @@ export default function ReportGenerator() {
         <div className="flex gap-2 mb-6 border-b border-lab-border">
           <button
             onClick={() => setActiveTab('form')}
-            className={`px-6 py-3 font-medium transition-colors border-b-2 ${
+            className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${
               activeTab === 'form'
                 ? 'border-accent text-accent'
                 : 'border-transparent text-gray-600 hover:text-gray-800'
             }`}
           >
-            📝 Formulario
+            <FiEdit className="w-4 h-4" /> Formulario
           </button>
           <button
             onClick={() => setActiveTab('preview')}
             disabled={!reportPreview}
-            className={`px-6 py-3 font-medium transition-colors border-b-2 ${
+            className={`px-6 py-3 font-medium transition-colors border-b-2 flex items-center gap-2 ${
               activeTab === 'preview'
                 ? 'border-accent text-accent'
                 : 'border-transparent text-gray-600 hover:text-gray-800 disabled:opacity-50'
             }`}
           >
-            👁️ Vista Previa
+            <FiEye className="w-4 h-4" /> Vista Previa
           </button>
         </div>
 
@@ -232,8 +232,8 @@ export default function ReportGenerator() {
             {/* Sección Izquierda: Datos Principales */}
             <div className="space-y-6">
               <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">
-                  ℹ️ Información del Experimento
+                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <FiInfo className="w-5 h-5" /> Información del Experimento
                 </h2>
 
                 <div className="space-y-4">
@@ -361,7 +361,7 @@ export default function ReportGenerator() {
               {/* Datos */}
               <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm">
                 <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  📊 Datos (CSV)
+                  <FiBarChart2 className="w-5 h-5" /> Datos (CSV)
                 </h2>
                 <textarea
                   name="csvData"
@@ -392,8 +392,8 @@ export default function ReportGenerator() {
                   className="hidden"
                 />
                 {formData.imageAnalysis && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-                    ✅ {formData.imageAnalysis}
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 flex items-center gap-2">
+                    <FiCheckCircle className="w-4 h-4" /> {formData.imageAnalysis}
                   </div>
                 )}
               </div>
