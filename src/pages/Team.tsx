@@ -5,21 +5,6 @@ import { useProject } from '../context/ProjectContext';
 type MemberStatus = 'active' | 'pending';
 type Role = 'Administrador' | 'Colaborador' | 'Lector';
 
-interface PlatformMember {
-  id: number | string;
-  name?: string;
-  username?: string;
-  email?: string;
-  role?: Role;
-  status?: string;
-}
-
-interface PendingRequestApi {
-  id: number | string;
-  name: string;
-  email: string;
-}
-
 interface TeamMember {
   id: string;
   name: string;
@@ -29,120 +14,115 @@ interface TeamMember {
   status: MemberStatus;
   color: string;
 }
+
+interface PendingInvitation {
+  id: string;
+  name: string;
+  email: string;
+}
 export default function Team() {
   const { projectId, projectMode, setProjectMode } = useProject();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
 
-  const [pendingRequests, setPendingRequests] = useState<{id: string, name: string, email: string}[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
+
+  const toInitials = (nameOrEmail: string) =>
+    nameOrEmail
+      .split(' ')
+      .map((part) => part.trim().charAt(0))
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'NA';
+
+  const getMemberColor = (index: number) => {
+    const colors = ['bg-accent', 'bg-blue-600', 'bg-green-600', 'bg-cyan-600', 'bg-indigo-600'];
+    return colors[index % colors.length];
+  };
+
+  const loadMembers = async () => {
+    if (!projectId) {
+      setMembers([]);
+      return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/members`);
+    if (!response.ok) {
+      throw new Error('No se pudieron obtener los miembros del proyecto');
+    }
+
+    const data = await response.json();
+    const normalized = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+
+    const mapped = normalized.map((member: any, index: number) => ({
+      id: String(member.id),
+      name: member.name || (member.email ? String(member.email).split('@')[0] : 'Integrante'),
+      initials: toInitials(member.name || member.email),
+      email: member.email,
+      role: member.role === 'owner' || member.role === 'admin' ? 'Administrador' : 'Colaborador',
+      status: 'active' as MemberStatus,
+      color: getMemberColor(index),
+    }));
+
+    setMembers(mapped);
+    setProjectMode(mapped.length > 1 ? 'team' : 'solo');
+  };
+
+  const loadPendingInvitations = async () => {
+    if (!projectId) {
+      setPendingRequests([]);
+      return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/invitations?status=pending`);
+    if (!response.ok) {
+      throw new Error('No se pudieron obtener las invitaciones pendientes');
+    }
+
+    const data = await response.json();
+    const normalized = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+
+    setPendingRequests(
+      normalized.map((inv: any) => ({
+        id: String(inv.id),
+        name: inv.name || (inv.email ? String(inv.email).split('@')[0] : 'Invitado'),
+        email: inv.email,
+      })),
+    );
+  };
+
+  const reloadTeamData = async () => {
+    try {
+      await Promise.all([loadMembers(), loadPendingInvitations()]);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Fetch miembros actuales y solicitudes pendientes desde el backend real
   useEffect(() => {
-    const localUser = () => {
-      try {
-        const stored = localStorage.getItem('user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const name = parsed.name || parsed.username || 'Tú';
-          return {
-            id: parsed.id ? String(parsed.id) : 'me',
-            name,
-            initials: name.substring(0, 2).toUpperCase(),
-            email: parsed.email || 'usuario@sapientlab.dev',
-            role: 'Administrador' as Role,
-            status: 'active' as MemberStatus,
-            color: 'bg-accent',
-          };
-        }
-      } catch (e) {
-        console.error('Error leyendo user local', e);
-      }
-      return {
-        id: 'me',
-        name: 'Tú',
-        initials: 'TU',
-        email: 'tu@email.com',
-        role: 'Administrador' as Role,
-        status: 'active' as MemberStatus,
-        color: 'bg-accent',
-      };
-    };
-
-    const loadMembers = async () => {
-      const base = localUser();
-      let list: TeamMember[] = [base];
-
-      if (projectId) {
-        try {
-          const res = await fetch(`/api/projects/${projectId}/members`);
-          if (res.ok) {
-            const data = await res.json();
-            const mapped = (data as PlatformMember[]).map((m: PlatformMember, idx: number) => {
-              const name = m.name || m.username || 'Miembro';
-              return {
-                id: String(m.id),
-                name,
-                initials: name.substring(0, 2).toUpperCase(),
-                email: m.email || 'sin-correo@lab.dev',
-                role: (m.role || 'Colaborador') as Role,
-                status: (m.status === 'active' ? 'active' : 'pending') as MemberStatus,
-                color: ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500'][idx % 4],
-              };
-            });
-            // Evitar duplicar al usuario local si ya vino del backend
-            list = [base, ...mapped.filter((m: TeamMember) => m.id !== base.id)];
-            if (mapped.length > 0) setProjectMode('team');
-          } else {
-            console.error('Error cargando miembros - Status:', res.status, res.statusText);
-          }
-        } catch (e) {
-          console.error('Error cargando miembros', e);
-        }
-      }
-
-      setMembers(list);
-    };
-
-    const loadRequests = async () => {
-      if (!projectId) return;
-      try {
-        const res = await fetch(`/api/projects/${projectId}/requests`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setPendingRequests((data as PendingRequestApi[]).map((d: PendingRequestApi) => ({ id: String(d.id), name: d.name, email: d.email })));
-          }
-        }
-      } catch (e) {
-        console.error('Error cargando solicitudes', e);
-      }
-    };
-
-    loadMembers();
-    loadRequests();
-  }, [projectId, setProjectMode]);
+    reloadTeamData();
+  }, [projectId]);
 
   const handleAcceptRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`/api/projects/${projectId}/requests/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: Number(reqId), action: 'accept' })
-      });
       const req = pendingRequests.find(r => r.id === reqId);
       if (!req) return;
-      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
-      setMembers([...members, {
-        id: reqId,
-        name: req.name,
-        initials: req.name.substring(0, 2).toUpperCase(),
-        email: req.email,
-        role: 'Colaborador',
-        status: 'active',
-        color: 'bg-green-600'
-      }]);
-      setProjectMode('team');
+
+      const response = await fetch(`/api/projects/${projectId}/invitations/${reqId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: req.name })
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo aceptar la invitacion');
+      }
+
+      await reloadTeamData();
     } catch (e) {
       console.error(e);
       alert('Error aceptando solicitud');
@@ -152,12 +132,16 @@ export default function Team() {
   const handleDeclineRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
-      await fetch(`/api/projects/${projectId}/requests/resolve`, {
+      const response = await fetch(`/api/projects/${projectId}/invitations/${reqId}/decline`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: Number(reqId), action: 'reject' })
+        headers: { 'Content-Type': 'application/json' }
       });
-      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
+
+      if (!response.ok) {
+        throw new Error('No se pudo rechazar la invitacion');
+      }
+
+      await reloadTeamData();
     } catch (e) {
       console.error(e);
       alert('Error rechazando solicitud');
@@ -166,40 +150,30 @@ export default function Team() {
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail) return;
+    if (!inviteEmail || !projectId || isSubmittingInvite) return;
 
-    // Validar que el usuario a invitar no esté ya en un proyecto grupal
+    setIsSubmittingInvite(true);
+
     try {
-      const response = await fetch(`/api/users/check-project-status?email=${encodeURIComponent(inviteEmail)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.hasTeamProject) {
-          alert(`❌ No se puede invitar a ${inviteEmail}.\n\nEste usuario ya forma parte de un proyecto grupal. Solo puedes invitar a usuarios que tengan proyectos individuales.`);
-          return;
-        }
+      const response = await fetch(`/api/projects/${projectId}/invitations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim(), invitedByUserId: 1 }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.message || 'No se pudo crear la invitacion');
       }
-    } catch (e) {
-      console.warn('No se pudo validar el estado del usuario, continuando...', e);
-    }
 
-    alert(`✅ ¡Invitación enviada! Se ha enviado un correo de invitación a ${inviteEmail}.\n\nEste usuario debe aceptar la invitación desde su correo para unirse al proyecto.`);
-
-    const newMember: TeamMember = {
-      id: `invite-${inviteEmail}`,
-      name: inviteEmail.split('@')[0],
-      initials: inviteEmail.substring(0, 2).toUpperCase(),
-      email: inviteEmail,
-      role: 'Colaborador',
-      status: 'pending',
-      color: 'bg-gray-400'
-    };
-
-    setMembers([...members, newMember]);
-    setInviteEmail('');
-    
-    // Si estaba en modo solo y acaba de invitar a alguien, lo pasamos a equipo
-    if (projectMode === 'solo') {
-      setProjectMode('team');
+      setInviteEmail('');
+      await reloadTeamData();
+      alert('Invitacion enviada correctamente');
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message || 'Error al crear la invitacion');
+    } finally {
+      setIsSubmittingInvite(false);
     }
   };
 
@@ -260,9 +234,10 @@ export default function Team() {
                 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dim transition-colors shadow-sm"
+                  disabled={isSubmittingInvite}
+                  className="w-full py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dim transition-colors shadow-sm disabled:opacity-60"
                 >
-                  Enviar Invitación
+                  {isSubmittingInvite ? 'Enviando...' : 'Enviar Invitación'}
                 </button>
               </form>
             </div>
