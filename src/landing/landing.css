@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+.landing-shell {
+  --background: 0 0% 100%;
+  --foreground: 222 84% 5%;
+  --scientific-cyan: 185 100% 45%;
+  --scientific-blue: 210 100% 50%;
+  --glass-bg: hsl(0 0% 100% / 0.7);
+  --glass-border: hsl(214 32% 91% / 0.8);
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+.dark .landing-shell {
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
+  --scientific-cyan: 185 100% 50%;
+  --scientific-blue: 210 100% 55%;
+  --glass-bg: hsl(224 50% 8% / 0.6);
+  --glass-border: hsl(185 100% 50% / 0.15);
+}
+
+.landing-shell .font-display {
+  font-family: 'Orbitron', sans-serif;
+}
+
+.landing-shell .font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.landing-shell .gradient-text {
+  background: linear-gradient(135deg, hsl(var(--scientific-cyan)), hsl(var(--scientific-blue)));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.landing-shell .glass-scientific {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.landing-shell .scientific-grid {
+  background-image:
+    linear-gradient(hsl(var(--scientific-cyan) / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--scientific-cyan) / 0.08) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.dark .landing-shell .scientific-grid {
+  background-image:
+    linear-gradient(hsl(var(--scientific-cyan) / 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--scientific-cyan) / 0.1) 1px, transparent 1px);
+}
+
+@keyframes orbit-3d {
+  0% {
+    transform: rotate(var(--start-angle, 0deg)) translateX(var(--radius, 80px)) rotate(0deg);
+  }
+  100% {
+    transform: rotate(calc(var(--start-angle, 0deg) + 360deg)) translateX(var(--radius, 80px)) rotate(-360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(2deg);
+  }
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.6;
+  }
+  75% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-40px) translateX(calc(20px - 40px * var(--direction, 0.5))) scale(0);
+    opacity: 0;
+  }
+}
+
+.landing-shell .animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.landing-shell .animate-float-particle {
+  animation: float-particle 3s ease-out infinite;
+}
+
+.landing-shell .card-scientific {
+  transition: all 0.3s ease;
+}
+
+.landing-shell .card-scientific:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--scientific-cyan) / 0.5);
+  box-shadow: 0 8px 32px hsl(var(--scientific-cyan) / 0.1);
+}

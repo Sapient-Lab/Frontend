@@ -9,6 +9,7 @@ import ProtocolScanner from './pages/ProtocolScanner'
 import Resources from './pages/Resources'
 import TasksAndEvaluation from './pages/Tasks'
 import Team from './pages/Team'
+import LandingPage from './landing/LandingPage.jsx'
 import { ProjectProvider } from './context/ProjectContext'
 import { ThemeProvider } from './context/ThemeContext'
 
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/app/tareas" element={<RootLayout><TasksAndEvaluation /></RootLayout>} />
             <Route path="/app/equipo" element={<RootLayout><Team /></RootLayout>} />
             <Route path="/app/docs" element={<RootLayout><Resources /></RootLayout>} />
+            <Route path="/landing" element={<LandingPage />} />
             
             {/* Redirigir la raíz al login */}
             <Route path="*" element={<Navigate to="/login" replace />} />
