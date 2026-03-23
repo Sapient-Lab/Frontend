@@ -5,21 +5,6 @@ import { useProject } from '../context/ProjectContext';
 type MemberStatus = 'active' | 'pending';
 type Role = 'Administrador' | 'Colaborador' | 'Lector';
 
-interface PlatformMember {
-  id: number | string;
-  name?: string;
-  username?: string;
-  email?: string;
-  role?: Role;
-  status?: string;
-}
-
-interface PendingRequestApi {
-  id: number | string;
-  name: string;
-  email: string;
-}
-
 interface TeamMember {
   id: string;
   name: string;
@@ -29,16 +14,12 @@ interface TeamMember {
   status: MemberStatus;
   color: string;
 }
-<<<<<<< HEAD
 
 interface PendingInvitation {
   id: string;
   name: string;
   email: string;
 }
-
-=======
->>>>>>> 8e0c063d7c7e0d97c896b633c9b52aa30c9aa7c9
 export default function Team() {
   const { projectId, projectMode, setProjectMode } = useProject();
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -122,101 +103,14 @@ export default function Team() {
 
   // Fetch miembros actuales y solicitudes pendientes desde el backend real
   useEffect(() => {
-<<<<<<< HEAD
     reloadTeamData();
   }, [projectId]);
-=======
-    const localUser = () => {
-      try {
-        const stored = localStorage.getItem('user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const name = parsed.name || parsed.username || 'Tú';
-          return {
-            id: parsed.id ? String(parsed.id) : 'me',
-            name,
-            initials: name.substring(0, 2).toUpperCase(),
-            email: parsed.email || 'usuario@sapientlab.dev',
-            role: 'Administrador' as Role,
-            status: 'active' as MemberStatus,
-            color: 'bg-accent',
-          };
-        }
-      } catch (e) {
-        console.error('Error leyendo user local', e);
-      }
-      return {
-        id: 'me',
-        name: 'Tú',
-        initials: 'TU',
-        email: 'tu@email.com',
-        role: 'Administrador' as Role,
-        status: 'active' as MemberStatus,
-        color: 'bg-accent',
-      };
-    };
-
-    const loadMembers = async () => {
-      const base = localUser();
-      let list: TeamMember[] = [base];
-
-      if (projectId) {
-        try {
-          const res = await fetch(`/api/projects/${projectId}/members`);
-          if (res.ok) {
-            const data = await res.json();
-            const mapped = (data as PlatformMember[]).map((m: PlatformMember, idx: number) => {
-              const name = m.name || m.username || 'Miembro';
-              return {
-                id: String(m.id),
-                name,
-                initials: name.substring(0, 2).toUpperCase(),
-                email: m.email || 'sin-correo@lab.dev',
-                role: (m.role || 'Colaborador') as Role,
-                status: (m.status === 'active' ? 'active' : 'pending') as MemberStatus,
-                color: ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500'][idx % 4],
-              };
-            });
-            // Evitar duplicar al usuario local si ya vino del backend
-            list = [base, ...mapped.filter((m: TeamMember) => m.id !== base.id)];
-            if (mapped.length > 0) setProjectMode('team');
-          } else {
-            console.error('Error cargando miembros - Status:', res.status, res.statusText);
-          }
-        } catch (e) {
-          console.error('Error cargando miembros', e);
-        }
-      }
-
-      setMembers(list);
-    };
-
-    const loadRequests = async () => {
-      if (!projectId) return;
-      try {
-        const res = await fetch(`/api/projects/${projectId}/requests`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setPendingRequests((data as PendingRequestApi[]).map((d: PendingRequestApi) => ({ id: String(d.id), name: d.name, email: d.email })));
-          }
-        }
-      } catch (e) {
-        console.error('Error cargando solicitudes', e);
-      }
-    };
-
-    loadMembers();
-    loadRequests();
-  }, [projectId, setProjectMode]);
->>>>>>> 8e0c063d7c7e0d97c896b633c9b52aa30c9aa7c9
 
   const handleAcceptRequest = async (reqId: string) => {
     if (!projectId) return;
     try {
       const req = pendingRequests.find(r => r.id === reqId);
       if (!req) return;
-<<<<<<< HEAD
 
       const response = await fetch(`/api/projects/${projectId}/invitations/${reqId}/accept`, {
         method: 'POST',
@@ -229,19 +123,6 @@ export default function Team() {
       }
 
       await reloadTeamData();
-=======
-      setPendingRequests(pendingRequests.filter(r => r.id !== reqId));
-      setMembers([...members, {
-        id: reqId,
-        name: req.name,
-        initials: req.name.substring(0, 2).toUpperCase(),
-        email: req.email,
-        role: 'Colaborador',
-        status: 'active',
-        color: 'bg-green-600'
-      }]);
-      setProjectMode('team');
->>>>>>> 8e0c063d7c7e0d97c896b633c9b52aa30c9aa7c9
     } catch (e) {
       console.error(e);
       alert('Error aceptando solicitud');
@@ -271,7 +152,6 @@ export default function Team() {
     e.preventDefault();
     if (!inviteEmail || !projectId || isSubmittingInvite) return;
 
-<<<<<<< HEAD
     setIsSubmittingInvite(true);
 
     try {
@@ -280,33 +160,6 @@ export default function Team() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: inviteEmail.trim(), invitedByUserId: 1 }),
       });
-=======
-    // Validar que el usuario a invitar no esté ya en un proyecto grupal
-    try {
-      const response = await fetch(`/api/users/check-project-status?email=${encodeURIComponent(inviteEmail)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.hasTeamProject) {
-          alert(`❌ No se puede invitar a ${inviteEmail}.\n\nEste usuario ya forma parte de un proyecto grupal. Solo puedes invitar a usuarios que tengan proyectos individuales.`);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('No se pudo validar el estado del usuario, continuando...', e);
-    }
-
-    alert(`✅ ¡Invitación enviada! Se ha enviado un correo de invitación a ${inviteEmail}.\n\nEste usuario debe aceptar la invitación desde su correo para unirse al proyecto.`);
-
-    const newMember: TeamMember = {
-      id: `invite-${inviteEmail}`,
-      name: inviteEmail.split('@')[0],
-      initials: inviteEmail.substring(0, 2).toUpperCase(),
-      email: inviteEmail,
-      role: 'Colaborador',
-      status: 'pending',
-      color: 'bg-gray-400'
-    };
->>>>>>> 8e0c063d7c7e0d97c896b633c9b52aa30c9aa7c9
 
       if (!response.ok) {
         const err = await response.json().catch(() => null);
