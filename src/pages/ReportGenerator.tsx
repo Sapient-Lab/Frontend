@@ -14,7 +14,8 @@ interface ReportData {
 }
 
 export default function ReportGenerator() {
-  const { projectName, projectId } = useProject();
+  // Note: projectName and projectId available from context if needed for future features
+  const { } = useProject();
   const [formData, setFormData] = useState<ReportData>({
     title: '',
     description: '',
@@ -93,14 +94,6 @@ export default function ReportGenerator() {
     if (!file) return;
 
     try {
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          resolve(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      });
-
       // Aquí normalmente enviarías a Azure Vision
       // Por ahora, almacenamos el análisis de ejemplo
       setFormData((prev) => ({
@@ -140,7 +133,9 @@ export default function ReportGenerator() {
       if (!response.ok) throw new Error('Error generando reporte');
 
       const data = await response.json();
-      setReportPreview(data);
+      setReportPreview({
+        html: data.preview || data.html || '<p>Error generando preview</p>',
+      });
       setActiveTab('preview');
     } catch (err: any) {
       setError(err.message || 'Error al generar el reporte');
