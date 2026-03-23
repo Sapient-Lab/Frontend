@@ -20,13 +20,13 @@ export const aiService = {
   /**
    * Envía un mensaje al endpoint conversacional del backend
    */
-  async sendMessage(message: string, messages?: ChatMessage[]) {
+  async sendMessage(message: string, messages?: ChatMessage[], provider?: 'azure' | 'mistral' | 'deepseek') {
     const response = await fetch('/api/ai/conversation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, messages }), 
+      body: JSON.stringify({ message, messages, provider }), 
     });
 
     if (!response.ok) throw new Error('Error en el chat de IA');
@@ -141,6 +141,36 @@ export const aiService = {
     });
     if (!response.ok) throw new Error('Error al explicar el código');
     return response.json();
+  },
+
+  /**
+   * Convierte texto a voz usando Azure Speech
+   */
+  async textToSpeech(text: string) {
+    const response = await fetch('/api/ai/speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!response.ok) throw new Error('Error al generar voz');
+    const data = await response.json();
+    return data.audioBase64; // Base64 encoded audio
+  },
+
+  /**
+   * Transcribe audio a texto usando Azure Speech
+   */
+  async speechToText(audioBlob: Blob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio.wav');
+    
+    const response = await fetch('/api/ai/speech-to-text', {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) throw new Error('Error al transcribir audio');
+    const data = await response.json();
+    return data.text;
   },
 
   /**

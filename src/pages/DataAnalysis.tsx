@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FiAlertTriangle, FiFileText, FiSearch, FiTarget } from 'react-icons/fi';
+import { useState, useRef } from 'react';
+import { FiAlertTriangle, FiFileText, FiSearch, FiTarget, FiUploadCloud } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 
 export default function DataAnalysis() {
@@ -7,6 +7,7 @@ export default function DataAnalysis() {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAnalyze = async () => {
     if (!csvData.trim()) {
@@ -26,6 +27,41 @@ export default function DataAnalysis() {
       setError(err.message || 'Hubo un error al analizar los datos.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    setError('');
+    setAnalysisResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/ai/document/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Error al procesar documento');
+      
+      const result = await response.json();
+      
+      // Populate CSV textarea with extracted data
+      if (result.extractedText) {
+        setCsvData(result.extractedText);
+      }
+      
+      setAnalysisResult(result);
+    } catch (err: any) {
+      setError(err.message || 'Error al procesar el PDF/Excel.');
+    } finally {
+      setIsLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -61,7 +97,25 @@ export default function DataAnalysis() {
                 className="flex-1 w-full p-4 border border-lab-border rounded-lg bg-gray-50 font-mono text-xs focus:outline-none focus:border-accent resize-none min-h-[300px]"
               />
               
-              {/* Opcional: Para futuro drag & drop se puede incluir aquí */}
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-2 rounded text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  title="Soporta PDF, Excel (.xlsx, .xls)"
+                >
+                  <FiUploadCloud className="w-4 h-4" />
+                  📄 Importar PDF/Excel
+                </button>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.xlsx,.xls,.csv"
+                onChange={handleUploadDocument}
+                className="hidden"
+              />
               
               {error && (
                 <div className="mt-4 p-3 bg-red-50 text-red-600 text-xs rounded border border-red-100">

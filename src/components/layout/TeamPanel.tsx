@@ -2,73 +2,117 @@ import { useState, useEffect } from 'react';
 import { useProject } from '../../context/ProjectContext';
 import { useTheme } from '../../context/ThemeContext';
 
+type MemberStatus = 'online' | 'away';
+
+interface Member {
+  id: string;
+  name: string;
+  role: string;
+  initials: string;
+  status: MemberStatus;
+}
+
+interface PlatformMember {
+  id: number | string;
+  name?: string;
+  username?: string;
+  role?: string;
+  status?: string;
+}
+
+type CurrentUser = { name: string; initials: string; role: string; id: string };
+
 export default function TeamPanel() {
   const { projectMode, projectId } = useProject();
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<Member[]>([]);
   const { isDark } = useTheme();
   const [open, setOpen] = useState(true);
-  const [user, setUser] = useState<{name: string, initials: string, role: string, id: string} | null>(null);
-
-  useEffect(() => {
-    let localUser = { name: 'Tú', initials: 'TU', role: 'Usuario', id: 'me' };
+  const [user] = useState<CurrentUser | null>(() => {
+    let localUser: CurrentUser = { name: 'Tú', initials: 'TU', role: 'Usuario', id: 'me' };
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        const name = parsed.name || parsed.username || 'Usuario';
-        const initials = name.substring(0, 2).toUpperCase();
-        localUser = { name, initials, role: parsed.role || 'Investigador', id: parsed.id?.toString() || 'me' };
-      } catch(e) {}
+        const name = parsed.name || parsed.username || 'Tú';
+        const initials = parsed.initials || name.substring(0, 2).toUpperCase();
+        const role = parsed.role || 'Investigador';
+        const id = parsed.id?.toString() || 'me';
+        localUser = { name, initials, role, id };
+      } catch {
+        // fallback already set
+      }
     }
-    setUser(localUser);
-  }, []);
+    return localUser;
+  });
 
   useEffect(() => {
+    // Si no hay projectId en el contexto, intentar leerlo desde localStorage
+    const effectiveProjectId = projectId || (() => {
+      const saved = localStorage.getItem('sapientlab_project_id');
+      return saved ? parseInt(saved, 10) : null;
+    })();
+    
+    console.log('[TeamPanel] Effect triggered. projectId (context):', projectId, 'effectiveProjectId:', effectiveProjectId, 'user:', user);
+    
     const fetchMembers = async () => {
-      let members: any[] = [];
-      // Siempre añadir al usuario actual a la lista de conectados
-      if (user) {
-        members.push({
-          id: user.id,
-          name: user.name + ' (Tú)',
-          role: user.role,
-          initials: user.initials,
-          status: 'online'
-        });
-      }
+      let members: Member[] = [];
 
-      if (projectId) {
+      if (effectiveProjectId) {
+        console.log('[TeamPanel] Fetching members for project:', effectiveProjectId);
         try {
-          const response = await fetch('http://localhost:3000/api/platform/projects/' + projectId + '/members');
+          const url = '/api/projects/' + effectiveProjectId + '/members';
+          console.log('[TeamPanel] Fetching from URL:', url);
+          
+          const response = await fetch(url);
+          console.log('[TeamPanel] Response status:', response.status);
+          
           if (response.ok) {
             const data = await response.json();
-            const fetchedMembers = data.map((m: any) => {
-              const name = m.name || m.username || 'Usuario';
-              return {
-                id: m.id.toString(),
-                name: name,
-                role: m.role || 'Member',
-                initials: name.substring(0, 2).toUpperCase(),
-                status: 'online'
-              };
-            });
+            console.log('[TeamPanel] Backend members response (full):', JSON.stringify(data));
             
-            // FIltrar para no duplicar al propio usuario si viniera en la query agregándolo
-            const filteredFetched = fetchedMembers.filter((fm: any) => fm.id !== user?.id);
-            members = [...members, ...filteredFetched];
+            if (Array.isArray(data) && data.length > 0) {
+              const fetchedMembers = (data as PlatformMember[]).map((m: PlatformMember): Member => {
+                const name = m.name || m.username || 'Usuario';
+                const status: MemberStatus = m.status === 'active' ? 'online' : 'away';
+                const memberId = m.id.toString();
+                
+                // Check if this is the current user
+                const isCurrentUser = user && memberId === user.id;
+                
+                console.log('[TeamPanel] Processing member:', { name, memberId, userIdToCompare: user?.id, isCurrentUser });
+                
+                return {
+                  id: memberId,
+                  name: isCurrentUser ? name + ' (Tú)' : name,
+                  role: m.role || 'Investigador',
+                  initials: name.substring(0, 2).toUpperCase(),
+                  status,
+                };
+              });
+
+              console.log('[TeamPanel] Final processed members:', fetchedMembers);
+              members = fetchedMembers;
+            } else {
+              console.warn('[TeamPanel] No members returned from backend. Data:', data);
+            }
+          } else {
+            const errorText = await response.text();
+            console.error('[TeamPanel] Error fetching members - Status:', response.status, response.statusText, 'Body:', errorText);
           }
         } catch (error) {
-          console.error('Error fetching members:', error);
+          console.error('[TeamPanel] Fetch error:', error);
         }
+      } else {
+        console.log('[TeamPanel] No projectId available. Cannot fetch members.');
       }
-      
+
       setTeamMembers(members);
     };
-    if (user) { // Esperar a que el usuario se haya seteado
+
+    if (user) {
       fetchMembers();
     }
   }, [projectId, user]);
-
   
 
   return (
