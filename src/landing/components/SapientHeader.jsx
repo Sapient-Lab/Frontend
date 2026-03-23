@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Sun, Moon, FlaskConical, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -90,6 +91,13 @@ const SapientHeader = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
+          <Link
+            to="/login"
+            className="hidden md:inline-flex font-mono text-xs font-semibold tracking-wider px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-500 dark:to-blue-600 text-white"
+          >
+            IR A LOGIN
+          </Link>
+
           <button
             onClick={() => setDark(!dark)}
             className="p-2 rounded-lg border border-gray-300 dark:border-cyan-500/30 hover:bg-gray-100 dark:hover:bg-cyan-500/10 transition-all duration-300"
@@ -133,9 +141,13 @@ const SapientHeader = () => {
                   {item.label}
                 </a>
               ))}
-              <button className="font-mono text-sm font-semibold tracking-wider px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-500 dark:to-blue-600 text-white mt-2">
-                PROBAR DEMO
-              </button>
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="font-mono text-sm font-semibold tracking-wider px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-500 dark:to-blue-600 text-white mt-2 text-center"
+              >
+                IR A LOGIN
+              </Link>
             </div>
           </motion.div>
         )}

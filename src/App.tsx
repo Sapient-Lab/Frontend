@@ -19,6 +19,7 @@ export default function App() {
       <ProjectProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             
             <Route path="/onboarding" element={<Onboarding />} />
@@ -34,8 +35,8 @@ export default function App() {
             <Route path="/app/docs" element={<RootLayout><Resources /></RootLayout>} />
             <Route path="/landing" element={<LandingPage />} />
             
-            {/* Redirigir la raíz al login */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            {/* Redirigir rutas no encontradas a la landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </ProjectProvider>
