@@ -8,7 +8,6 @@ const navItems: NavItem[] = [
   { label: 'Equipo', path: '/app/equipo' },
   { label: 'Resultados', path: '/app/resultados' },
   // { label: 'Reportes IA', path: '/app/reportes' },
-  { label: 'Seguridad', path: '/app/seguridad' },
   { label: 'Tareas', path: '/app/tareas' },
   { label: 'Docs', path: '/app/docs' },
 ]
