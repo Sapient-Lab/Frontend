@@ -199,8 +199,9 @@ export default function Dashboard() {
         <p className="text-sm text-gray-600 max-w-3xl leading-relaxed">
           {projectMode === 'solo' 
             ? 'Asistente de cuaderno para razonar experimentos sin reemplazar el juicio científico. Aquí verás progreso, alertas y recomendaciones explicables.'
-            : 'Resumen colaborativo del proyecto. Prioriza trazabilidad, decisiones justificadas y límites de seguridad en cada iteración.'}
+            : ''}
         </p>
+
       </div>
 
       <div className="mb-6 p-4 rounded-xl border border-[#d8e1ec] bg-white/80 backdrop-blur stagger-in">
@@ -213,10 +214,10 @@ export default function Dashboard() {
       <div className="flex flex-col gap-6">
 
         {/* Fila 1: Progreso + Insights IA */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           
           {/* Tarjeta de Insights de IA */}
-          <div className="bg-[#f7fbff] border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col relative stagger-in" style={{ animationDelay: '90ms' }}>
+          <div className="lg:col-span-2 bg-[#f7fbff] border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col relative stagger-in" style={{ animationDelay: '90ms' }}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-accent rounded-t-xl"></div>
             
             <div className="flex items-center gap-3 mb-4">
@@ -237,9 +238,38 @@ export default function Dashboard() {
               Abrir asistente para revisar evidencia <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
             </button>
           </div>
+
+          {/* Actividad Reciente */}
+          <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '280ms' }}>
+            <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
+              {projectMode === 'solo' ? 'Tu Bitácora Reciente' : 'Actividad del Equipo'}
+            </h2>
+            
+            <div className="flex-1 space-y-4 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+              {recentActivity.map((activity, index) => (
+                <div key={activity.id} className="flex gap-4 relative">
+                  {index !== recentActivity.length - 1 && (
+                    <div className="absolute left-3.5 top-8 w-[1px] h-[calc(100%+4px)] bg-lab-border"></div>
+                  )}
+                  
+                  <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white z-10 shrink-0 ${activity.color}`}>
+                    {activity.user}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-700 leading-tight mb-1">{activity.text}</p>
+                    <span className="text-[10px] text-gray-400 font-mono">{activity.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <button className="w-full text-center mt-4 text-xs font-medium text-gray-500 hover:text-accent transition-colors shrink-0">
+              Ver todo el historial
+            </button>
+          </div>
         </div>
 
-        {/* Fila 2: Accesos Directos + Actividad Reciente */}
+        {/* Fila 2: Accesos Directos + Equipo Conectado */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Accesos Directos */}
@@ -277,58 +307,26 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Actividad Reciente */}
-          <div className="flex flex-col gap-6">
-            <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '280ms' }}>
-              <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
-                {projectMode === 'solo' ? 'Tu Bitácora Reciente' : 'Actividad del Equipo'}
-              </h2>
-              
-              <div className="flex-1 space-y-5">
-                {recentActivity.map((activity, index) => (
-                  <div key={activity.id} className="flex gap-4 relative">
-                    {/* Linea conectora de timeline si no es el último */}
-                    {index !== recentActivity.length - 1 && (
-                      <div className="absolute left-3.5 top-8 w-[1px] h-[calc(100%+4px)] bg-lab-border"></div>
-                    )}
-                    
-                    <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white z-10 ${activity.color}`}>
-                      {activity.user}
+          {/* Equipo Conectado */}
+          <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col h-full stagger-in" style={{ animationDelay: '300ms' }}>
+            <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2 shrink-0">
+              {projectMode === 'solo' ? 'Conectado' : 'Conectados'}
+            </h2>
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+              {teamMembers.map(member => (
+                <div key={member.id} className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded bg-gray-100 border border-lab-border flex items-center justify-center text-xs font-semibold text-gray-600">
+                      {member.initials}
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-700 leading-tight mb-1">{activity.text}</p>
-                      <span className="text-[10px] text-gray-400 font-mono">{activity.time}</span>
-                    </div>
+                    <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${member.status === 'online' ? 'bg-green-500' : 'bg-yellow-400'}`} />
                   </div>
-                ))}
-              </div>
-              
-              <button className="w-full text-center mt-6 text-xs font-medium text-gray-500 hover:text-accent transition-colors">
-                Ver todo el historial
-              </button>
-            </div>
-
-            {/* Equipo Conectado */}
-            <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '300ms' }}>
-              <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
-                {projectMode === 'solo' ? 'Conectado' : 'Conectados'}
-              </h2>
-              <div className="flex-1 space-y-4">
-                {teamMembers.map(member => (
-                  <div key={member.id} className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-8 h-8 rounded bg-gray-100 border border-lab-border flex items-center justify-center text-xs font-semibold text-gray-600">
-                        {member.initials}
-                      </div>
-                      <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${member.status === 'online' ? 'bg-green-500' : 'bg-yellow-400'}`} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-800 leading-tight">{member.name}</span>
-                      <span className="text-[10px] text-muted font-mono leading-tight">{member.role}</span>
-                    </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-800 leading-tight">{member.name}</span>
+                    <span className="text-[10px] text-muted font-mono leading-tight">{member.role}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
