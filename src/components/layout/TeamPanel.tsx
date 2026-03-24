@@ -156,25 +156,6 @@ export default function TeamPanel() {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-            {/* Progreso del Módulo */}
-            <div>
-              <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">
-                {projectMode === 'solo' ? 'Mi Progreso' : 'Progreso Actual'}
-              </h3>
-              <div className={`rounded-lg border border-lab-border p-3 ${
-                isDark ? 'bg-gradient-to-br from-[#132238] to-[#0f1c2f]' : 'bg-gradient-to-br from-[#f8fbff] to-[#f1f6fc]'
-              }`}>
-                <div className="flex justify-between text-xs mb-1 font-mono">
-                  <span className="text-gray-600">Nuevo Proyecto</span>
-                  <span className="text-accent font-semibold">0%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
-                  <div className="bg-accent h-1.5 rounded-full" style={{ width: '0%' }}></div>
-                </div>
-                <p className="text-[10px] text-gray-500">0 bloques completados</p>
-              </div>
-            </div>
-
             {/* Miembros Conectados */}
             <div>
               <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-3">

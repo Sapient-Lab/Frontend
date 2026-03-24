@@ -5,7 +5,7 @@ import { useProject } from '../context/ProjectContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { projectMode, projectName, projectId } = useProject();
+  const { projectMode, projectId } = useProject();
 
   const [aiMessage, setAiMessage] = useState(
     'Análisis pendiente: carga un protocolo o evidencia para generar recomendaciones de seguridad.'
@@ -115,45 +115,6 @@ export default function Dashboard() {
         {/* Fila 1: Progreso + Insights IA */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Tarjeta de Progreso del Curso */}
-          <div className="lg:col-span-2 bg-white border border-lab-border rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden stagger-in">
-            {/* Efecto de fondo sutil */}
-            <div className="absolute -right-16 -top-12 w-52 h-52 bg-accent/10 rounded-full blur-3xl"></div>
-            
-            <div className="z-10">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider mb-1 block">Proyecto / Módulo Activo</span>
-                  <h2 className="text-xl font-semibold mb-1 text-inherit">{projectName} - Interpretación de protocolos</h2>
-                  <p className="text-sm text-muted"></p>
-                </div>
-                <div className="text-right">
-                  <span className="text-2xl font-bold text-accent">0%</span>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Completado</p>
-                </div>
-              </div>
-
-              <div className="w-full bg-gray-100 rounded-full h-2.5 mb-6">
-                <div className="bg-accent h-2.5 rounded-full relative" style={{width: '0%'}}>
-                  <div className="absolute -right-1.5 -top-1 w-4 h-4 bg-white border-2 border-accent rounded-full shadow"></div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => navigate('/app/lab')}
-                  className="bg-accent text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-accent-dim transition-colors shadow-sm"
-                >
-                  Continuar en el Laboratorio
-                </button>
-                <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                   verificaciones pendientes
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Tarjeta de Insights de IA */}
           <div className="bg-[#f7fbff] border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col relative stagger-in" style={{ animationDelay: '90ms' }}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-accent rounded-t-xl"></div>

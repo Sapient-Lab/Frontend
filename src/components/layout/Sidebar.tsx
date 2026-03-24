@@ -112,30 +112,8 @@ export default function Sidebar() {
             </button>
           </div>
 
-          {/* Contenido scrolleable */}
+          {/* Contenido scrolleable vacío manteniéndose el menú abrible/cerrable */}
           <div className="flex-1 overflow-y-visible py-4">
-
-            {/* IAs Disponibles */}
-            <div className="mb-6 space-y-2 px-3 relative">
-              {aiTools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="group relative flex items-center gap-3 p-3 rounded-lg border border-transparent hover:border-accent hover:bg-accent-light text-gray-600 hover:text-accent cursor-pointer transition-all"
-                >
-                  <div className="flex-shrink-0 text-accent">
-                    {tool.icon}
-                  </div>
-                  <span className="flex-1 font-medium text-[13.5px]">{tool.name}</span>
-                  
-                  {/* Tooltip on hover */}
-                  <div className="absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 w-48 bg-gray-900 text-white text-xs rounded-md p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none">
-                    <div className="absolute top-1/2 -translate-y-1/2 -left-2 border-4 border-transparent border-r-gray-900" />
-                    <p className="font-semibold text-[13px] mb-1">{tool.name}</p>
-                    <p className="text-gray-300 leading-relaxed font-sans">{tool.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
 
           </div>
         </aside>
