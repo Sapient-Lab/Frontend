@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiZap } from 'react-icons/fi';
+import { FiZap, FiFileText } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
 type MemberStatus = 'online' | 'away';
@@ -281,9 +281,7 @@ export default function Dashboard() {
               style={{ animationDelay: '160ms' }}
             >
               <div className="w-10 h-10 rounded bg-green-50 flex items-center justify-center text-green-600 mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <FiFileText className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-medium text-gray-800 mb-1">Visión Mágica</h2>
               <p className="text-xs text-muted mb-4">Interpreta protocolos y diagramas usando visión IA. Sube imágenes o manuales y obtén un análisis automático.</p>
@@ -297,9 +295,7 @@ export default function Dashboard() {
               style={{ animationDelay: '220ms' }}
             >
               <div className="w-10 h-10 rounded bg-orange-50 flex items-center justify-center text-orange-500 mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+                <FiZap className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-medium text-gray-800 mb-1">Centro de Tareas</h2>
               <p className="text-xs text-gray-500 mb-4">Gestiona evidencia experimental, revisiones del agente y estado de aprobación por calidad y seguridad.</p>

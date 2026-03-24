@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FiAlertTriangle, FiFileText, FiSearch, FiTarget, FiUploadCloud } from 'react-icons/fi';
+import { FiAlertTriangle, FiFileText, FiSearch, FiTarget, FiUploadCloud, FiSidebar, FiX, FiBarChart2 } from 'react-icons/fi';
 import { aiService } from '../../services/aiService';
 
 export default function TeamPanel() {
@@ -76,10 +76,7 @@ export default function TeamPanel() {
             title="Abrir panel de análisis"
             className="p-2 rounded hover:bg-lab-bg text-muted hover:text-gray-700 transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <line x1="9" y1="3" x2="9" y2="21" />
-            </svg>
+            <FiSidebar className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -97,10 +94,7 @@ export default function TeamPanel() {
               title="Cerrar panel"
               className="p-1.5 rounded hover:bg-lab-bg text-muted hover:text-gray-700 transition-colors"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6"  y2="18" />
-                <line x1="6"  y1="6" x2="18" y2="18" />
-              </svg>
+              <FiX className="w-4 h-4" />
             </button>
           </div>
 
@@ -246,9 +240,7 @@ export default function TeamPanel() {
                 </div>
               ) : (
                 <div className="text-center py-6 text-gray-400">
-                  <svg className="w-8 h-8 mb-2 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+                  <FiBarChart2 className="w-8 h-8 mb-2 mx-auto text-gray-300" />
                   <p className="text-[10px]">Aún no hay resultados para mostrar.</p>
                 </div>
               )}

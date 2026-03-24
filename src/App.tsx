@@ -9,10 +9,9 @@ import Resources from './pages/Resources'
 import TasksAndEvaluation from './pages/Tasks'
 import Team from './pages/Team'
 import ReportGenerator from './pages/ReportGenerator'
-import LandingPage from './landing/LandingPage.jsx'
+import LandingPage from './landing/LandingPage'
 import { ProjectProvider } from './context/ProjectContext'
 import { ThemeProvider } from './context/ThemeContext'
-
 export default function App() {
   return (
     <ThemeProvider>

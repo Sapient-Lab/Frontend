@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FiMoon, FiSun } from 'react-icons/fi'
+import { FiMoon, FiSun, FiActivity } from 'react-icons/fi'
 import type { NavItem } from '../../types/navigation'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -43,12 +43,7 @@ export default function Topbar() {
         className="flex shrink-0 items-center gap-3 font-semibold text-[15px] text-accent tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
       >
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-[#123155] flex items-center justify-center shadow-[0_8px_20px_rgba(20,65,110,0.25)]">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="2" y="4" width="5" height="5" rx="1" fill="white" opacity="0.9"/>
-            <rect x="9" y="4" width="5" height="5" rx="1" fill="white" opacity="0.6"/>
-            <rect x="2" y="11" width="5" height="2" rx="1" fill="white" opacity="0.6"/>
-            <rect x="9" y="11" width="5" height="2" rx="1" fill="white" opacity="0.4"/>
-          </svg>
+          <FiActivity className="w-5 h-5 text-white opacity-90" />
         </div>
         <div className="leading-tight">
           <p className="font-semibold text-sm">SapientLab</p>
