@@ -4,7 +4,6 @@ import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import LabWorkspace from './pages/LabWorkspace'
 import Dashboard from './pages/Dashboard'
-import DataAnalysis from './pages/DataAnalysis'
 import ProtocolScanner from './pages/ProtocolScanner'
 import Resources from './pages/Resources'
 import TasksAndEvaluation from './pages/Tasks'
@@ -27,7 +26,6 @@ export default function App() {
             
             <Route path="/app" element={<RootLayout><Dashboard /></RootLayout>} />
             <Route path="/app/lab" element={<RootLayout><LabWorkspace /></RootLayout>} />
-            <Route path="/app/resultados" element={<RootLayout><DataAnalysis /></RootLayout>} />
             <Route path="/app/protocolos" element={<RootLayout><ProtocolScanner /></RootLayout>} />
             <Route path="/app/reportes" element={<RootLayout><ReportGenerator /></RootLayout>} />
             
