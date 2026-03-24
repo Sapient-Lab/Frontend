@@ -6,7 +6,6 @@ import { useTheme } from '../../context/ThemeContext'
 const navItems: NavItem[] = [
   { label: 'Laboratorio', path: '/app/lab' },
   { label: 'Equipo', path: '/app/equipo' },
-  { label: 'Escaner de Protocolos', path: '/app/protocolos' },
   { label: 'Resultados', path: '/app/resultados' },
   // { label: 'Reportes IA', path: '/app/reportes' },
   { label: 'Seguridad', path: '/app/seguridad' },

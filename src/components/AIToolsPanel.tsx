@@ -1,12 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { FiSliders } from 'react-icons/fi';
 import {
-  FiEye,
-  FiVolume2,
-  FiFileText,
-  FiZap,
-  FiCpu,
-  FiMic,
 } from 'react-icons/fi';
 
 interface Tool {

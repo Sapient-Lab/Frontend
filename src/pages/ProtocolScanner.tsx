@@ -177,25 +177,19 @@ export default function ProtocolScanner() {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto p-8 lg:p-10 page-fade-in">
-      <div className="max-w-4xl mx-auto">
+    <div className="h-full w-full overflow-y-auto w-full p-4 lg:p-6 page-fade-in">
+      <div className="w-full mx-auto">
         
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
-            Visión Mágica y Escáner de Protocolos
+            Visión Mágica
           </h1>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Sube una imagen de un manual, tubo de ensayo, esquema de laboratorio o protocolo. La IA lo interpretará usando visión computacional para sugerir precauciones de seguridad.
+            Sube una imagen de un manual, tubo de ensayo, esquema de laboratorio o protocolo. La IA lo interpretará usando visión computacional para darte un resumen.
           </p>
         </div>
 
-        <div className="mb-6 p-4 rounded-xl border border-[#d8e1ec] bg-white/80">
-          <p className="text-xs text-[#4f6278] leading-relaxed">
-            Límite de uso: la evaluación visual por IA es un apoyo experimental y en ocasiones podría crear "alucinaciones". Evita ejecutar recomendaciones sensibles sin validación humana.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-8 w-full">
           
           {/* Input Panel */}
           <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in">
