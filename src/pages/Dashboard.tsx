@@ -3,6 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { FiZap } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 
+type MemberStatus = 'online' | 'away';
+
+interface Member {
+  id: string;
+  name: string;
+  role: string;
+  initials: string;
+  status: MemberStatus;
+}
+interface PlatformMember {
+  id: number | string;
+  name?: string;
+  username?: string;
+  role?: string;
+  status?: string;
+}
+
+type CurrentUser = { name: string; initials: string; role: string; id: string };
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { projectMode, projectId } = useProject();
@@ -13,6 +32,25 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState<Array<{ id: string | number; time: string; text: string; user: string; color: string }>>(
     []
   );
+  const [teamMembers, setTeamMembers] = useState<Member[]>([]);
+
+  const [user] = useState<CurrentUser | null>(() => {
+    let localUser: CurrentUser = { name: 'Tú', initials: 'TU', role: 'Usuario', id: 'me' };
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        const name = parsed.name || parsed.username || 'Tú';
+        const initials = parsed.initials || name.substring(0, 2).toUpperCase();
+        const role = parsed.role || 'Investigador';
+        const id = parsed.id?.toString() || 'me';
+        localUser = { name, initials, role, id };
+      } catch {
+        // fallback already set
+      }
+    }
+    return localUser;
+  });
 
   const palette = useMemo(
     () => ['bg-blue-500', 'bg-green-500', 'bg-accent', 'bg-purple-500', 'bg-amber-500'],
@@ -87,6 +125,68 @@ export default function Dashboard() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, projectMode]);
+
+  useEffect(() => {
+    let unmounted = false;
+    const effectiveProjectId = projectId || (() => {
+      const stored = localStorage.getItem('projectContext');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return parsed.id;
+        } catch { return null; }
+      }
+      return null;
+    })();
+
+    const fetchMembers = async () => {
+      let members: Member[] = [];
+      if (user) {
+        members.push({
+          id: user.id || 'me',
+          name: user.name,
+          role: user.role || 'Investigador',
+          initials: user.initials,
+          status: 'online'
+        });
+      }
+
+      if (effectiveProjectId) {
+        try {
+          const response = await fetch(`/api/projects/${effectiveProjectId}/members`);
+          if (response.ok) {
+            const data = await response.json();
+            const apiMembers = (data as PlatformMember[])
+              .filter(m => String(m.id) !== String(user?.id))
+              .map(m => {
+                const name = m.name || m.username || 'Usuario';
+                return {
+                  id: String(m.id),
+                  name,
+                  role: m.role || 'Miembro',
+                  initials: name.substring(0, 2).toUpperCase(),
+                  status: (m.status === 'active' ? 'online' : 'away') as MemberStatus
+                };
+              });
+            members = [...members, ...apiMembers];
+          }
+        } catch (error) {
+          console.error('[Dashboard] Fetch members error:', error);
+        }
+      }
+
+      if (!unmounted) {
+        setTeamMembers(members);
+      }
+    };
+
+    if (user) {
+      fetchMembers();
+    }
+    return () => {
+      unmounted = true;
+    };
+  }, [projectId, user]);
 
   return (
     <div className="h-full w-full overflow-y-auto p-8 lg:p-10 page-fade-in">
@@ -178,35 +278,59 @@ export default function Dashboard() {
           </div>
 
           {/* Actividad Reciente */}
-          <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '280ms' }}>
-            <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
-              {projectMode === 'solo' ? 'Tu Bitácora Reciente' : 'Actividad del Equipo'}
-            </h2>
-            
-            <div className="flex-1 space-y-5">
-              {recentActivity.map((activity, index) => (
-                <div key={activity.id} className="flex gap-4 relative">
-                  {/* Linea conectora de timeline si no es el último */}
-                  {index !== recentActivity.length - 1 && (
-                    <div className="absolute left-3.5 top-8 w-[1px] h-[calc(100%+4px)] bg-lab-border"></div>
-                  )}
-                  
-                  <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white z-10 ${activity.color}`}>
-                    {activity.user}
+          <div className="flex flex-col gap-6">
+            <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '280ms' }}>
+              <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
+                {projectMode === 'solo' ? 'Tu Bitácora Reciente' : 'Actividad del Equipo'}
+              </h2>
+              
+              <div className="flex-1 space-y-5">
+                {recentActivity.map((activity, index) => (
+                  <div key={activity.id} className="flex gap-4 relative">
+                    {/* Linea conectora de timeline si no es el último */}
+                    {index !== recentActivity.length - 1 && (
+                      <div className="absolute left-3.5 top-8 w-[1px] h-[calc(100%+4px)] bg-lab-border"></div>
+                    )}
+                    
+                    <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-[10px] font-bold text-white z-10 ${activity.color}`}>
+                      {activity.user}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-700 leading-tight mb-1">{activity.text}</p>
+                      <span className="text-[10px] text-gray-400 font-mono">{activity.time}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-700 leading-tight mb-1">{activity.text}</p>
-                    <span className="text-[10px] text-gray-400 font-mono">{activity.time}</span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              
+              <button className="w-full text-center mt-6 text-xs font-medium text-gray-500 hover:text-accent transition-colors">
+                Ver todo el historial
+              </button>
             </div>
-            
-            <button className="w-full text-center mt-6 text-xs font-medium text-gray-500 hover:text-accent transition-colors">
-              Ver todo el historial
-            </button>
-          </div>
 
+            {/* Equipo Conectado */}
+            <div className="bg-surface border border-lab-border rounded-xl p-6 shadow-sm flex flex-col stagger-in" style={{ animationDelay: '300ms' }}>
+              <h2 className="text-[10px] font-mono font-bold text-muted uppercase tracking-wider mb-5 border-b border-lab-border pb-2">
+                {projectMode === 'solo' ? 'Conectado' : 'Conectados'}
+              </h2>
+              <div className="flex-1 space-y-4">
+                {teamMembers.map(member => (
+                  <div key={member.id} className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded bg-gray-100 border border-lab-border flex items-center justify-center text-xs font-semibold text-gray-600">
+                        {member.initials}
+                      </div>
+                      <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${member.status === 'online' ? 'bg-green-500' : 'bg-yellow-400'}`} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-800 leading-tight">{member.name}</span>
+                      <span className="text-[10px] text-muted font-mono leading-tight">{member.role}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
