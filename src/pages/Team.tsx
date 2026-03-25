@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiMail, FiUsers } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
+import { microsoftService } from '../services/microsoftService';
 
 type MemberStatus = 'active' | 'pending';
 type Role = 'Administrador' | 'Colaborador' | 'Lector';
@@ -25,6 +26,13 @@ export default function Team() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
+  const [teamsWebhookConfigured, setTeamsWebhookConfigured] = useState(false);
+  const [isCheckingTeamsStatus, setIsCheckingTeamsStatus] = useState(false);
+  const [isSendingTeamsTest, setIsSendingTeamsTest] = useState(false);
+  const [teamsFeedback, setTeamsFeedback] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<string>('');
 
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
 
@@ -101,10 +109,76 @@ export default function Team() {
     }
   };
 
+  const loadTeamsStatus = async () => {
+    setIsCheckingTeamsStatus(true);
+    try {
+      const status = await microsoftService.getStatus();
+      setTeamsWebhookConfigured(Boolean(status.teamsWebhookConfigured));
+      setTeamsFeedback('');
+    } catch (error) {
+      console.error(error);
+      setTeamsFeedback('No se pudo leer el estado de Teams. Revisa backend/proxy.');
+    } finally {
+      setIsCheckingTeamsStatus(false);
+    }
+  };
+
+  const handleTeamsTestNotification = async () => {
+    setIsSendingTeamsTest(true);
+    try {
+      const response = await microsoftService.sendTeamsTest(
+        `Mensaje de prueba desde SapientLab (${new Date().toLocaleString()})`,
+      );
+
+      if (response.success) {
+        setTeamsFeedback('Notificacion enviada a Teams correctamente.');
+      } else {
+        setTeamsFeedback(response.result?.reason || 'No se pudo enviar la notificacion a Teams.');
+      }
+    } catch (error: any) {
+      console.error(error);
+      setTeamsFeedback(error?.message || 'Error al enviar la notificacion de prueba.');
+    } finally {
+      setIsSendingTeamsTest(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setSelectedFile(f);
+    setUploadFeedback('');
+  };
+
+  const handleUploadFile = async () => {
+    if (!selectedFile) return;
+    setIsUploadingFile(true);
+    setUploadFeedback('');
+    try {
+      // dynamic import to avoid circular deps
+      const { storageService } = await import('../services/storageService');
+      const res = await storageService.uploadFile(selectedFile);
+      if (res.success) {
+        setUploadFeedback('Archivo subido correctamente: ' + (res.url || res.blobName));
+        setSelectedFile(null);
+      } else {
+        setUploadFeedback('Error: ' + (res.error || 'Unknown'));
+      }
+    } catch (err: any) {
+      console.error(err);
+      setUploadFeedback(err?.message || 'Error al subir archivo');
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   // Fetch miembros actuales y solicitudes pendientes desde el backend real
   useEffect(() => {
     reloadTeamData();
   }, [projectId]);
+
+  useEffect(() => {
+    loadTeamsStatus();
+  }, []);
 
   const handleAcceptRequest = async (reqId: string) => {
     if (!projectId) return;
@@ -240,6 +314,59 @@ export default function Team() {
                   {isSubmittingInvite ? 'Enviando...' : 'Enviar Invitación'}
                 </button>
               </form>
+
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">Microsoft Teams</h4>
+                  <button
+                    type="button"
+                    onClick={loadTeamsStatus}
+                    disabled={isCheckingTeamsStatus}
+                    className="text-[11px] text-accent hover:text-accent-dim disabled:opacity-60"
+                  >
+                    {isCheckingTeamsStatus ? 'Verificando...' : 'Actualizar estado'}
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-500 mb-3">
+                  Estado webhook:{' '}
+                  <span className={teamsWebhookConfigured ? 'text-green-700 font-semibold' : 'text-amber-700 font-semibold'}>
+                    {teamsWebhookConfigured ? 'Configurado' : 'No configurado'}
+                  </span>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleTeamsTestNotification}
+                  disabled={isSendingTeamsTest || !teamsWebhookConfigured}
+                  className="w-full py-2 bg-blue-700 text-white text-xs font-semibold rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-60"
+                >
+                  {isSendingTeamsTest ? 'Enviando prueba...' : 'Enviar prueba a Teams'}
+                </button>
+
+                {!teamsWebhookConfigured && (
+                  <p className="text-[10px] text-gray-500 mt-2">
+                    Configura TEAMS_WEBHOOK_URL en el backend para habilitar envio real.
+                  </p>
+                )}
+
+                {teamsFeedback && <p className="text-[11px] text-gray-600 mt-2">{teamsFeedback}</p>}
+                <div className="mt-4">
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">Subir archivo</label>
+                  <input type="file" onChange={handleFileChange} className="text-sm text-gray-600" />
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      onClick={handleUploadFile}
+                      disabled={!selectedFile || isUploadingFile}
+                      className="px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 transition-colors disabled:opacity-60"
+                    >
+                      {isUploadingFile ? 'Subiendo...' : 'Subir archivo'}
+                    </button>
+                    {selectedFile && <span className="text-xs text-gray-500">{selectedFile.name}</span>}
+                  </div>
+                  {uploadFeedback && <p className="text-[11px] text-gray-600 mt-2">{uploadFeedback}</p>}
+                </div>
+              </div>
             </div>
           </div>
 
