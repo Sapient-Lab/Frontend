@@ -202,18 +202,17 @@ ${sugg.safetyWarnings.length > 0 ? `### ⚠️ Advertencias de Seguridad\n${sugg
   };
 
   const generateChatResponse = async (userMessage: string, noteContext: string): Promise<string> => {
-    const protocolText = noteContext
+    const content = noteContext
       ? `Contexto de la nota:\n${noteContext}\n\nPregunta del usuario:\n${userMessage}`
       : userMessage;
 
-    const response = await fetch('/api/ai/protocol/interpret', {
+    const response = await fetch('/api/ai/copilot/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        protocolText,
-        labContext: 'Laboratorio de investigación científica',
-        complianceTags: ['GLP', 'OSHA'],
-        riskLevel: 'high',
+        messages: [{ role: 'user', content }],
+        language: 'typescript',
+        workspaceHint: 'Laboratorio de investigación científica',
       }),
     });
     if (!response.ok) {
@@ -222,49 +221,9 @@ ${sugg.safetyWarnings.length > 0 ? `### ⚠️ Advertencias de Seguridad\n${sugg
     }
     const data = await response.json();
 
-    const s = data.structured;
-    if (!s) return '> Sin resultado disponible.';
-
-    const lines: string[] = [];
-
-    if (s.summary) {
-      lines.push(`## 📋 Resumen\n\n${s.summary}`);
-    }
-
-    if (Array.isArray(s.hazards) && s.hazards.length) {
-      lines.push(`## ⚠️ Peligros\n\n${s.hazards.map((h: string) => `- 🔴 ${h}`).join('\n')}`);
-    }
-
-    if (Array.isArray(s.checklist) && s.checklist.length) {
-      lines.push(
-        `## ✅ Checklist\n\n${s.checklist
-          .map(
-            (item: { title: string; action: string; cautions: string; riskLevel: string }) =>
-              `### ${item.title} _(Riesgo: ${item.riskLevel})_\n- **Acción:** ${item.action}\n- **Precaución:** ${item.cautions}`
-          )
-          .join('\n\n')}`
-      );
-    }
-
-    if (s.instrumentation) {
-      const req = Array.isArray(s.instrumentation.required)
-        ? s.instrumentation.required.map((r: string) => `- ${r}`).join('\n')
-        : '';
-      const opt = Array.isArray(s.instrumentation.optional)
-        ? s.instrumentation.optional.map((o: string) => `- ${o}`).join('\n')
-        : '';
-      lines.push(
-        `## 🔬 Instrumentación\n\n**Requerido:**\n${req}${opt ? `\n\n**Opcional:**\n${opt}` : ''}`
-      );
-    }
-
-    if (s.compliance) {
-      lines.push(
-        `## 📑 Cumplimiento\n\n- **GLP:** ${s.compliance.GLP}\n- **OSHA:** ${s.compliance.OSHA}`
-      );
-    }
-
-    return lines.join('\n\n---\n\n');
+    const reply = data.rawModelResponse ?? data.response ?? data.message ?? data.content ?? null;
+    if (!reply) return '> Sin respuesta disponible.';
+    return reply;
   };
 
   const createNewNote = () => {
