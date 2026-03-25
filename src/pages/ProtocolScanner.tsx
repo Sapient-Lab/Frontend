@@ -311,7 +311,7 @@ export default function ProtocolScanner() {
                     {scanResult.structured.checklist && scanResult.structured.checklist.length > 0 && (
                       <div>
                         <h3 className="text-[11px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-3">
-                          Checklist de bioseguridad preventivo
+                          Seguridad preventiva
                         </h3>
                         <div className="space-y-2">
                           {scanResult.structured.checklist.map((item: any, idx: number) => {
@@ -320,8 +320,7 @@ export default function ProtocolScanner() {
                             const riskLabel = risk === 'high' ? 'Alto' : risk === 'medium' ? 'Medio' : risk === 'low' ? 'Bajo' : null;
                             const riskBadge = risk === 'high' ? 'bg-red-100 text-red-700' : risk === 'medium' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700';
                             return (
-                              <label key={idx} className={`flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 border-l-4 ${borderColor} cursor-pointer hover:bg-gray-100 transition-colors group`}>
-                                <input type="checkbox" className="mt-0.5 w-4 h-4 accent-accent shrink-0" />
+                              <div key={idx} className={`flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 border-l-4 ${borderColor} transition-colors group`}>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-gray-800 leading-snug">{item.action}</p>
                                   {item.cautions && (
@@ -336,7 +335,7 @@ export default function ProtocolScanner() {
                                     </span>
                                   )}
                                 </div>
-                              </label>
+                              </div>
                             );
                           })}
                         </div>
