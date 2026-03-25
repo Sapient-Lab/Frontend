@@ -74,8 +74,8 @@ export default function IntelligentLabNotebook() {
         const data = await response.json();
         setNotes(Array.isArray(data) ? data : []);
       }
-    } catch (error) {
-      console.error('Error loading notes:', error);
+    } catch {
+      // notes endpoint not yet available
     }
   };
 
@@ -182,9 +182,7 @@ ${sugg.safetyWarnings.length > 0 ? `### ⚠️ Advertencias de Seguridad\n${sugg
     setIsLoadingChat(true);
 
     try {
-      // TODO: Implement backend chat endpoint or use existing aiService
-      // For now, show a placeholder response
-      const responseText = await generateChatResponse(noteContent);
+      const responseText = await generateChatResponse(userMessage, noteContent);
       setMessages(prev => [
         ...prev,
         { role: 'assistant', content: responseText },
@@ -203,16 +201,70 @@ ${sugg.safetyWarnings.length > 0 ? `### ⚠️ Advertencias de Seguridad\n${sugg
     }
   };
 
-  const generateChatResponse = async (_noteContext: string): Promise<string> => {
-    // TODO: Call backend endpoint or aiService
-    // For MVP, return contextual response based on note
-    const responses = [
-      '¿Podrías describir con más detalle ese paso del experimento?',
-      'Interesante observación. ¿Fue controlada la temperatura durante esto?',
-      'Te recomiendo documentar también las condiciones ambientales.',
-      '¿Comparaste estos resultados con experimentos anteriores?',
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+  const generateChatResponse = async (userMessage: string, noteContext: string): Promise<string> => {
+    const protocolText = noteContext
+      ? `Contexto de la nota:\n${noteContext}\n\nPregunta del usuario:\n${userMessage}`
+      : userMessage;
+
+    const response = await fetch('/api/ai/protocol/interpret', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        protocolText,
+        labContext: 'Laboratorio de investigación científica',
+        complianceTags: ['GLP', 'OSHA'],
+        riskLevel: 'high',
+      }),
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Error ${response.status}: ${errBody}`);
+    }
+    const data = await response.json();
+
+    const s = data.structured;
+    if (!s) return '> Sin resultado disponible.';
+
+    const lines: string[] = [];
+
+    if (s.summary) {
+      lines.push(`## 📋 Resumen\n\n${s.summary}`);
+    }
+
+    if (Array.isArray(s.hazards) && s.hazards.length) {
+      lines.push(`## ⚠️ Peligros\n\n${s.hazards.map((h: string) => `- 🔴 ${h}`).join('\n')}`);
+    }
+
+    if (Array.isArray(s.checklist) && s.checklist.length) {
+      lines.push(
+        `## ✅ Checklist\n\n${s.checklist
+          .map(
+            (item: { title: string; action: string; cautions: string; riskLevel: string }) =>
+              `### ${item.title} _(Riesgo: ${item.riskLevel})_\n- **Acción:** ${item.action}\n- **Precaución:** ${item.cautions}`
+          )
+          .join('\n\n')}`
+      );
+    }
+
+    if (s.instrumentation) {
+      const req = Array.isArray(s.instrumentation.required)
+        ? s.instrumentation.required.map((r: string) => `- ${r}`).join('\n')
+        : '';
+      const opt = Array.isArray(s.instrumentation.optional)
+        ? s.instrumentation.optional.map((o: string) => `- ${o}`).join('\n')
+        : '';
+      lines.push(
+        `## 🔬 Instrumentación\n\n**Requerido:**\n${req}${opt ? `\n\n**Opcional:**\n${opt}` : ''}`
+      );
+    }
+
+    if (s.compliance) {
+      lines.push(
+        `## 📑 Cumplimiento\n\n- **GLP:** ${s.compliance.GLP}\n- **OSHA:** ${s.compliance.OSHA}`
+      );
+    }
+
+    return lines.join('\n\n---\n\n');
   };
 
   const createNewNote = () => {
