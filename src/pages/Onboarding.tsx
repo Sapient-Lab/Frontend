@@ -108,16 +108,18 @@ export default function Onboarding() {
           size: file.size
         }));
         
-        const savedFiles = localStorage.getItem('sapientlab_recent_files');
+        // Usar clave específica del proyecto para filtrar correctamente
+        const storageKey = `sapientlab_recent_files_project_${projectId}`;
+        const savedFiles = localStorage.getItem(storageKey);
         const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
         const allFiles = [...existingFiles, ...recentFiles];
         // Limitar a los últimos 20 archivos
         const limitedFiles = allFiles.slice(-20);
-        localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
+        localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
         
         // Verificar que se guardó correctamente
-        const verifyedFiles = localStorage.getItem('sapientlab_recent_files');
-        console.log('✅ Documentos guardados en Material Reciente:', limitedFiles);
+        const verifyedFiles = localStorage.getItem(storageKey);
+        console.log('✅ Documentos guardados en Material Reciente para proyecto', projectId, ':', limitedFiles);
         console.log('🔍 Verificación de localStorage:', verifyedFiles);
         
         // Ahora enviar al Backend (puede fallar sin afectar lo guardado)

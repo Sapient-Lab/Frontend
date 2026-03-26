@@ -35,18 +35,25 @@ export default function Resources() {
     }
   }, [chatHistory, isChatLoading]);
 
-  // Cargar archivos guardados del localStorage
+  // Cargar archivos guardados del localStorage (filtrados por projectId)
   useEffect(() => {
     const loadRecentFiles = () => {
-      const savedFiles = localStorage.getItem('sapientlab_recent_files');
-      console.log('🔍 localStorage["sapientlab_recent_files"]:', savedFiles);
+      if (!projectId) {
+        console.warn('⚠️ No projectId available for Material Reciente');
+        setLocalFiles([]);
+        return;
+      }
+      
+      const storageKey = `sapientlab_recent_files_project_${projectId}`;
+      const savedFiles = localStorage.getItem(storageKey);
+      console.log(`🔍 Material Reciente para proyecto ${projectId}:`, savedFiles);
       
       if (savedFiles) {
         try {
           const files = JSON.parse(savedFiles);
           if (Array.isArray(files)) {
             setLocalFiles(files);
-            console.log('✅ Material Reciente cargado desde localStorage:', files.length, 'archivos');
+            console.log(`✅ Material Reciente cargado para proyecto ${projectId}:`, files.length, 'archivos');
           } else {
             console.warn('⚠️ Material Reciente no es un array:', files);
             setLocalFiles([]);
@@ -56,7 +63,7 @@ export default function Resources() {
           setLocalFiles([]);
         }
       } else {
-        console.log('ℹ️ No hay Material Reciente guardado en localStorage');
+        console.log(`ℹ️ No hay Material Reciente para proyecto ${projectId}`);
         setLocalFiles([]);
       }
     };
@@ -65,17 +72,22 @@ export default function Resources() {
     
     // Escuchar cambios en el storage desde otra ventana
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sapientlab_recent_files') {
-        console.log('🔄 Cambio detectado en Material Reciente desde otra ventana');
+      if (e.key === `sapientlab_recent_files_project_${projectId}`) {
+        console.log(`🔄 Cambio detectado en Material Reciente para proyecto ${projectId}`);
         loadRecentFiles();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [projectId]);
 
   const handleFileUpload = async (files: File[]) => {
+    if (!projectId) {
+      console.error('❌ Cannot upload files without projectId');
+      return;
+    }
+    
     // Frontend Update - agregar a Material Reciente
     const newFiles = files.map(f => ({
       id: Math.random().toString(36).substr(2, 9),
@@ -88,9 +100,10 @@ export default function Resources() {
       // Limitar a los últimos 20 archivos
       const limitedFiles = allFiles.slice(-20);
       
-      // Guardar inmediatamente en localStorage
-      localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
-      console.log('Material Reciente actualizado:', limitedFiles);
+      // Guardar inmediatamente en localStorage con clave específica del proyecto
+      const storageKey = `sapientlab_recent_files_project_${projectId}`;
+      localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
+      console.log(`Material Reciente actualizado para proyecto ${projectId}:`, limitedFiles);
       
       return limitedFiles;
     });

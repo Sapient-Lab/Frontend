@@ -72,20 +72,21 @@ export default function DocsLibrary() {
 
       if (!response.ok) throw new Error('Error al subir documentos');
       
-      // Agregar archivos a Material Reciente
+      // Agregar archivos a Material Reciente (filtrados por projectId)
       const recentFiles = filesArray.map(file => ({
         id: Math.random().toString(36).substr(2, 9),
         name: file.name,
         size: file.size
       }));
       
-      const savedFiles = localStorage.getItem('sapientlab_recent_files');
+      const storageKey = `sapientlab_recent_files_project_${projectId}`;
+      const savedFiles = localStorage.getItem(storageKey);
       const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
       const allFiles = [...existingFiles, ...recentFiles];
       // Limitar a los últimos 20 archivos
       const limitedFiles = allFiles.slice(-20);
-      localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
-      console.log('✅ Documentos guardados en Material Reciente desde DocsLibrary:', limitedFiles);
+      localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
+      console.log(`✅ Documentos guardados en Material Reciente para proyecto ${projectId}:`, limitedFiles);
       
       // Recargar contexto
       await fetchProjectContext();
