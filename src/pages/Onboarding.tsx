@@ -62,6 +62,8 @@ export default function Onboarding() {
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
+    
+    console.log('📝 Inicio de handleCreateProject. Archivos a subir:', projectFiles.length, projectFiles);
 
     try {
       const owner = localStorage.getItem('sapientlab_user_name') || 'Usuario Demo';
@@ -69,32 +71,73 @@ export default function Onboarding() {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName, projectDesc: projectDescInput, owner })
+        body: JSON.stringify({ 
+          projectName, 
+          projectDesc: projectDescInput, 
+          workingOn: projectDescInput,
+          goal: projectGoalInput,
+          owner 
+        })
       });
       
+      if (!res.ok) {
+        throw new Error(`Error al crear proyecto (${res.status})`);
+      }
+
       const data = await res.json();
       
-      if (data?.project?.id) {
-        setProjectId(data.project.id);
-        localStorage.setItem('sapientlab_project_id', data.project.id.toString());
+      if (!data?.project?.id) {
+        throw new Error('El servidor no retornó un ID de proyecto válido');
       }
+
+      const projectId = data.project.id;
+      setProjectId(projectId);
+      localStorage.setItem('sapientlab_project_id', projectId.toString());
       
       setProjectMode('solo');
       setGlobalProjectName(projectName);
       setProjectDesc(projectDescInput);
       setProjectGoal(projectGoalInput);
 
-      // Si hay archivos, enviarlos al Backend
+      // Si hay archivos, enviarlos al Backend Y guardar en Material Reciente
       if (projectFiles.length > 0) {
-        const { aiService } = await import('../services/aiService');
-        await aiService.uploadProjectDocuments(projectFiles, data?.project?.id || 'nuevo_proyecto_id');
-        console.log('Documentos subidos y procesados correctamente.');
+        // Agregar archivos a Material Reciente PRIMERO (antes de async operations)
+        const recentFiles = projectFiles.map(file => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size
+        }));
+        
+        // Usar clave específica del proyecto para filtrar correctamente
+        const storageKey = `sapientlab_recent_files_project_${projectId}`;
+        const savedFiles = localStorage.getItem(storageKey);
+        const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
+        const allFiles = [...existingFiles, ...recentFiles];
+        // Limitar a los últimos 20 archivos
+        const limitedFiles = allFiles.slice(-20);
+        localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
+        
+        // Verificar que se guardó correctamente
+        const verifyedFiles = localStorage.getItem(storageKey);
+        console.log('✅ Documentos guardados en Material Reciente para proyecto', projectId, ':', limitedFiles);
+        console.log('🔍 Verificación de localStorage:', verifyedFiles);
+        
+        // Ahora enviar al Backend (puede fallar sin afectar lo guardado)
+        try {
+          const { aiService } = await import('../services/aiService');
+          await aiService.uploadProjectDocuments(projectFiles, projectId.toString());
+          console.log('✅ Documentos subidos al backend');
+        } catch (docError) {
+          console.warn('Advertencia: Los documentos no se pudieron subir al backend, pero se guardaron localmente:', docError);
+        }
       }
 
+      // Asegurar que localStorage se write antes de navigate
+      await new Promise(resolve => setTimeout(resolve, 100));
       navigate('/app');
     } catch (error) {
       console.error('Error al procesar el proyecto:', error);
-      alert('Hubo un problema al crear el proyecto o subir los archivos.');
+      alert(`Hubo un problema al crear el proyecto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsUploading(false);
     }

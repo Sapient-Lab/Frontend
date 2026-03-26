@@ -1,24 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import type { IconType } from 'react-icons';
-import { FiCode, FiFileText, FiLink2, FiPlayCircle, FiSearch, FiUploadCloud, FiMessageSquare, FiSend, FiLoader, FiBook } from 'react-icons/fi';
+import { FiFileText, FiUploadCloud, FiMessageSquare, FiSend, FiLoader, FiBook } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 import { aiService } from '../services/aiService';
-
-type Resource = {
-  id: string;
-  title: string;
-  type: 'pdf' | 'link' | 'video' | 'repo';
-  description: string;
-  module: string;
-  url?: string;
-};
-
-const typeIcons: Record<Resource['type'], IconType> = {
-  pdf: FiFileText,
-  link: FiLink2,
-  video: FiPlayCircle,
-  repo: FiCode,
-};
 
 type LocalFile = {
   id: string;
@@ -33,10 +16,6 @@ type ChatMessage = {
 
 export default function Resources() {
   const { projectId } = useProject();
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterModule, setFilterModule] = useState('Todos');
-  const [loading, setLoading] = useState(true);
 
   // Drag & drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -56,29 +35,78 @@ export default function Resources() {
     }
   }, [chatHistory, isChatLoading]);
 
+  // Cargar archivos guardados del localStorage (filtrados por projectId)
   useEffect(() => {
-    fetch((import.meta.env.VITE_API_URL || '') + '/api/platform/resources')
-      .then(res => res.json())
-      .then(data => {
-        const mapped = data.map((item: any) => ({
-          ...item,
-          module: `Módulo ${item.module}`,
-          description: Array.isArray(item.tags) ? item.tags.join(', ') : 'Sin descripción'
-        }));
-        setResources(mapped);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    const loadRecentFiles = () => {
+      if (!projectId) {
+        console.warn('⚠️ No projectId available for Material Reciente');
+        setLocalFiles([]);
+        return;
+      }
+      
+      const storageKey = `sapientlab_recent_files_project_${projectId}`;
+      const savedFiles = localStorage.getItem(storageKey);
+      console.log(`🔍 Material Reciente para proyecto ${projectId}:`, savedFiles);
+      
+      if (savedFiles) {
+        try {
+          const files = JSON.parse(savedFiles);
+          if (Array.isArray(files)) {
+            setLocalFiles(files);
+            console.log(`✅ Material Reciente cargado para proyecto ${projectId}:`, files.length, 'archivos');
+          } else {
+            console.warn('⚠️ Material Reciente no es un array:', files);
+            setLocalFiles([]);
+          }
+        } catch (err) {
+          console.error('❌ Error al parsear Material Reciente:', err);
+          setLocalFiles([]);
+        }
+      } else {
+        console.log(`ℹ️ No hay Material Reciente para proyecto ${projectId}`);
+        setLocalFiles([]);
+      }
+    };
+
+    loadRecentFiles();
+    
+    // Escuchar cambios en el storage desde otra ventana
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `sapientlab_recent_files_project_${projectId}`) {
+        console.log(`🔄 Cambio detectado en Material Reciente para proyecto ${projectId}`);
+        loadRecentFiles();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [projectId]);
 
   const handleFileUpload = async (files: File[]) => {
-    // Frontend Update
+    if (!projectId) {
+      console.error('❌ Cannot upload files without projectId');
+      return;
+    }
+    
+    // Frontend Update - agregar a Material Reciente
     const newFiles = files.map(f => ({
       id: Math.random().toString(36).substr(2, 9),
       name: f.name,
       size: f.size
     }));
-    setLocalFiles(prev => [...prev, ...newFiles]);
+    
+    setLocalFiles(prev => {
+      const allFiles = [...prev, ...newFiles];
+      // Limitar a los últimos 20 archivos
+      const limitedFiles = allFiles.slice(-20);
+      
+      // Guardar inmediatamente en localStorage con clave específica del proyecto
+      const storageKey = `sapientlab_recent_files_project_${projectId}`;
+      localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
+      console.log(`Material Reciente actualizado para proyecto ${projectId}:`, limitedFiles);
+      
+      return limitedFiles;
+    });
 
     // Backend Request
     try {
@@ -111,14 +139,6 @@ export default function Resources() {
       setIsChatLoading(false);
     }, 1500);
   };
-
-  const modules = ['Todos', ...Array.from(new Set(resources.map(r => r.module)))];
-
-  const filtered = resources.filter(r => {
-    const matchSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) || r.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchModule = filterModule === 'Todos' || r.module === filterModule;
-    return matchSearch && matchModule;
-  });
 
   return (
     <div className="h-full w-full overflow-y-auto bg-[#fbfbfb] p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
@@ -186,77 +206,7 @@ export default function Resources() {
           </div>
         </div>
 
-        {/* Buscador y Filtros para la vista tradicional inferior */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-5">
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Buscar en la base de datos general por protocolo, riesgo o palabra..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-lab-border text-sm rounded-lg focus:outline-none focus:border-accent shadow-sm"
-            />
-          </div>
-          <select 
-            value={filterModule}
-            onChange={(e) => setFilterModule(e.target.value)}
-            className="w-full sm:w-64 px-4 py-2 bg-white border border-lab-border text-sm rounded-lg focus:outline-none focus:border-accent shadow-sm"
-          >
-            {modules.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </div>
 
-        {/* Grid de Recursos Clásicos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-max pb-8">
-          {loading ? (
-            <div className="col-span-full py-8 text-center text-gray-400 text-sm">
-              Cargando recursos de la nube...
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-gray-400 text-sm border border-dashed rounded-xl border-gray-200">
-              No se encontraron recursos clásicos para tu búsqueda.
-            </div>
-          ) : (
-            filtered.map(resource => (
-              <div key={resource.id} className="bg-white border border-lab-border p-4 rounded-xl flex flex-col hover:shadow-md transition-shadow group relative overflow-hidden">
-                {(() => {
-                  const ResourceIcon = typeIcons[resource.type] || FiFileText;
-                  return (
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl bg-gray-50 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-100 group-hover:scale-105 transition-transform">
-                          <ResourceIcon className="w-4 h-4 text-gray-700" />
-                        </span>
-                      </div>
-                      <span className="text-[9px] font-mono font-bold bg-accent-light text-accent px-2 py-1 rounded">
-                        {resource.type.toUpperCase()}
-                      </span>
-                    </div>
-                  );
-                })()}
-                
-                <h3 className="text-sm font-bold text-gray-800 leading-tight mb-1 line-clamp-2">
-                  {resource.title}
-                </h3>
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 block font-medium">
-                  {resource.module}
-                </span>
-                
-                <p className="text-[11px] text-gray-500 mb-4 flex-1 line-clamp-3">
-                  {resource.description}
-                </p>
-
-                <button 
-                  onClick={() => resource.url && window.open(resource.url, '_blank')}
-                  className="w-full mt-auto py-1.5 border border-accent text-accent text-[11px] font-bold rounded-lg hover:bg-accent hover:text-white transition-colors"
-                >
-                  Abrir Material
-                </button>
-              </div>
-            ))
-          )}
-        </div>
       </div>
 
       {/* DERECHA: Drag & Drop Dropzone */}
