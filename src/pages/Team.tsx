@@ -227,8 +227,9 @@ export default function Team() {
                     className="w-full px-3 py-2 border border-lab-border rounded-lg text-sm focus:outline-none focus:border-accent"
                     required
                   />
-                  <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
-                    💌 La invitación será enviada al correo. El usuario debe aceptarla para unirse al proyecto.
+                  <p className="text-[10px] text-gray-500 mt-2 leading-relaxed flex items-start gap-1.5">
+                    <FiMail className="w-3 h-3 mt-0.5 shrink-0" />
+                    <span>La invitación será enviada al correo. El usuario debe aceptarla para unirse al proyecto.</span>
                   </p>
                 </div>
                 

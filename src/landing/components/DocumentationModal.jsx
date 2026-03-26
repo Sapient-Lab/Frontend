@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, BookOpen, Code, FileText, HelpCircle, CheckCircle, Zap, Shield, FlaskConical, Cloud, Mic, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FiFolder, FiEdit3, FiBarChart2, FiShield, FiMic, FiCloud, FiEye, FiFileText, FiHelpCircle, FiArrowRight, FiCheckCircle, FiRefreshCw, FiServer, FiBookOpen, FiZap, FiLoader, FiGrid } from 'react-icons/fi';
+import { FaGamepad, FaRobot, FaReact, FaRocket } from 'react-icons/fa';
+import { FaPalette } from 'react-icons/fa6';
+import { SiMysql, SiNestjs } from 'react-icons/si';
 
 const DocumentationModal = ({ isOpen, onClose }) => {
   // Cerrar con Escape
@@ -64,17 +68,19 @@ const DocumentationModal = ({ isOpen, onClose }) => {
               </h3>
               <div className="space-y-3">
                 {[
-                  { step: 1, text: "Prueba la demo interactiva abajo en esta página", icon: "🎮" },
-                  { step: 2, text: "Selecciona CSV, Protocolo o Imagen", icon: "📁" },
-                  { step: 3, text: "Ingresa tus datos o usa el ejemplo", icon: "📝" },
-                  { step: 4, text: "Recibe análisis y recomendaciones de IA", icon: "🤖" }
+                  { step: 1, text: "Prueba la demo interactiva abajo en esta página", icon: FaGamepad },
+                  { step: 2, text: "Selecciona CSV, Protocolo o Imagen", icon: FiFolder },
+                  { step: 3, text: "Ingresa tus datos o usa el ejemplo", icon: FiEdit3 },
+                  { step: 4, text: "Recibe análisis y recomendaciones de IA", icon: FaRobot }
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                     <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-mono font-bold">
                       {item.step}
                     </div>
                     <span className="text-sm text-gray-700 dark:text-gray-300">{item.text}</span>
-                    <span className="ml-auto text-xl">{item.icon}</span>
+                    <span className="ml-auto text-xl text-cyan-600 dark:text-cyan-400">
+                      <item.icon className="w-5 h-5" />
+                    </span>
                   </div>
                 ))}
               </div>
@@ -133,13 +139,13 @@ const DocumentationModal = ({ isOpen, onClose }) => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
-                  { title: "Análisis de experimentos", desc: "Procesa datos CSV automáticamente", icon: "📊" },
-                  { title: "Seguridad en laboratorio", desc: "Detecta riesgos en protocolos", icon: "🛡️" },
-                  { title: "Documentación automática", desc: "Genera informes y bitácoras", icon: "📝" },
-                  { title: "Dictado por voz", desc: "Transcripción de notas de laboratorio", icon: "🎙️" }
+                  { title: "Análisis de experimentos", desc: "Procesa datos CSV automáticamente", icon: FiBarChart2 },
+                  { title: "Seguridad en laboratorio", desc: "Detecta riesgos en protocolos", icon: FiShield },
+                  { title: "Documentación automática", desc: "Genera informes y bitácoras", icon: FiFileText },
+                  { title: "Dictado por voz", desc: "Transcripción de notas de laboratorio", icon: FiMic }
                 ].map((useCase) => (
                   <div key={useCase.title} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                    <p className="text-lg">{useCase.icon}</p>
+                    <useCase.icon className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-1">{useCase.title}</p>
                     <p className="text-xs text-gray-500 mt-1">{useCase.desc}</p>
                   </div>
@@ -155,17 +161,17 @@ const DocumentationModal = ({ isOpen, onClose }) => {
               </h3>
               <div className="flex flex-wrap gap-3">
                 {[
-                  { name: "NestJS", desc: "Backend API", icon: "🟢" },
-                  { name: "Azure AI Foundry", desc: "Plataforma de IA", icon: "☁️" },
-                  { name: "Azure OpenAI", desc: "Modelos GPT", icon: "🤖" },
-                  { name: "Azure Vision", desc: "Análisis de imágenes", icon: "👁️" },
-                  { name: "Azure Speech", desc: "Voz y transcripción", icon: "🎤" },
-                  { name: "React", desc: "Frontend", icon: "⚛️" },
-                  { name: "Tailwind CSS", desc: "Estilos", icon: "🎨" },
-                  { name: "MySQL", desc: "Base de datos", icon: "🐬" }
+                  { name: "NestJS", desc: "Backend API", icon: SiNestjs },
+                  { name: "Azure AI Foundry", desc: "Plataforma de IA", icon: FiCloud },
+                  { name: "Azure OpenAI", desc: "Modelos GPT", icon: FaRobot },
+                  { name: "Azure Vision", desc: "Análisis de imágenes", icon: FiEye },
+                  { name: "Azure Speech", desc: "Voz y transcripción", icon: FiMic },
+                  { name: "React", desc: "Frontend", icon: FaReact },
+                  { name: "Tailwind CSS", desc: "Estilos", icon: FaPalette },
+                  { name: "MySQL", desc: "Base de datos", icon: SiMysql }
                 ].map((tech) => (
                   <div key={tech.name} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                    <span className="text-lg">{tech.icon}</span>
+                    <tech.icon className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                     <div>
                       <p className="text-sm font-semibold">{tech.name}</p>
                       <p className="text-xs text-gray-500">{tech.desc}</p>
@@ -189,8 +195,14 @@ const DocumentationModal = ({ isOpen, onClose }) => {
                   { q: "¿Es gratuito?", a: "Demo gratuita disponible durante la hackathon" }
                 ].map((faq) => (
                   <div key={faq.q} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">❓ {faq.q}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-5">→ {faq.a}</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <FiHelpCircle className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                      {faq.q}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-6 flex items-start gap-2">
+                      <FiArrowRight className="w-3.5 h-3.5 mt-0.5 text-cyan-500 shrink-0" />
+                      <span>{faq.a}</span>
+                    </p>
                   </div>
                 ))}
               </div>
@@ -205,8 +217,9 @@ const DocumentationModal = ({ isOpen, onClose }) => {
               <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-sm font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                    🚀 Microsoft AI Challenge 2026
+                  <span className="text-sm font-mono font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                    <FaRocket className="w-4 h-4" />
+                    Microsoft AI Challenge 2026
                   </span>
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -215,11 +228,13 @@ const DocumentationModal = ({ isOpen, onClose }) => {
                   interpreta protocolos de seguridad y asiste en la documentación de laboratorio.
                 </p>
                 <div className="mt-3 pt-3 border-t border-cyan-500/30">
-                  <p className="text-xs text-gray-500">
-                    ✅ Endpoints implementados y funcionando con Azure AI Services
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                    <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Endpoints implementados y funcionando con Azure AI Services</span>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    🔄 En desarrollo: Integración con Azure Agents para flujos autónomos
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                    <FiRefreshCw className="w-3.5 h-3.5 text-cyan-500" />
+                    <span>En desarrollo: Integración con Azure Agents para flujos autónomos</span>
                   </p>
                 </div>
               </div>

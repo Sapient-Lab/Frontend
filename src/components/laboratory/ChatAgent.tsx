@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { aiService, type ChatMessage } from '../../services/aiService';
 import { useProject } from '../../context/ProjectContext';
+import { FiCloud, FiZap, FiSearch } from 'react-icons/fi';
 
 interface ChatAgentProps {
   onInsertCode?: (code: string) => void;
@@ -116,33 +117,33 @@ export default function ChatAgent({ onInsertCode, editorContext }: ChatAgentProp
         <span className="text-xs font-bold text-gray-600 self-center">Proveedor IA:</span>
         <button
           onClick={() => setProvider('azure')}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
             provider === 'azure'
               ? 'bg-blue-500 text-white shadow-sm'
               : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
           }`}
         >
-          🔷 Azure GPT-4o
+          <FiCloud className="w-3.5 h-3.5" /> Azure GPT-4o
         </button>
         <button
           onClick={() => setProvider('mistral')}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
             provider === 'mistral'
               ? 'bg-orange-500 text-white shadow-sm'
               : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
           }`}
         >
-          ⚡ Mistral
+          <FiZap className="w-3.5 h-3.5" /> Mistral
         </button>
         <button
           onClick={() => setProvider('deepseek')}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
             provider === 'deepseek'
               ? 'bg-purple-500 text-white shadow-sm'
               : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
           }`}
         >
-          🔍 DeepSeek
+          <FiSearch className="w-3.5 h-3.5" /> DeepSeek
         </button>
       </div>
 

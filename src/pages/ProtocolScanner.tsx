@@ -113,7 +113,7 @@ export default function ProtocolScanner() {
       if (Array.isArray(val)) return val.map(formatVal).join(', ');
       // Objeto — mostrar pares clave: valor
       return Object.entries(val)
-        .map(([k, v]) => `${k}: ${typeof v === 'boolean' ? (v ? '✓' : '✗') : formatVal(v)}`)
+        .map(([k, v]) => `${k}: ${typeof v === 'boolean' ? (v ? 'Sí' : 'No') : formatVal(v)}`)
         .join(' · ');
     };
 
@@ -250,14 +250,14 @@ export default function ProtocolScanner() {
                   </>
                 ) : (
                   <>
-                    <FiMic className="w-4 h-4" /> 🎙️ Dictar
+                    <FiMic className="w-4 h-4" /> Dictar
                   </>
                 )}
               </button>
             </div>
             <textarea
               className="w-full flex-1 min-h-[160px] p-4 text-sm font-sans bg-gray-50 border border-lab-border rounded-lg resize-none focus:outline-none focus:border-accent"
-              placeholder="Pega texto del protocolo aquí, o presiona 🎙️ para dictar con tu voz..."
+              placeholder="Pega texto del protocolo aquí, o presiona el botón de micrófono para dictar con tu voz..."
               value={protocolText}
               onChange={(e) => setProtocolText(e.target.value)}
             />

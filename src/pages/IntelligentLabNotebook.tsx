@@ -7,6 +7,7 @@ import {
   FiSend,
   FiPlus,
   FiRefreshCw,
+  FiBookOpen,
 } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 
@@ -156,18 +157,18 @@ export default function IntelligentLabNotebook() {
   };
 
   const formatSuggestionsAsMarkdown = (sugg: AISuggestion): string => {
-    return `## 🔬 Análisis Automático de tu Nota
+    return `## Análisis Automático de tu Nota
 
-### ✓ Validación
+### Validación
 ${sugg.validation}
 
-### ❓ Preguntas de Seguimiento
+### Preguntas de Seguimiento
 ${sugg.followUpQuestions.map(q => `- ${q}`).join('\n')}
 
-### 📋 Estándares Relacionados
+### Estándares Relacionados
 ${sugg.relatedStandards.map(s => `- ${s}`).join('\n')}
 
-${sugg.safetyWarnings.length > 0 ? `### ⚠️ Advertencias de Seguridad\n${sugg.safetyWarnings.map(w => `- 🔴 ${w}`).join('\n')}` : ''}`;
+${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safetyWarnings.map(w => `- ${w}`).join('\n')}` : ''}`;
   };
 
   const handleSendChat = async (e: React.FormEvent) => {
@@ -266,8 +267,9 @@ ${sugg.safetyWarnings.length > 0 ? `### ⚠️ Advertencias de Seguridad\n${sugg
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              📝 Lab Notebook Inteligente
+            <h1 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+              <FiBookOpen className="w-5 h-5 text-accent" />
+              Lab Notebook Inteligente
             </h1>
             <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
               Experimento #{experimentId}

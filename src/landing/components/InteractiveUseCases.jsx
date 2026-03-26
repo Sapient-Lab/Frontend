@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Microscope, Upload, Loader2, CheckCircle, XCircle, Database, Beaker, Image } from 'lucide-react';
+import { FileText, Microscope, Upload, Loader2, CheckCircle, XCircle, Database, Beaker, Image, Lightbulb } from 'lucide-react';
 
 const useCases = [
   {
@@ -309,8 +309,9 @@ const InteractiveUseCases = () => {
 
           {/* Nota sobre el backend */}
           <div className="mt-6 text-center">
-            <p className="text-xs font-mono text-gray-500">
-              💡 Demo interactiva | {!response && !error ? 'Ingresa datos para probar la IA' : 'Resultados en tiempo real'}
+            <p className="text-xs font-mono text-gray-500 flex items-center justify-center gap-1.5">
+              <Lightbulb className="w-3.5 h-3.5" />
+              <span>Demo interactiva | {!response && !error ? 'Ingresa datos para probar la IA' : 'Resultados en tiempo real'}</span>
             </p>
           </div>
         </div>
