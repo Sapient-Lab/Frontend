@@ -70,45 +70,12 @@ export default function Dashboard() {
   useEffect(() => {
     let active = true;
     const load = async () => {
-      let hasActivity = false;
       try {
-        const progressPromise = fetch('/api/platform/users/me/progress');
-        const logsPromise = projectId
-          ? fetch(`/api/platform/projects/${projectId}/logs`)
-          : null;
-
-        const [progressRes, logsRes] = await Promise.all([progressPromise, logsPromise]);
-
-        if (progressRes.ok) {
-          const progress = await progressRes.json();
-          if (active && progress?.recentActivity?.length) {
-            setAiMessage(progress.recentActivity[0].text);
-          }
-        }
-
-        if (logsRes && logsRes.ok) {
-          const logs = await logsRes.json();
-          if (active && Array.isArray(logs)) {
-            const mapped = logs.slice(0, 6).map((log: any, idx: number) => {
-              const initials = (log.author || 'Equipo').substring(0, 2).toUpperCase();
-              const color = palette[idx % palette.length];
-              return {
-                id: log.id,
-                time: log.createdAt ? relativeTime(log.createdAt) : 'Hace un momento',
-                text: log.message,
-                user: initials,
-                color,
-              };
-            });
-            setRecentActivity(mapped);
-            hasActivity = mapped.length > 0;
-          }
-        }
-
-        // Fallback if no activity yet
-        if (active && !hasActivity) {
+        // Usar datos por defecto sin hacer llamadas a endpoints no implementados
+        if (active) {
+          setAiMessage('Bienvenido a tu Dashboard. Comienza a trabajar en tus proyectos.');
           setRecentActivity([
-            { id: 'fallback-1', time: 'Hace 10 min', text: 'Carga tus primeros logs para ver actividad aquí.', user: 'AI', color: 'bg-blue-500' },
+            { id: 'fallback-1', time: 'Ahora', text: 'Panel de Control cargado exitosamente', user: 'AI', color: 'bg-blue-500' },
           ]);
         }
       } catch (error) {
