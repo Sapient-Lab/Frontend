@@ -10,6 +10,7 @@ import {
   FiBookOpen,
   FiMic,
   FiMicOff,
+  FiTrash2,
 } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 import { useTheme } from '../context/ThemeContext';
@@ -94,6 +95,34 @@ export default function IntelligentLabNotebook() {
       }
     } catch {
       // notes endpoint not yet available
+    }
+  };
+
+  const deleteNotebookNote = async (noteId: number) => {
+    const note = notes.find((item) => item.id === noteId);
+    const confirmed = window.confirm(
+      `Se eliminará completamente esta nota${note ? ` (ID ${note.id})` : ''}. Esta acción no se puede deshacer. ¿Deseas continuar?`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/experiments/${experimentId}/notes/${noteId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo eliminar la nota');
+      }
+
+      setNotes((prev) => prev.filter((item) => item.id !== noteId));
+      if (currentNoteId === noteId) {
+        setCurrentNoteId(null);
+        setNoteContent('');
+        setMessages([messages[0]]);
+      }
+    } catch (error) {
+      console.error('Error deleting notebook note:', error);
     }
   };
 
@@ -553,24 +582,48 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 </p>
               ) : (
                 notes.map(note => (
-                  <button
+                  <div
                     key={note.id}
-                    onClick={() => selectNote(note)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    className={`relative w-full text-left p-3 pr-10 rounded-lg transition-colors cursor-pointer ${
                       currentNoteId === note.id
                         ? 'bg-blue-500 text-white'
                         : isDark
                           ? 'bg-[#1a2a3a] text-gray-200 hover:bg-[#2a3a4a]'
                           : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
+                    onClick={() => selectNote(note)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        selectNote(note);
+                      }
+                    }}
                   >
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        deleteNotebookNote(note.id);
+                      }}
+                      className={`absolute top-2 right-2 p-1.5 rounded-md transition-colors ${
+                        currentNoteId === note.id
+                          ? 'bg-white/15 hover:bg-white/25 text-white'
+                          : isDark
+                            ? 'bg-[#223349] hover:bg-[#2a3d58] text-red-300'
+                            : 'bg-white hover:bg-red-50 text-red-600'
+                      }`}
+                      title="Eliminar esta nota"
+                    >
+                      <FiTrash2 className="w-3.5 h-3.5" />
+                    </button>
                     <p className="text-xs truncate font-mono">
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                     <p className="text-xs truncate opacity-75">
                       {note.content.substring(0, 40)}...
                     </p>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
