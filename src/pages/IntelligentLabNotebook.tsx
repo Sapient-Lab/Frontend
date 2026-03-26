@@ -104,9 +104,6 @@ export default function IntelligentLabNotebook() {
 
     debounceTimerRef.current = setTimeout(() => {
       saveNote(content);
-      if (currentNoteId) {
-        generateSuggestions(currentNoteId);
-      }
     }, 3000);
   };
 
@@ -286,7 +283,7 @@ export default function IntelligentLabNotebook() {
     }
   };
 
-  const saveNote = async (content: string) => {
+  const saveNote = async (content: string): Promise<number | null> => {
     try {
       if (currentNoteId) {
         // Update existing note
@@ -300,6 +297,7 @@ export default function IntelligentLabNotebook() {
           setNotes(prev =>
             prev.map(n => (n.id === currentNoteId ? { ...n, ...updated } : n))
           );
+          return currentNoteId;
         }
       } else {
         // Create new note
@@ -312,11 +310,25 @@ export default function IntelligentLabNotebook() {
           const newNote = await response.json();
           setNotes([newNote, ...notes]);
           setCurrentNoteId(newNote.id);
+          return newNote.id;
         }
       }
     } catch (error) {
       console.error('Error saving note:', error);
     }
+
+    return currentNoteId;
+  };
+
+  const handleAnalyzeText = async () => {
+    const savedNoteId = await saveNote(noteContent);
+    const noteIdToAnalyze = savedNoteId ?? currentNoteId;
+
+    if (!noteIdToAnalyze) {
+      return;
+    }
+
+    await generateSuggestions(noteIdToAnalyze);
   };
 
   const generateSuggestions = async (noteId: number) => {
@@ -545,7 +557,7 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
               ref={noteTextareaRef}
               value={noteContent}
               onChange={handleNoteChange}
-              placeholder="Escribe tus notas del experimento aquí. La IA analizará automáticamente tu contenido y te dará sugerencias..."
+              placeholder="Escribe tus notas del experimento aquí. Luego usa 'Analizar texto' para pedir sugerencias a la IA..."
               className={`flex-1 p-4 rounded-lg resize-none font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 isDark
                   ? 'bg-[#1a2a3a] border border-[#223349] text-white placeholder-gray-500'
@@ -558,6 +570,13 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                   <FiRefreshCw className="w-4 h-4 animate-spin" /> Analizando...
                 </span>
               )}
+              <button
+                onClick={handleAnalyzeText}
+                disabled={isGeneratingSuggestions || !noteContent.trim()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 text-sm"
+              >
+                <FiBookOpen className="w-4 h-4" /> Analizar texto
+              </button>
               <button
                 onClick={() => saveNote(noteContent)}
                 className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 text-sm"
