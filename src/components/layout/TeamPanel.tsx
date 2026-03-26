@@ -1,6 +1,27 @@
 import { useState, useRef } from 'react';
 import { FiAlertTriangle, FiFileText, FiSearch, FiTarget, FiUploadCloud, FiSidebar, FiX, FiBarChart2 } from 'react-icons/fi';
 import { aiService } from '../../services/aiService';
+import TaskRecommendation from '../TaskRecommendation';
+import type { TaskRecommendationItem } from '../TaskRecommendation';
+
+// Helper function to ensure a value is an array  
+const ensureArray = (value: any): string[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    // Try to parse as JSON array
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // If not JSON, split by common delimiters
+      return value
+        .split(/[,\n•-]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+    }
+  }
+  return [];
+};
 
 export default function TeamPanel() {
   const [open, setOpen] = useState(false);
@@ -42,7 +63,7 @@ export default function TeamPanel() {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('document', file);
 
       const response = await fetch('/api/ai/document/analyze', {
         method: 'POST',
@@ -64,6 +85,44 @@ export default function TeamPanel() {
       setIsLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const generateTaskRecommendations = (result: any): TaskRecommendationItem[] => {
+    const recommendations: TaskRecommendationItem[] = [];
+
+    if (!result?.structured) return recommendations;
+
+    // Crear tareas basadas en hallazgos notables
+    const notableFindings = ensureArray(result.structured.notableFindings);
+    if (notableFindings.length > 0) {
+      recommendations.push({
+        title: 'Investigar Hallazgos Notables',
+        description: `Se encontraron ${notableFindings.length} hallazgo(s) importante(s) en los datos. Revisa y documenta cada uno.`,
+        aiAssigner: 'Análisis de Datos',
+      });
+    }
+
+    // Crear tareas basadas en alertas
+    const qualityFlags = ensureArray(result.structured.qualityFlags);
+    if (qualityFlags.length > 0) {
+      recommendations.push({
+        title: 'Verificar Alertas de Calidad',
+        description: `Hay ${qualityFlags.length} alerta(s) de calidad de datos. Valida y corrige los problemas identificados.`,
+        aiAssigner: 'Análisis de Datos',
+      });
+    }
+
+    // Crear tareas basadas en pasos recomendados
+    const recommendedChecks = ensureArray(result.structured.recommendedChecks);
+    if (recommendedChecks.length > 0) {
+      recommendations.push({
+        title: 'Ejecutar Pasos Recomendados',
+        description: `El análisis sugiere ${recommendedChecks.length} paso(s) de validación adicional. Completa la revisión.`,
+        aiAssigner: 'Análisis de Datos',
+      });
+    }
+
+    return recommendations;
   };
 
   return (
@@ -199,19 +258,19 @@ export default function TeamPanel() {
                           <FiTarget className="w-3.5 h-3.5 text-green-600" /> Hallazgos Notables
                         </h3>
                         <ul className="list-disc pl-4 text-[11px] text-gray-600 space-y-1">
-                          {(analysisResult.structured.notableFindings || []).map((find: string, i: number) => (
+                          {ensureArray(analysisResult.structured.notableFindings).map((find: string, i: number) => (
                             <li key={i}>{find}</li>
                           ))}
                         </ul>
                       </div>
 
-                      {analysisResult.structured.qualityFlags && analysisResult.structured.qualityFlags.length > 0 && (
+                      {ensureArray(analysisResult.structured.qualityFlags).length > 0 && (
                         <div className="p-3 bg-orange-50/50 rounded border border-orange-100">
                           <h3 className="text-xs font-bold text-orange-800 mb-1 flex items-center gap-1.5">
                             <FiAlertTriangle className="w-3.5 h-3.5 text-orange-500" /> Alertas
                           </h3>
                           <ul className="list-disc pl-4 text-[10px] text-orange-700 space-y-0.5">
-                            {analysisResult.structured.qualityFlags.map((flag: string, i: number) => (
+                            {ensureArray(analysisResult.structured.qualityFlags).map((flag: string, i: number) => (
                               <li key={i}>{flag}</li>
                             ))}
                           </ul>
@@ -223,11 +282,21 @@ export default function TeamPanel() {
                           <FiSearch className="w-3.5 h-3.5 text-blue-500" /> Próximos Pasos
                         </h3>
                         <ul className="list-disc pl-4 text-[11px] text-gray-600 space-y-1">
-                          {(analysisResult.structured.recommendedChecks || []).map((step: string, i: number) => (
+                          {ensureArray(analysisResult.structured.recommendedChecks).map((step: string, i: number) => (
                             <li key={i}>{step}</li>
                           ))}
                         </ul>
                       </div>
+
+                      {/* Task Recommendations */}
+                      {generateTaskRecommendations(analysisResult).length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <h3 className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-2">
+                            Tareas Sugeridas
+                          </h3>
+                          <TaskRecommendation recommendations={generateTaskRecommendations(analysisResult)} />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-[11px] text-gray-600">

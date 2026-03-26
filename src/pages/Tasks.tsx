@@ -1,54 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiCheckCircle, FiCircle, FiCpu, FiTarget, FiBox } from 'react-icons/fi';
-
-type TaskStatus = 'pending' | 'completed';
-
-type Task = {
-  id: string;
-  title: string;
-  description: string;
-  aiAssigner: string;
-  status: TaskStatus;
-  date: string;
-};
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: '1',
-    title: 'Revisar protocolo de bioseguridad',
-    description: 'Verificar concentraciones máximas para los reactivos C y D antes del experimento.',
-    aiAssigner: 'Pionero (Azure OpenAI)',
-    status: 'pending',
-    date: 'Hoy, 10:30 AM'
-  },
-  {
-    id: '2',
-    title: 'Confirmar parámetros de cultivo',
-    description: 'Validar que la temperatura de la incubadora esté configurada según mis observaciones recientes.',
-    aiAssigner: 'Nova (Azure Foundry)',
-    status: 'pending',
-    date: 'Ayer, 15:45 PM'
-  },
-  {
-    id: '3',
-    title: 'Analizar anomalías en microfotografías',
-    description: 'Detecté un patrón inusual en las células de la fila A. Requiere revisión humana.',
-    aiAssigner: 'Lumos (Azure Vision)',
-    status: 'completed',
-    date: '12 de Octubre, 09:15 AM'
-  }
-];
+import { dynamicTaskService } from '../services/dynamicTaskService';
+import type { DynamicTask } from '../services/dynamicTaskService';
 
 export default function TasksAndEvaluation() {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<DynamicTask[]>(dynamicTaskService.getTasks());
+
+  // Escuchar eventos de tareas actualizadas
+  useEffect(() => {
+    const handleTasksUpdated = (event: any) => {
+      setTasks(event.detail.tasks);
+    };
+
+    window.addEventListener('tasksUpdated', handleTasksUpdated);
+    return () => window.removeEventListener('tasksUpdated', handleTasksUpdated);
+  }, []);
 
   const toggleTaskStatus = (id: string) => {
-    setTasks(tasks.map(t => {
-      if (t.id === id) {
-        return { ...t, status: t.status === 'pending' ? 'completed' : 'pending' };
-      }
-      return t;
-    }));
+    dynamicTaskService.toggleTaskStatus(id);
+  };
+
+  const deleteTask = (id: string) => {
+    dynamicTaskService.deleteTask(id);
   };
 
   const pendingCount = tasks.filter(t => t.status === 'pending').length;
@@ -101,7 +74,7 @@ export default function TasksAndEvaluation() {
           </span>
         </div>
         
-        <div className="divide-y divide-gray-100">
+        <div className="max-h-96 overflow-y-auto divide-y divide-gray-100">
           {tasks.map(task => (
             <div key={task.id} className={`p-6 flex items-start transition-all hover:bg-gray-50 border-l-[3px] ${task.status === 'completed' ? 'border-transparent opacity-60' : 'border-accent'}`}>
               <button 
@@ -129,8 +102,17 @@ export default function TasksAndEvaluation() {
                   {task.description}
                 </p>
                 
-                <div className="inline-flex items-center bg-indigo-50/70 border border-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold">
-                  <FiCpu className="mr-1.5" /> Asignado por: {task.aiAssigner}
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center bg-indigo-50/70 border border-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold">
+                    <FiCpu className="mr-1.5" /> Asignado por: {task.aiAssigner}
+                  </div>
+                  
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    className="text-xs text-red-500 hover:text-red-600 font-medium"
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </div>
             </div>
@@ -140,7 +122,7 @@ export default function TasksAndEvaluation() {
             <div className="p-16 text-center text-gray-400 flex flex-col items-center">
               <FiCheckCircle className="text-5xl mb-4 text-gray-200" />
               <p className="text-lg font-medium">No hay tareas pendientes</p>
-              <p className="text-sm">Las IA's no han asignado ninguna tarea aún.</p>
+              <p className="text-sm">Las IA's recomendarán tareas mientras trabajas. Las verás aquí.</p>
             </div>
           )}
         </div>

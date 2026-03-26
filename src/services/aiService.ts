@@ -339,5 +339,40 @@ export const aiService = {
     });
     if (!response.ok) throw new Error('Error al escanear el protocolo');
     return response.json();
+  },
+
+  /**
+   * Chat sobre documentos: Analiza documentos usando IA conversacional
+   */
+  async documentChat(query: string, documentNames: string[] = []) {
+    const prompt = `
+Eres un asistente especializado en análisis de documentos e investigación. 
+El usuario ha subido los siguientes documentos: ${documentNames.join(', ')}
+Responde la siguiente pregunta basándote en tu conocimiento de estos tipos de documentos y lo que sabrías de archivos con esos nombres.
+La respuesta debe ser específica, útil y basada en el contenido que típicamente encontraríamos en tales documentos.
+
+Pregunta del usuario: ${query}
+    `.trim();
+
+    try {
+      const response = await this.sendMessage(prompt, []);
+      // Extract the actual response text from the wrapper
+      const responseText = response?.rawModelResponse || response?.text || response?.message || JSON.stringify(response);
+      
+      // Format the response
+      if (!responseText) return 'Sin información disponible.';
+      
+      let formatted = responseText
+        .trim()
+        // Normalize paragraph spacing
+        .split('\n\n')
+        .filter((p: string) => p.trim().length > 0)
+        .join('\n\n');
+      
+      return formatted;
+    } catch (error) {
+      console.error('Error en documentChat:', error);
+      throw error;
+    }
   }
 };

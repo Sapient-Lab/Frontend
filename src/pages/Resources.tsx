@@ -117,7 +117,61 @@ export default function Resources() {
     }
   };
 
-  const handleChatSubmit = () => {
+  const renderFormattedMessage = (content: string) => {
+    const paragraphs = content.split('\n\n').filter(p => p.trim());
+    
+    return (
+      <div className="space-y-2">
+        {paragraphs.map((paragraph, idx) => {
+          // Check if it's a bullet point
+          if (paragraph.trim().startsWith('•') || paragraph.trim().startsWith('-') || paragraph.trim().startsWith('*')) {
+            const lines = paragraph.split('\n').map(line => line.trim()).filter(l => l);
+            return (
+              <ul key={idx} className="list-disc list-inside space-y-1">
+                {lines.map((line, lineIdx) => (
+                  <li key={lineIdx} className="ml-1">
+                    {line.replace(/^[•\-*]\s*/, '')}
+                  </li>
+                ))}
+              </ul>
+            );
+          }
+          
+          // Check if it's a numbered list
+          if (/^\d+\./.test(paragraph.trim())) {
+            const lines = paragraph.split('\n').map(line => line.trim()).filter(l => l);
+            return (
+              <ol key={idx} className="list-decimal list-inside space-y-1">
+                {lines.map((line, lineIdx) => (
+                  <li key={lineIdx} className="ml-1">
+                    {line.replace(/^\d+\.\s*/, '')}
+                  </li>
+                ))}
+              </ol>
+            );
+          }
+          
+          // Check for bold text patterns
+          const parts = paragraph.split(/(\*\*[^*]+\*\*)/g);
+          return (
+            <p key={idx} className="text-sm leading-relaxed">
+              {parts.map((part, partIdx) => 
+                part.startsWith('**') ? (
+                  <strong key={partIdx} className="font-semibold">
+                    {part.replace(/\*\*/g, '')}
+                  </strong>
+                ) : (
+                  <span key={partIdx}>{part}</span>
+                )
+              )}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const handleChatSubmit = async () => {
     if (!chatQuery.trim() || isChatLoading) return;
     
     const userMsg = chatQuery.trim();
@@ -125,19 +179,29 @@ export default function Resources() {
     setChatQuery('');
     setIsChatLoading(true);
 
-    // Mock API Call - En un futuro llamará al endpoint /api/docs/chat detallado en backend-reqs-docs.md
-    setTimeout(() => {
+    try {
+      const documentNames = localFiles.map(f => f.name);
+      const aiResponse = await aiService.documentChat(userMsg, documentNames);
+      
       setChatHistory(prev => [
         ...prev, 
         { 
           role: 'ai', 
-          content: localFiles.length > 0 
-            ? `Analizando tus documentos recientes (como ${localFiles[0].name})...\n\nBasado en la literatura de tu proyecto: No se han encontrado restricciones graves. Para este manual debes mantener el equipo por debajo de 4°C y utilizar equipo de protección clase A.` 
-            : 'Parece que no tienes documentos subidos aún. Sube un PDF a la derecha para que pueda leerlo y ayudarte mejor.' 
+          content: aiResponse
         }
       ]);
+    } catch (error) {
+      console.error('Error in documentChat:', error);
+      setChatHistory(prev => [
+        ...prev, 
+        { 
+          role: 'ai', 
+          content: 'Error al procesar tu pregunta. Intenta de nuevo más tarde.' 
+        }
+      ]);
+    } finally {
       setIsChatLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -167,15 +231,20 @@ export default function Resources() {
             {chatHistory.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-gray-400 mt-2 space-y-3">
                 <FiBook className="w-10 h-10 opacity-20" />
-                <p className="text-sm text-center max-w-sm">Hazme una pregunta sobre tus PDFs.</p>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Asistente de Documentos</p>
+                  <p className="text-xs text-gray-500 max-w-sm">Sube PDFs o documentos y hazle preguntas. Tu IA privada evaluará el contenido automáticamente.</p>
+                </div>
               </div>
             )}
             {chatHistory.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-accent text-white rounded-br-sm shadow-md' : 'bg-gray-100 text-gray-800 rounded-bl-sm border border-gray-200'}`}>
-                  {msg.content.split('\n').map((line, j) => (
-                    <span key={j}>{line}<br/></span>
-                  ))}
+                <div className={`max-w-[85%] p-4 rounded-xl text-sm ${msg.role === 'user' ? 'bg-accent text-white rounded-br-sm shadow-md' : 'bg-gray-50 text-gray-800 rounded-bl-sm border border-gray-200 border-l-4 border-l-accent'}`}>
+                  {msg.role === 'user' ? (
+                    <p className="leading-relaxed">{msg.content}</p>
+                  ) : (
+                    renderFormattedMessage(msg.content)
+                  )}
                 </div>
               </div>
             ))}

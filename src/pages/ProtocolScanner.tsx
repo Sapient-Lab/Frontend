@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { FiAlertTriangle, FiShield, FiUploadCloud, FiImage, FiX, FiMic, FiMicOff } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
+import TaskRecommendation from '../components/TaskRecommendation';
+import type { TaskRecommendationItem } from '../components/TaskRecommendation';
 
 type BrowserSpeechRecognition = {
   lang: string;
@@ -262,6 +264,44 @@ export default function ProtocolScanner() {
     };
   };
 
+  const generateTaskRecommendations = (result: any): TaskRecommendationItem[] => {
+    const recommendations: TaskRecommendationItem[] = [];
+
+    if (!result?.structured) return recommendations;
+
+    // Crear tareas basadas en hazards (peligros detectados)
+    if (result.structured.hazards && result.structured.hazards.length > 0) {
+      recommendations.push({
+        title: 'Revisar Peligros Identificados',
+        description: `Se detectaron ${result.structured.hazards.length} peligros potenciales en el protocolo. Revisa la lista completa y asegura que todos los controles están implementados.`,
+        aiAssigner: 'Visión Mágica',
+      });
+    }
+
+    // Crear tareas basadas en checklist
+    if (result.structured.checklist && result.structured.checklist.length > 0) {
+      const highRiskItems = result.structured.checklist.filter((item: any) => item.riskLevel === 'high');
+      if (highRiskItems.length > 0) {
+        recommendations.push({
+          title: 'Atender Controles de Alto Riesgo',
+          description: `Hay ${highRiskItems.length} control(es) con riesgo alto que requieren atención inmediata antes de proceder.`,
+          aiAssigner: 'Visión Mágica',
+        });
+      }
+    }
+
+    // Crear tarea general de revisión
+    if (result.structured.checklist && result.structured.checklist.length > 3) {
+      recommendations.push({
+        title: 'Completar Checklist de Seguridad',
+        description: `Ejecuta todos los pasos del checklist de seguridad preventiva antes de iniciar el procedimiento experimental.`,
+        aiAssigner: 'Visión Mágica',
+      });
+    }
+
+    return recommendations;
+  };
+
   const handleScan = async () => {
     if (!protocolText.trim() && !imageFile) {
       setError('Por favor, pega el protocolo o sube una imagen.');
@@ -454,6 +494,16 @@ export default function ProtocolScanner() {
                             );
                           })}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Task Recommendations */}
+                    {generateTaskRecommendations(scanResult).length > 0 && (
+                      <div className="mt-6 pt-4 border-t border-gray-100">
+                        <h3 className="text-[11px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-3">
+                          Tareas Sugeridas
+                        </h3>
+                        <TaskRecommendation recommendations={generateTaskRecommendations(scanResult)} />
                       </div>
                     )}
 
