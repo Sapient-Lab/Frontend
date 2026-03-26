@@ -5,7 +5,6 @@ import { useTheme } from '../../context/ThemeContext'
 
 const navItems: NavItem[] = [
   { label: 'Laboratorio', path: '/app/lab' },
-  { label: 'Reportes IA', path: '/app/reportes' },
   { label: 'Tareas', path: '/app/tareas' },
   { label: 'Docs', path: '/app/docs' },
   { label: 'Equipo', path: '/app/equipo' },

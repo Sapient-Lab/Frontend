@@ -8,7 +8,6 @@ import ProtocolScanner from './pages/ProtocolScanner'
 import Resources from './pages/Resources'
 import TasksAndEvaluation from './pages/Tasks.tsx'
 import Team from './pages/Team'
-import ReportGenerator from './pages/ReportGenerator'
 import LandingPage from './landing/LandingPage.jsx'
 import { ProjectProvider } from './context/ProjectContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -26,7 +25,7 @@ export default function App() {
             <Route path="/app" element={<RootLayout><Dashboard /></RootLayout>} />
             <Route path="/app/lab" element={<RootLayout><LabWorkspace /></RootLayout>} />
             <Route path="/app/protocolos" element={<RootLayout><ProtocolScanner /></RootLayout>} />
-            <Route path="/app/reportes" element={<RootLayout><ReportGenerator /></RootLayout>} />
+            <Route path="/app/reportes" element={<Navigate to="/app" replace />} />
             
             {/* Rutas adicionales de la aplicación */}
             <Route path="/app/tareas" element={<RootLayout><TasksAndEvaluation /></RootLayout>} />
