@@ -25,10 +25,7 @@ type CurrentUser = { name: string; initials: string; role: string; id: string };
 export default function Dashboard() {
   const navigate = useNavigate();
   const { projectMode, projectId } = useProject();
-
-  const [aiMessage, setAiMessage] = useState(
-    'Análisis pendiente: carga un protocolo o evidencia para generar recomendaciones de seguridad.'
-  );
+  const [aiMessage, setAiMessage] = useState('Cargando tus datos recientes...');
   const [recentActivity, setRecentActivity] = useState<Array<{ id: string | number; time: string; text: string; user: string; color: string }>>(
     []
   );
@@ -217,12 +214,12 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           
           {/* Tarjeta de Insights de IA */}
-          <div className="lg:col-span-2 bg-[#f7fbff] border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col relative stagger-in" style={{ animationDelay: '90ms' }}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-accent rounded-t-xl"></div>
+          <div className="lg:col-span-2 bg-surface/95 border border-lab-border rounded-xl p-6 shadow-sm flex flex-col relative stagger-in backdrop-blur-sm" style={{ animationDelay: '90ms' }}>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-dim to-accent rounded-t-xl"></div>
             
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-lg">
-                <FiZap className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 rounded-full bg-accent-light flex items-center justify-center text-lg ring-1 ring-inset ring-white/50 dark:ring-white/10">
+                <FiZap className="w-4 h-4 text-accent" />
               </div>
               <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">EN QUE PUEDO AYUDARTE</h2>
             </div>
@@ -233,7 +230,7 @@ export default function Dashboard() {
             
             <button 
               onClick={() => navigate('/app/lab')}
-              className="mt-4 text-blue-600 text-xs font-semibold hover:underline flex items-center gap-1 group"
+              className="mt-4 text-accent-dim text-xs font-semibold hover:text-accent flex items-center gap-1 group transition-colors"
             >
               Abrir asistente para revisar evidencia <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
             </button>
