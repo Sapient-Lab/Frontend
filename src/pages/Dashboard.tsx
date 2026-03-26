@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiZap, FiFileText } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
@@ -48,24 +48,6 @@ export default function Dashboard() {
     }
     return localUser;
   });
-
-  const palette = useMemo(
-    () => ['bg-blue-500', 'bg-green-500', 'bg-accent', 'bg-purple-500', 'bg-amber-500'],
-    []
-  );
-
-  const relativeTime = (isoDate: string) => {
-    const target = new Date(isoDate).getTime();
-    const now = Date.now();
-    const diff = Math.max(0, now - target);
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'Ahora';
-    if (minutes < 60) return `Hace ${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `Hace ${hours} hrs`;
-    const days = Math.floor(hours / 24);
-    return days === 1 ? 'Ayer' : `Hace ${days} días`;
-  };
 
   useEffect(() => {
     let active = true;

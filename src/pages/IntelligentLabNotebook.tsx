@@ -70,7 +70,6 @@ export default function IntelligentLabNotebook() {
 
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,22 +126,8 @@ export default function IntelligentLabNotebook() {
     }
   };
 
-  const scheduleAutosave = (content: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      saveNote(content);
-    }, 3000);
-  };
-
   useEffect(() => {
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
       }
@@ -153,15 +138,9 @@ export default function IntelligentLabNotebook() {
     };
   }, []);
 
-  const syncNoteContent = (content: string) => {
-    setNoteContent(content);
-    scheduleAutosave(content);
-  };
-
   const appendNoteContent = (chunk: string) => {
     setNoteContent((prev) => {
       const next = `${prev}${prev ? '\n' : ''}${chunk}`;
-      scheduleAutosave(next);
       return next;
     });
   };
@@ -202,10 +181,10 @@ export default function IntelligentLabNotebook() {
     }
   };
 
-  // Auto-trigger suggestions with debounce (saves to backend every 3s of inactivity)
+  // Handle note changes - only update local state, save only on button click
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const content = e.target.value;
-    syncNoteContent(content);
+    setNoteContent(content);
   };
 
   const stopCurrentDictation = () => {
@@ -473,7 +452,7 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
           cells: [
             {
               id: 'notebook-content',
-              cellType: 'markdown',
+              cellType: 'markdown' as const,
               language: 'text',
               source: noteContext || noteContent,
             },

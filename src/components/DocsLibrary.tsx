@@ -29,7 +29,12 @@ export default function DocsLibrary() {
 
   useEffect(() => {
     if (projectId) {
+      console.log('🔍 DocsLibrary: Loading documents for project:', projectId);
       fetchProjectContext();
+    } else {
+      console.warn('⚠️ DocsLibrary: No projectId available');
+      setContext(null);
+      setError('No hay proyecto seleccionado');
     }
   }, [projectId]);
 
