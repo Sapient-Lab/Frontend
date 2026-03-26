@@ -20,6 +20,7 @@ export type NotebookChatPayload = {
   messages?: ChatMessage[];
   objective?: string;
   preferConcise?: boolean;
+  projectId?: number;
   notebook: {
     notebookId?: string;
     notebookTitle?: string;

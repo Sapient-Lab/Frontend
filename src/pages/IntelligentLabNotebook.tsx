@@ -458,10 +458,12 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
 
   const generateChatResponse = async (userMessage: string, noteContext: string): Promise<string> => {
     try {
+      const projectId = localStorage.getItem('sapientlab_project_id');
       const data = await aiService.notebookChat({
         message: userMessage,
         objective: 'Asistencia para redactar, analizar y mejorar notas científicas de laboratorio.',
         preferConcise: true,
+        projectId: projectId ? parseInt(projectId, 10) : undefined,
         notebook: {
           notebookId: currentNoteId ? String(currentNoteId) : undefined,
           notebookTitle: `Experimento #${experimentId}`,
