@@ -63,6 +63,7 @@ export default function IntelligentLabNotebook() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [isExtractingInsertable, setIsExtractingInsertable] = useState(false);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -145,10 +146,31 @@ export default function IntelligentLabNotebook() {
       .replace(/`([^`]+)`/g, '$1')
       .trim();
 
-  const insertAssistantTextIntoNotebook = (content: string) => {
-    const plainText = normalizeNotebookText(content);
-    if (!plainText) return;
-    appendNoteContent(plainText);
+  const insertAssistantTextIntoNotebook = async (content: string) => {
+    if (!content?.trim()) return;
+
+    setIsExtractingInsertable(true);
+    try {
+      const extraction = await aiService.extractNotebookInsertable({
+        assistantMessage: content,
+        mode: 'auto',
+        preserveFormatting: true,
+        maxItems: 10,
+        userPrompt: 'Extrae solo la parte que debe guardarse en el notebook, sin saludos ni relleno.',
+      });
+
+      const plainText = normalizeNotebookText(extraction.insertableText || '');
+      if (!plainText) return;
+      appendNoteContent(plainText);
+    } catch (error) {
+      console.error('Error extrayendo contenido insertable:', error);
+      // Fallback local si la API no esta disponible
+      const plainText = normalizeNotebookText(content);
+      if (!plainText) return;
+      appendNoteContent(plainText);
+    } finally {
+      setIsExtractingInsertable(false);
+    }
   };
 
   // Auto-trigger suggestions with debounce (saves to backend every 3s of inactivity)
@@ -655,13 +677,14 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                       <button
                         type="button"
                         onClick={() => insertAssistantTextIntoNotebook(msg.content)}
+                        disabled={isExtractingInsertable}
                         className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${
                           isDark
                             ? 'bg-[#223349] text-blue-100 hover:bg-[#2a3d58]'
                             : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                        }`}
+                        } ${isExtractingInsertable ? 'opacity-60 cursor-not-allowed' : ''}`}
                       >
-                        Escribir en notebook
+                        {isExtractingInsertable ? 'Extrayendo...' : 'Escribir en notebook'}
                       </button>
                     </div>
                   ) : (

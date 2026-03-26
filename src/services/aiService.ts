@@ -28,6 +28,25 @@ export type NotebookChatPayload = {
   };
 };
 
+export type NotebookExtractMode = 'auto' | 'protocol' | 'checklist' | 'recipe' | 'code' | 'summary';
+
+export type NotebookExtractPayload = {
+  assistantMessage: string;
+  userPrompt?: string;
+  mode?: NotebookExtractMode;
+  preserveFormatting?: boolean;
+  maxItems?: number;
+};
+
+export type NotebookExtractResponse = {
+  insertableText: string;
+  includedSections?: string[];
+  removedFragments?: string[];
+  confidence?: number;
+  usedHeuristicFallback?: boolean;
+  rawModelResponse?: string;
+};
+
 export const aiService = {
   async parseError(response: Response, fallbackMessage: string) {
     try {
@@ -90,6 +109,26 @@ export const aiService = {
       const detailed = await this.parseError(response, 'Error en notebook chat de IA');
       throw new Error(detailed);
     }
+    return response.json();
+  },
+
+  /**
+   * Extrae solo la parte insertable de una respuesta del chat para pegarla en el notebook.
+   */
+  async extractNotebookInsertable(payload: NotebookExtractPayload): Promise<NotebookExtractResponse> {
+    const response = await fetch('/api/ai/notebook/extract-insertable', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const detailed = await this.parseError(response, 'Error al extraer contenido insertable del notebook');
+      throw new Error(detailed);
+    }
+
     return response.json();
   },
 
