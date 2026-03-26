@@ -62,6 +62,8 @@ export default function Onboarding() {
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
+    
+    console.log('📝 Inicio de handleCreateProject. Archivos a subir:', projectFiles.length, projectFiles);
 
     try {
       const owner = localStorage.getItem('sapientlab_user_name') || 'Usuario Demo';
