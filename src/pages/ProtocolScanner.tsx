@@ -1,6 +1,17 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FiAlertTriangle, FiShield, FiUploadCloud, FiImage, FiX, FiMic, FiMicOff } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
+
+type BrowserSpeechRecognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: any) => void) | null;
+  onerror: ((event: any) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
 
 export default function ProtocolScanner() {
   const [protocolText, setProtocolText] = useState('');
@@ -12,7 +23,41 @@ export default function ProtocolScanner() {
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+
+  useEffect(() => {
+    return () => {
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+      }
+
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
+  const stopCurrentListening = () => {
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+      listeningTimeoutRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,20 +79,83 @@ export default function ProtocolScanner() {
 
   const handleStartListening = async () => {
     if (isListening) {
-      // Detener grabación
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-      }
+      stopCurrentListening();
       return;
     }
 
     setIsListening(true);
     setError('');
 
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    // Preferred path: browser-native speech recognition avoids audio format mismatches.
+    if (SpeechRecognitionCtor) {
+      try {
+        const recognition: BrowserSpeechRecognition = new SpeechRecognitionCtor();
+        recognitionRef.current = recognition;
+        recognition.lang = 'es-MX';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event: any) => {
+          const transcripts: string[] = [];
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const transcript = event.results[i]?.[0]?.transcript?.trim();
+            if (transcript) {
+              transcripts.push(transcript);
+            }
+          }
+
+          if (transcripts.length > 0) {
+            const chunk = transcripts.join(' ');
+            setProtocolText((prev) => `${prev}${prev ? '\n' : ''}${chunk}`);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          const code = String(event?.error ?? 'unknown');
+          if (code !== 'aborted') {
+            setError(`Error de dictado por voz (${code}).`);
+          }
+        };
+
+        recognition.onend = () => {
+          recognitionRef.current = null;
+          setIsListening(false);
+          if (listeningTimeoutRef.current) {
+            clearTimeout(listeningTimeoutRef.current);
+            listeningTimeoutRef.current = null;
+          }
+        };
+
+        recognition.start();
+
+        listeningTimeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.stop();
+          }
+        }, 30000);
+
+        return;
+      } catch {
+        recognitionRef.current = null;
+      }
+    }
+
     try {
-      // Solicitar acceso al micrófono
+      // Fallback path: raw audio capture and backend transcription.
       const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(mediaStream);
+      const supportedMimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+
+      const mediaRecorder = supportedMimeType
+        ? new MediaRecorder(mediaStream, { mimeType: supportedMimeType })
+        : new MediaRecorder(mediaStream);
+
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -56,11 +164,18 @@ export default function ProtocolScanner() {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(chunksRef.current, {
+          type: mediaRecorder.mimeType || 'audio/webm',
+        });
         
         // Detener stream
         mediaStream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current = null;
         setIsListening(false);
+        if (listeningTimeoutRef.current) {
+          clearTimeout(listeningTimeoutRef.current);
+          listeningTimeoutRef.current = null;
+        }
 
         // Enviar al backend para transcribir
         try {
@@ -75,8 +190,8 @@ export default function ProtocolScanner() {
       mediaRecorder.start();
 
       // Detener grabación después de 30 segundos
-      setTimeout(() => {
-        if (mediaRecorderRef.current && isListening) {
+      listeningTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
           mediaRecorderRef.current.stop();
         }
       }, 30000);

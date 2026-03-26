@@ -162,7 +162,16 @@ export const aiService = {
    */
   async speechToText(audioBlob: Blob) {
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'audio.wav');
+    const mimeType = audioBlob.type || 'audio/webm';
+    const extension = mimeType.includes('wav')
+      ? 'wav'
+      : mimeType.includes('mp4')
+      ? 'm4a'
+      : mimeType.includes('ogg')
+      ? 'ogg'
+      : 'webm';
+
+    formData.append('audio', audioBlob, `audio.${extension}`);
     
     const response = await fetch('/api/ai/speech-to-text', {
       method: 'POST',
