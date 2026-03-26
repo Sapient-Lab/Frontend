@@ -29,6 +29,23 @@ export type NotebookChatPayload = {
 };
 
 export const aiService = {
+  async parseError(response: Response, fallbackMessage: string) {
+    try {
+      const data = await response.json();
+      const message = data?.message;
+      if (Array.isArray(message)) {
+        return message.join(' | ');
+      }
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    } catch {
+      // noop
+    }
+
+    return `${fallbackMessage} (HTTP ${response.status})`;
+  },
+
   /**
    * Obtiene el estado de los proveedores IA disponibles
    */
@@ -50,7 +67,10 @@ export const aiService = {
       body: JSON.stringify({ message, messages, provider }), 
     });
 
-    if (!response.ok) throw new Error('Error en el chat de IA');
+    if (!response.ok) {
+      const detailed = await this.parseError(response, 'Error en el chat de IA');
+      throw new Error(detailed);
+    }
     return response.json();
   },
 
@@ -66,7 +86,10 @@ export const aiService = {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) throw new Error('Error en notebook chat de IA');
+    if (!response.ok) {
+      const detailed = await this.parseError(response, 'Error en notebook chat de IA');
+      throw new Error(detailed);
+    }
     return response.json();
   },
 

@@ -389,11 +389,15 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
       ] as ChatMessage[]);
     } catch (error) {
       console.error('Error in chat:', error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Error al procesar tu mensaje. Por favor intenta de nuevo.';
       setMessages(prev => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Error al procesar tu mensaje. Por favor intenta de nuevo.',
+          content: `Error al procesar tu mensaje: ${message}`,
         },
       ] as ChatMessage[]);
     } finally {
@@ -402,28 +406,51 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
   };
 
   const generateChatResponse = async (userMessage: string, noteContext: string): Promise<string> => {
-    const data = await aiService.notebookChat({
-      message: userMessage,
-      objective: 'Asistencia para redactar, analizar y mejorar notas científicas de laboratorio.',
-      preferConcise: true,
-      notebook: {
-        notebookId: currentNoteId ? String(currentNoteId) : undefined,
-        notebookTitle: `Experimento #${experimentId}`,
-        activeCellNumber: 1,
-        cells: [
-          {
-            id: 'notebook-content',
-            cellType: 'markdown',
-            language: 'text',
-            source: noteContext || noteContent,
-          },
-        ],
-      },
-    });
+    try {
+      const data = await aiService.notebookChat({
+        message: userMessage,
+        objective: 'Asistencia para redactar, analizar y mejorar notas científicas de laboratorio.',
+        preferConcise: true,
+        notebook: {
+          notebookId: currentNoteId ? String(currentNoteId) : undefined,
+          notebookTitle: `Experimento #${experimentId}`,
+          activeCellNumber: 1,
+          cells: [
+            {
+              id: 'notebook-content',
+              cellType: 'markdown',
+              language: 'text',
+              source: noteContext || noteContent,
+            },
+          ],
+        },
+      });
 
-    const reply = data.rawModelResponse ?? data.response ?? data.message ?? data.content ?? null;
-    if (!reply) return '> Sin respuesta disponible.';
-    return reply;
+      const reply = data.rawModelResponse ?? data.response ?? data.message ?? data.content ?? null;
+      if (!reply) return '> Sin respuesta disponible.';
+      return reply;
+    } catch (notebookError) {
+      const contextualMessage = [
+        'Usa este contexto del notebook para responder.',
+        `Experimento: #${experimentId}`,
+        `Nota actual: ${noteContext || noteContent || 'Sin contenido aún.'}`,
+        `Pregunta: ${userMessage}`,
+      ].join('\n');
+
+      const fallback = await aiService.sendMessage(contextualMessage, [
+        { role: 'user', content: contextualMessage },
+      ]);
+
+      const fallbackReply =
+        fallback.rawModelResponse ?? fallback.response ?? fallback.message ?? fallback.content ?? null;
+
+      if (!fallbackReply) {
+        const reason = notebookError instanceof Error ? notebookError.message : 'Sin detalle adicional';
+        throw new Error(`Notebook chat sin respuesta y fallback fallido. Motivo inicial: ${reason}`);
+      }
+
+      return fallbackReply;
+    }
   };
 
   const createNewNote = () => {
