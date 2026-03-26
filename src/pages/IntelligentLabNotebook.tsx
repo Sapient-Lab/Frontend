@@ -402,24 +402,24 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
   };
 
   const generateChatResponse = async (userMessage: string, noteContext: string): Promise<string> => {
-    const content = noteContext
-      ? `Contexto de la nota:\n${noteContext}\n\nPregunta del usuario:\n${userMessage}`
-      : userMessage;
-
-    const response = await fetch('/api/ai/copilot/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content }],
-        language: 'typescript',
-        workspaceHint: 'Laboratorio de investigación científica',
-      }),
+    const data = await aiService.notebookChat({
+      message: userMessage,
+      objective: 'Asistencia para redactar, analizar y mejorar notas científicas de laboratorio.',
+      preferConcise: true,
+      notebook: {
+        notebookId: currentNoteId ? String(currentNoteId) : undefined,
+        notebookTitle: `Experimento #${experimentId}`,
+        activeCellNumber: 1,
+        cells: [
+          {
+            id: 'notebook-content',
+            cellType: 'markdown',
+            language: 'text',
+            source: noteContext || noteContent,
+          },
+        ],
+      },
     });
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Error ${response.status}: ${errBody}`);
-    }
-    const data = await response.json();
 
     const reply = data.rawModelResponse ?? data.response ?? data.message ?? data.content ?? null;
     if (!reply) return '> Sin respuesta disponible.';
