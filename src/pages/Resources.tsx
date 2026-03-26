@@ -57,7 +57,7 @@ export default function Resources() {
   }, [chatHistory, isChatLoading]);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/platform/resources')
+    fetch((import.meta.env.VITE_API_URL || '') + '/api/platform/resources')
       .then(res => res.json())
       .then(data => {
         const mapped = data.map((item: any) => ({

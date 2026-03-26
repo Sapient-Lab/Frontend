@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiTarget = env.VITE_API_TARGET || 'http://localhost:3000'
+  const apiTarget = env.VITE_API_TARGET || env.VITE_API_URL
 
   return {
     plugins: [

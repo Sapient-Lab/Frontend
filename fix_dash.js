@@ -11,7 +11,7 @@ if (!code.includes('import { useState, useEffect }')) {
 if (!code.includes('const [dashboardData,')) {
   code = code.replace(
     'const { projectMode, projectName } = useProject();',
-    "const { projectMode, projectName, currentProject } = useProject();\n  const [dashboardData, setDashboardData] = useState({ logs: [], progress: 0, blocks: 0, pending: 0, total: 0 });\n\n  useEffect(() => {\n    if (!currentProject) return;\n    const fetchDashboard = async () => {\n      try {\n        const resLogs = await fetch('http://localhost:3000/api/platform/projects/' + currentProject.id + '/logs');\n        let logs = [];\n        if (resLogs.ok) logs = await resLogs.json();\n        setDashboardData({ logs, progress: 0, blocks: 0, pending: 0, total: 0 });\n      } catch (e) { console.error('Error fetching dashboard data:', e); }\n    };\n    fetchDashboard();\n  }, [currentProject]);",
+    "const { projectMode, projectName, currentProject } = useProject();\n  const [dashboardData, setDashboardData] = useState({ logs: [], progress: 0, blocks: 0, pending: 0, total: 0 });\n\n  useEffect(() => {\n    if (!currentProject) return;\n    const fetchDashboard = async () => {\n      try {\n        const resLogs = await fetch((import.meta.env.VITE_API_URL || '') + '/api/platform/projects/' + currentProject.id + '/logs');\n        let logs = [];\n        if (resLogs.ok) logs = await resLogs.json();\n        setDashboardData({ logs, progress: 0, blocks: 0, pending: 0, total: 0 });\n      } catch (e) { console.error('Error fetching dashboard data:', e); }\n    };\n    fetchDashboard();\n  }, [currentProject]);",
   );
 }
 
