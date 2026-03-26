@@ -7,6 +7,27 @@ export type ChatMessage = {
   content: string;
 };
 
+export type NotebookCellContext = {
+  id?: string;
+  cellType?: 'markdown' | 'code' | 'raw';
+  language?: string;
+  source?: string;
+  sourceLines?: string[];
+};
+
+export type NotebookChatPayload = {
+  message?: string;
+  messages?: ChatMessage[];
+  objective?: string;
+  preferConcise?: boolean;
+  notebook: {
+    notebookId?: string;
+    notebookTitle?: string;
+    activeCellNumber?: number;
+    cells: NotebookCellContext[];
+  };
+};
+
 export const aiService = {
   /**
    * Obtiene el estado de los proveedores IA disponibles
@@ -30,6 +51,22 @@ export const aiService = {
     });
 
     if (!response.ok) throw new Error('Error en el chat de IA');
+    return response.json();
+  },
+
+  /**
+   * Chat especial con contexto del notebook (celdas + celda activa)
+   */
+  async notebookChat(payload: NotebookChatPayload) {
+    const response = await fetch('/api/ai/notebook/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error('Error en notebook chat de IA');
     return response.json();
   },
 
