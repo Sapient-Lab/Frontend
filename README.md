@@ -1,75 +1,287 @@
-# React + TypeScript + Vite
+# Sapient Lab Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF)](https://vite.dev/)
+[![Azure AI](https://img.shields.io/badge/Azure-AI%20Stack-0078D4)](https://azure.microsoft.com/)
+[![Innovation Challenge](https://img.shields.io/badge/Microsoft%20Innovation%20Challenge-2026-0078D4)](https://www.microsoft.com/)
 
-Currently, two official plugins are available:
+Frontend oficial de Sapient Lab para el reto Lab Notebook AI Assistant del Microsoft Innovation Challenge 2026.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Este cliente web permite a investigadores interactuar con un asistente de laboratorio orientado a explicabilidad, seguridad y soporte a decision cientifica, sin reemplazar el juicio humano.
 
-## React Compiler
+## Objetivo del proyecto
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Sapient Lab implementa una experiencia de notebook cientifico asistido por agentes para:
 
-## Expanding the ESLint configuration
+- Interpretar protocolos.
+- Analizar resultados desde texto, CSV e imagen.
+- Sugerir siguientes pasos con justificacion.
+- Mantener controles de seguridad en dominios sensibles.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tecnologias
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Categoria | Stack |
+|---|---|
+| UI | React 19 + TypeScript |
+| Build Tool | Vite 8 |
+| Routing | react-router-dom |
+| Animacion | framer-motion |
+| Visual/UI libs | react-icons, lucide-react |
+| Markdown | react-markdown, remark-gfm |
+| Editor embebido | Monaco Editor |
+| Integracion API | fetch + proxy Vite + interceptor de base URL |
+| IA backend | Azure AI stack (via API backend) |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Alineacion con criterios del challenge
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Criterio de evaluacion | Implementacion en frontend |
+|---|---|
+| Explicabilidad | El chat muestra respuestas completas y el flujo de insercion al notebook separa contenido util de texto conversacional. |
+| Seguridad | La interfaz consume endpoints con filtros y politicas server-side; evita exponer llaves y delega decisiones sensibles al backend. |
+| Orquestacion de datos y modelos | El frontend integra notebook context, notas de experimento, documentos y servicios AI en un flujo unico. |
+| Usabilidad para investigacion | Vistas de trabajo, scanner de protocolo, dashboard, tareas, equipo y recursos en una sola experiencia. |
+
+## Arquitectura de alto nivel
+
+```mermaid
+flowchart LR
+  U[Investigador] --> FE[Frontend React Vite]
+  FE -->|/api| BE[Backend NestJS]
+  BE --> DB[(MySQL)]
+  BE --> AZ[Azure AI Services]
+  BE --> ST[Azure Blob Storage]
+  FE --> N1[Notebook UI]
+  FE --> N2[Protocol Scanner]
+  FE --> N3[Dashboard y Workspace]
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Flujo principal del notebook
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```mermaid
+sequenceDiagram
+  participant R as Researcher
+  participant UI as Frontend Notebook
+  participant API as Backend API
+  R->>UI: Escribe observaciones y pregunta
+  UI->>API: POST /api/ai/notebook/chat
+  API-->>UI: Respuesta explicada
+  R->>UI: Clic en Escribir en notebook
+  UI->>API: POST /api/ai/notebook/extract-insertable
+  API-->>UI: Texto insertable limpio
+  UI->>UI: Inserta contenido en nota activa
+  UI->>API: POST/PUT /api/experiments/:id/notes
 ```
 
-2026
+## Modulos funcionales
+
+- Landing y narrativa del producto: [src/landing](src/landing)
+- Navegacion y layout: [src/components/layout](src/components/layout)
+- Notebook inteligente: [src/pages/IntelligentLabNotebook.tsx](src/pages/IntelligentLabNotebook.tsx)
+- Workspace de laboratorio: [src/pages/LabWorkspace.tsx](src/pages/LabWorkspace.tsx)
+- Scanner de protocolos: [src/pages/ProtocolScanner.tsx](src/pages/ProtocolScanner.tsx)
+- Dashboard, tareas, equipo y recursos: [src/pages](src/pages)
+- Servicios API: [src/services](src/services)
+- Estado global de proyecto y tema: [src/context](src/context)
+
+## Estado funcional actual
+
+| Modulo | Estado | Notas |
+|---|---|---|
+| Notebook inteligente | Activo | Chat con contexto + extraccion insertable + guardado de notas por experimento. |
+| Scanner de protocolo e imagen | Activo | Soporta texto, imagen y dictado de voz con fallback. |
+| Onboarding de proyecto | Activo | Crea proyecto, define objetivo y sube documentos iniciales. |
+| Equipo e invitaciones | Activo | Miembros, invitaciones pendientes y aprobacion/rechazo. |
+| Biblioteca documental | Activo | Carga/listado/eliminacion de documentos por proyecto. |
+| Chat documental en Resources | En evolucion | Actualmente usa respuesta simulada (mock) en UI. |
+
+## Rutas principales
+
+- /
+- /login
+- /onboarding
+- /app
+- /app/lab
+- /app/protocolos
+- /app/tareas
+- /app/equipo
+- /app/docs
+- /app/reportes (redirige a /app)
+
+Definidas en [src/App.tsx](src/App.tsx).
+
+## Integracion con backend
+
+El frontend usa dos mecanismos compatibles:
+
+1. Proxy de Vite para /api en desarrollo (ver [vite.config.ts](vite.config.ts)).
+2. Interceptor global de fetch que antepone VITE_API_URL cuando la URL inicia con /api/ (ver [src/main.tsx](src/main.tsx)).
+
+Esto permite ejecutar localmente y desplegar en cloud sin cambiar el codigo de llamadas.
+
+## Contrato API consumido por el frontend
+
+### IA
+
+- `GET /api/ai/providers/status`
+- `POST /api/ai/conversation`
+- `POST /api/ai/notebook/chat`
+- `POST /api/ai/notebook/extract-insertable`
+- `POST /api/ai/protocol/interpret`
+- `POST /api/ai/results/analyze`
+- `POST /api/ai/analyze-image`
+- `POST /api/ai/document/analyze`
+- `POST /api/ai/speech`
+- `POST /api/ai/speech-to-text`
+- `POST /api/ai/copilot/chat`
+- `POST /api/ai/copilot/completions`
+- `POST /api/ai/copilot/explain`
+
+### Plataforma
+
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+- `POST /api/auth/forgot-password`
+- `GET /api/projects`
+- `POST /api/projects`
+- `POST /api/projects/:id/join`
+- `GET /api/projects/:id/members`
+- `GET /api/projects/:id/invitations`
+- `POST /api/projects/:id/invitations`
+- `POST /api/projects/:id/invitations/:invitationId/accept`
+- `POST /api/projects/:id/invitations/:invitationId/decline`
+- `GET /api/experiments/:experimentId/notes`
+- `POST /api/experiments/:experimentId/notes`
+- `PUT /api/experiments/:experimentId/notes/:noteId`
+- `DELETE /api/experiments/:experimentId/notes/:noteId`
+- `POST /api/experiments/:experimentId/notes/:noteId/ai-suggestions`
+- `GET /api/frontend/home`
+- `GET /api/frontend/themes`
+- `POST /api/frontend/metrics/counter-clicks/increment`
+
+### Contexto de proyecto y documentos
+
+- `GET /api/project-context/:projectId`
+- `POST /api/project-context/:projectId/documents`
+- `DELETE /api/project-context/:projectId/documents/:documentId`
+
+### Integraciones
+
+- `POST /api/storage/upload`
+- `GET /api/integrations/microsoft/status`
+- `POST /api/integrations/microsoft/teams/test`
+
+## Arquitectura de layout en aplicacion
+
+La shell principal monta de forma simultanea:
+
+- Sidebar izquierda con scanner de protocolos.
+- Vista central de pagina activa.
+- Panel derecho de analisis de datos.
+- Panel adicional de herramientas IA.
+
+Referencia: [src/components/layout/RootLayout.tsx](src/components/layout/RootLayout.tsx).
+
+## Requisitos
+
+- Node.js 18 o superior.
+- npm 9 o superior.
+- Backend Sapient Lab corriendo y accesible.
+
+## Variables de entorno
+
+Archivo recomendado para desarrollo: .env.development.
+
+- VITE_API_URL: URL base del backend.
+- VITE_API_TARGET: objetivo de proxy de Vite (opcional, recomendado en local).
+
+Ejemplo:
+
+```env
+VITE_API_URL=http://localhost:3000
+VITE_API_TARGET=http://localhost:3000
+```
+
+## Instalacion y ejecucion
+
+```bash
+cd Frontend
+npm install
+npm run dev
+```
+
+Build de produccion:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Scripts disponibles
+
+- npm run dev
+- npm run build
+- npm run preview
+- npm run lint
+
+## Instrucciones para jueces y evaluadores
+
+### 1) Preparar entorno
+
+1. Levantar backend en puerto 3000.
+2. Configurar Frontend/.env.development con VITE_API_URL.
+3. Ejecutar npm run dev en Frontend.
+
+### 2) Escenario de demo recomendado (5-7 min)
+
+1. Abrir landing y mostrar propuesta de valor.
+2. Entrar a /app/lab y registrar una nota experimental.
+3. Enviar una pregunta cientifica en el chat del notebook.
+4. Mostrar respuesta explicada del asistente.
+5. Usar Escribir en notebook para insertar solo contenido util.
+6. Guardar nota y mostrar historial de notas.
+7. Ir a scanner de protocolos para evidenciar soporte multimodal.
+8. Abrir seccion de equipo para mostrar flujo de invitaciones.
+9. Mostrar biblioteca documental y carga de archivos por proyecto.
+
+### 3) Evidencias clave a observar
+
+- El asistente no reemplaza al investigador, argumenta y sugiere.
+- El contenido insertado en notebook evita texto conversacional de relleno.
+- El flujo UI-API se mantiene estable incluso con errores de red (manejo de errores en servicios).
+
+### 4) Alcance declarado para la evaluacion
+
+- La experiencia critica de notebook, escaneo y colaboracion esta operativa.
+- El chat documental en la pagina Resources esta en modo mock y se declara explicitamente para no sobreprometer funcionalidad.
+
+## Estructura del proyecto
+
+```text
+Frontend/
+  src/
+    components/
+    context/
+    landing/
+    pages/
+    services/
+    types/
+    App.tsx
+    main.tsx
+  public/
+  vite.config.ts
+  package.json
+```
+
+## Calidad y mantenimiento
+
+- Tipado fuerte en TypeScript.
+- Separacion de UI, servicios y contexto.
+- Capa de servicios centralizada para endpoints.
+- Documentacion alineada al backend y a criterios de evaluacion del challenge.
+
+## Notas de despliegue
+
+- En desarrollo local, usar proxy y/o VITE_API_URL al backend local.
+- En despliegue, configurar VITE_API_URL al endpoint publicado del backend.
+- Mantener CORS habilitado para el origen del frontend en el backend.
