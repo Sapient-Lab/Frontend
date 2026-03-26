@@ -58,20 +58,42 @@ export default function Resources() {
 
   // Cargar archivos guardados del localStorage
   useEffect(() => {
-    const savedFiles = localStorage.getItem('sapientlab_recent_files');
-    if (savedFiles) {
-      try {
-        const files = JSON.parse(savedFiles);
-        if (Array.isArray(files)) {
-          setLocalFiles(files);
-          console.log('✅ Material Reciente cargado:', files);
+    const loadRecentFiles = () => {
+      const savedFiles = localStorage.getItem('sapientlab_recent_files');
+      console.log('🔍 localStorage["sapientlab_recent_files"]:', savedFiles);
+      
+      if (savedFiles) {
+        try {
+          const files = JSON.parse(savedFiles);
+          if (Array.isArray(files)) {
+            setLocalFiles(files);
+            console.log('✅ Material Reciente cargado desde localStorage:', files.length, 'archivos');
+          } else {
+            console.warn('⚠️ Material Reciente no es un array:', files);
+            setLocalFiles([]);
+          }
+        } catch (err) {
+          console.error('❌ Error al parsear Material Reciente:', err);
+          setLocalFiles([]);
         }
-      } catch (err) {
-        console.error('Error al parsear Material Reciente:', err);
+      } else {
+        console.log('ℹ️ No hay Material Reciente guardado en localStorage');
+        setLocalFiles([]);
       }
-    } else {
-      console.log('No hay Material Reciente guardado');
-    }
+    };
+
+    loadRecentFiles();
+    
+    // Escuchar cambios en el storage desde otra ventana
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sapientlab_recent_files') {
+        console.log('🔄 Cambio detectado en Material Reciente desde otra ventana');
+        loadRecentFiles();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {

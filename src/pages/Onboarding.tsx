@@ -97,33 +97,39 @@ export default function Onboarding() {
       setProjectDesc(projectDescInput);
       setProjectGoal(projectGoalInput);
 
-      // Si hay archivos, enviarlos al Backend
+      // Si hay archivos, enviarlos al Backend Y guardar en Material Reciente
       if (projectFiles.length > 0) {
+        // Agregar archivos a Material Reciente PRIMERO (antes de async operations)
+        const recentFiles = projectFiles.map(file => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size
+        }));
+        
+        const savedFiles = localStorage.getItem('sapientlab_recent_files');
+        const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
+        const allFiles = [...existingFiles, ...recentFiles];
+        // Limitar a los últimos 20 archivos
+        const limitedFiles = allFiles.slice(-20);
+        localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
+        
+        // Verificar que se guardó correctamente
+        const verifyedFiles = localStorage.getItem('sapientlab_recent_files');
+        console.log('✅ Documentos guardados en Material Reciente:', limitedFiles);
+        console.log('🔍 Verificación de localStorage:', verifyedFiles);
+        
+        // Ahora enviar al Backend (puede fallar sin afectar lo guardado)
         try {
           const { aiService } = await import('../services/aiService');
           await aiService.uploadProjectDocuments(projectFiles, projectId.toString());
-          
-          // Agregar archivos a Material Reciente
-          const recentFiles = projectFiles.map(file => ({
-            id: Math.random().toString(36).substr(2, 9),
-            name: file.name,
-            size: file.size
-          }));
-          
-          const savedFiles = localStorage.getItem('sapientlab_recent_files');
-          const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
-          const allFiles = [...existingFiles, ...recentFiles];
-          // Limitar a los últimos 20 archivos
-          const limitedFiles = allFiles.slice(-20);
-          localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
-          
-          console.log('✅ Documentos guardados en Material Reciente:', limitedFiles);
+          console.log('✅ Documentos subidos al backend');
         } catch (docError) {
-          console.warn('Advertencia: Los documentos no se pudieron subir, pero el proyecto fue creado:', docError);
-          // No bloqueamos el flujo si falla la subida de documentos
+          console.warn('Advertencia: Los documentos no se pudieron subir al backend, pero se guardaron localmente:', docError);
         }
       }
 
+      // Asegurar que localStorage se write antes de navigate
+      await new Promise(resolve => setTimeout(resolve, 100));
       navigate('/app');
     } catch (error) {
       console.error('Error al procesar el proyecto:', error);
