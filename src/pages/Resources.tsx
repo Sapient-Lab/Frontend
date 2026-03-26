@@ -56,6 +56,24 @@ export default function Resources() {
     }
   }, [chatHistory, isChatLoading]);
 
+  // Cargar archivos guardados del localStorage
+  useEffect(() => {
+    const savedFiles = localStorage.getItem('sapientlab_recent_files');
+    if (savedFiles) {
+      try {
+        const files = JSON.parse(savedFiles);
+        setLocalFiles(files);
+      } catch {
+        // Si hay error al parsear, ignorar
+      }
+    }
+  }, []);
+
+  // Guardar archivos en localStorage cuando cambien
+  useEffect(() => {
+    localStorage.setItem('sapientlab_recent_files', JSON.stringify(localFiles));
+  }, [localFiles]);
+
   useEffect(() => {
     fetch('http://localhost:3000/api/platform/resources')
       .then(res => res.json())
@@ -72,13 +90,17 @@ export default function Resources() {
   }, []);
 
   const handleFileUpload = async (files: File[]) => {
-    // Frontend Update
+    // Frontend Update - agregar a Material Reciente
     const newFiles = files.map(f => ({
       id: Math.random().toString(36).substr(2, 9),
       name: f.name,
       size: f.size
     }));
-    setLocalFiles(prev => [...prev, ...newFiles]);
+    setLocalFiles(prev => {
+      const allFiles = [...prev, ...newFiles];
+      // Limitar a los últimos 20 archivos
+      return allFiles.slice(-20);
+    });
 
     // Backend Request
     try {

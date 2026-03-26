@@ -69,15 +69,28 @@ export default function Onboarding() {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName, projectDesc: projectDescInput, owner })
+        body: JSON.stringify({ 
+          projectName, 
+          projectDesc: projectDescInput, 
+          workingOn: projectDescInput,
+          goal: projectGoalInput,
+          owner 
+        })
       });
       
+      if (!res.ok) {
+        throw new Error(`Error al crear proyecto (${res.status})`);
+      }
+
       const data = await res.json();
       
-      if (data?.project?.id) {
-        setProjectId(data.project.id);
-        localStorage.setItem('sapientlab_project_id', data.project.id.toString());
+      if (!data?.project?.id) {
+        throw new Error('El servidor no retornó un ID de proyecto válido');
       }
+
+      const projectId = data.project.id;
+      setProjectId(projectId);
+      localStorage.setItem('sapientlab_project_id', projectId.toString());
       
       setProjectMode('solo');
       setGlobalProjectName(projectName);
@@ -86,15 +99,35 @@ export default function Onboarding() {
 
       // Si hay archivos, enviarlos al Backend
       if (projectFiles.length > 0) {
-        const { aiService } = await import('../services/aiService');
-        await aiService.uploadProjectDocuments(projectFiles, data?.project?.id || 'nuevo_proyecto_id');
-        console.log('Documentos subidos y procesados correctamente.');
+        try {
+          const { aiService } = await import('../services/aiService');
+          await aiService.uploadProjectDocuments(projectFiles, projectId.toString());
+          
+          // Agregar archivos a Material Reciente
+          const recentFiles = projectFiles.map(file => ({
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            size: file.size
+          }));
+          
+          const savedFiles = localStorage.getItem('sapientlab_recent_files');
+          const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
+          const allFiles = [...existingFiles, ...recentFiles];
+          // Limitar a los últimos 20 archivos
+          const limitedFiles = allFiles.slice(-20);
+          localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
+          
+          console.log('Documentos subidos y procesados correctamente.');
+        } catch (docError) {
+          console.warn('Advertencia: Los documentos no se pudieron subir, pero el proyecto fue creado:', docError);
+          // No bloqueamos el flujo si falla la subida de documentos
+        }
       }
 
       navigate('/app');
     } catch (error) {
       console.error('Error al procesar el proyecto:', error);
-      alert('Hubo un problema al crear el proyecto o subir los archivos.');
+      alert(`Hubo un problema al crear el proyecto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsUploading(false);
     }

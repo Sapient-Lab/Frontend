@@ -78,12 +78,18 @@ export const aiService = {
    * Envía un mensaje al endpoint conversacional del backend
    */
   async sendMessage(message: string, messages?: ChatMessage[], provider?: 'azure' | 'mistral' | 'deepseek') {
+    const projectId = localStorage.getItem('sapientlab_project_id');
     const response = await fetch('/api/ai/conversation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, messages, provider }), 
+      body: JSON.stringify({ 
+        message, 
+        messages, 
+        provider,
+        projectId: projectId ? parseInt(projectId, 10) : undefined,
+      }), 
     });
 
     if (!response.ok) {
@@ -97,12 +103,18 @@ export const aiService = {
    * Chat especial con contexto del notebook (celdas + celda activa)
    */
   async notebookChat(payload: NotebookChatPayload) {
+    const projectId = localStorage.getItem('sapientlab_project_id');
+    const enhancedPayload = {
+      ...payload,
+      projectId: projectId ? parseInt(projectId, 10) : undefined,
+    };
+
     const response = await fetch('/api/ai/notebook/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(enhancedPayload),
     });
 
     if (!response.ok) {
@@ -135,18 +147,52 @@ export const aiService = {
   /**
    * Sube documentos del proyecto para dar contexto a la IA (Embeddings / Memoria)
    */
-  async uploadProjectDocuments(_files: File[], _projectId?: string) { return { success: true }; },
+  async uploadProjectDocuments(files: File[], projectId?: string) {
+    if (!files || files.length === 0) {
+      return { success: true, documents: [] };
+    }
+
+    if (!projectId) {
+      projectId = localStorage.getItem('sapientlab_project_id') || '';
+    }
+
+    if (!projectId) {
+      throw new Error('Project ID not found');
+    }
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    const response = await fetch(`/api/project-context/${projectId}/documents`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await this.parseError(response, 'Error al subir documentos del proyecto');
+      throw new Error(error);
+    }
+
+    return response.json();
+  },
 
   /**
    * Chat específico de código con Copilot AI
    */
   async copilotChat(message: string, language: string = 'typescript') {
+    const projectId = localStorage.getItem('sapientlab_project_id');
     const response = await fetch('/api/ai/copilot/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, language }), 
+      body: JSON.stringify({ 
+        message, 
+        language,
+        projectId: projectId ? parseInt(projectId, 10) : undefined,
+      }), 
     });
 
     if (!response.ok) throw new Error('Error en Copilot Chat');
