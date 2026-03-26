@@ -8,7 +8,10 @@ import {
   FiPlus,
   FiRefreshCw,
   FiBookOpen,
+  FiMic,
+  FiMicOff,
 } from 'react-icons/fi';
+import { aiService } from '../services/aiService';
 import { useTheme } from '../context/ThemeContext';
 
 interface Note {
@@ -32,12 +35,24 @@ interface AISuggestion {
   relatedStandards: string[];
 }
 
+type BrowserSpeechRecognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: any) => void) | null;
+  onerror: ((event: any) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
 export default function IntelligentLabNotebook() {
   const { isDark } = useTheme();
   const [noteContent, setNoteContent] = useState('');
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNoteId, setCurrentNoteId] = useState<number | null>(null);
   const [experimentId] = useState<number>(1); // TODO: Get from context or URL params
+  const [isDictating, setIsDictating] = useState(false);
 
   // Chat states
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -55,6 +70,8 @@ export default function IntelligentLabNotebook() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -80,23 +97,178 @@ export default function IntelligentLabNotebook() {
     }
   };
 
-  // Auto-trigger suggestions with debounce (saves to backend every 3s of inactivity)
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const content = e.target.value;
-    setNoteContent(content);
-
-    // Clear previous timer
+  const scheduleAutosave = (content: string) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Set new timer - save and get suggestions after 3 seconds of inactivity
     debounceTimerRef.current = setTimeout(() => {
       saveNote(content);
       if (currentNoteId) {
         generateSuggestions(currentNoteId);
       }
     }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+      }
+
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const syncNoteContent = (content: string) => {
+    setNoteContent(content);
+    scheduleAutosave(content);
+  };
+
+  const appendNoteContent = (chunk: string) => {
+    setNoteContent((prev) => {
+      const next = `${prev}${prev ? '\n' : ''}${chunk}`;
+      scheduleAutosave(next);
+      return next;
+    });
+  };
+
+  // Auto-trigger suggestions with debounce (saves to backend every 3s of inactivity)
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const content = e.target.value;
+    syncNoteContent(content);
+  };
+
+  const stopCurrentDictation = () => {
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+      listeningTimeoutRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const startHandsFreeDictation = async () => {
+    if (isDictating) {
+      stopCurrentDictation();
+      return;
+    }
+
+    setIsDictating(true);
+
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognitionCtor) {
+      try {
+        const recognition: BrowserSpeechRecognition = new SpeechRecognitionCtor();
+        recognitionRef.current = recognition;
+        recognition.lang = 'es-MX';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event: any) => {
+          const transcripts: string[] = [];
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const transcript = event.results[i]?.[0]?.transcript?.trim();
+            if (transcript) {
+              transcripts.push(transcript);
+            }
+          }
+
+          if (transcripts.length > 0) {
+            const chunk = transcripts.join(' ');
+            appendNoteContent(chunk);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          const code = String(event?.error ?? 'unknown');
+          if (code !== 'aborted') {
+            console.error(`Error de dictado por voz (${code}).`);
+          }
+        };
+
+        recognition.onend = () => {
+          recognitionRef.current = null;
+          setIsDictating(false);
+          if (listeningTimeoutRef.current) {
+            clearTimeout(listeningTimeoutRef.current);
+            listeningTimeoutRef.current = null;
+          }
+        };
+
+        recognition.start();
+
+        listeningTimeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.stop();
+          }
+        }, 30000);
+
+        return;
+      } catch (error) {
+        recognitionRef.current = null;
+      }
+    }
+
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const supportedMimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+
+      const mediaRecorder = supportedMimeType
+        ? new MediaRecorder(mediaStream, { mimeType: supportedMimeType })
+        : new MediaRecorder(mediaStream);
+
+      const chunks: BlobPart[] = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, {
+          type: mediaRecorder.mimeType || 'audio/webm',
+        });
+
+        mediaStream.getTracks().forEach((track) => track.stop());
+        setIsDictating(false);
+        if (listeningTimeoutRef.current) {
+          clearTimeout(listeningTimeoutRef.current);
+          listeningTimeoutRef.current = null;
+        }
+
+        try {
+          const transcribedText = await aiService.speechToText(audioBlob);
+          appendNoteContent(transcribedText);
+        } catch (error) {
+          console.error('Error al transcribir audio:', error);
+        }
+      };
+
+      mediaRecorder.start();
+
+      listeningTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      }, 30000);
+    } catch (error) {
+      setIsDictating(false);
+      console.error('Acceso al micrófono denegado:', error);
+    }
   };
 
   const saveNote = async (content: string) => {
@@ -274,6 +446,19 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
             <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
               Experimento #{experimentId}
             </span>
+            <button
+              type="button"
+              onClick={startHandsFreeDictation}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 transition-colors ${
+                isDictating
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-accent-light text-accent hover:bg-accent hover:text-white'
+              }`}
+              title={isDictating ? 'Detener dictado' : 'Trabajo sin manos'}
+            >
+              {isDictating ? <FiMicOff className="w-4 h-4" /> : <FiMic className="w-4 h-4" />}
+              {isDictating ? 'Detener' : 'Trabajo sin manos'}
+            </button>
           </div>
           <div className="flex gap-2">
             <button
