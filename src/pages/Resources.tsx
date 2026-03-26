@@ -62,30 +62,38 @@ export default function Resources() {
     if (savedFiles) {
       try {
         const files = JSON.parse(savedFiles);
-        setLocalFiles(files);
-      } catch {
-        // Si hay error al parsear, ignorar
+        if (Array.isArray(files)) {
+          setLocalFiles(files);
+          console.log('✅ Material Reciente cargado:', files);
+        }
+      } catch (err) {
+        console.error('Error al parsear Material Reciente:', err);
       }
+    } else {
+      console.log('No hay Material Reciente guardado');
     }
   }, []);
-
-  // Guardar archivos en localStorage cuando cambien
-  useEffect(() => {
-    localStorage.setItem('sapientlab_recent_files', JSON.stringify(localFiles));
-  }, [localFiles]);
 
   useEffect(() => {
     fetch('http://localhost:3000/api/platform/resources')
       .then(res => res.json())
       .then(data => {
-        const mapped = data.map((item: any) => ({
-          ...item,
-          module: `Módulo ${item.module}`,
-          description: Array.isArray(item.tags) ? item.tags.join(', ') : 'Sin descripción'
-        }));
-        setResources(mapped);
+        if (Array.isArray(data)) {
+          const mapped = data.map((item: any) => ({
+            ...item,
+            module: `Módulo ${item.module}`,
+            description: Array.isArray(item.tags) ? item.tags.join(', ') : 'Sin descripción'
+          }));
+          setResources(mapped);
+        } else {
+          console.warn('Resources data is not an array:', data);
+          setResources([]);
+        }
       })
-      .catch(console.error)
+      .catch(err => {
+        console.error('Error fetching resources:', err);
+        setResources([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -96,10 +104,17 @@ export default function Resources() {
       name: f.name,
       size: f.size
     }));
+    
     setLocalFiles(prev => {
       const allFiles = [...prev, ...newFiles];
       // Limitar a los últimos 20 archivos
-      return allFiles.slice(-20);
+      const limitedFiles = allFiles.slice(-20);
+      
+      // Guardar inmediatamente en localStorage
+      localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
+      console.log('Material Reciente actualizado:', limitedFiles);
+      
+      return limitedFiles;
     });
 
     // Backend Request

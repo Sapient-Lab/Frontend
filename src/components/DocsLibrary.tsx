@@ -80,6 +80,7 @@ export default function DocsLibrary() {
       // Limitar a los últimos 20 archivos
       const limitedFiles = allFiles.slice(-20);
       localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
+      console.log('✅ Documentos guardados en Material Reciente desde DocsLibrary:', limitedFiles);
       
       // Recargar contexto
       await fetchProjectContext();

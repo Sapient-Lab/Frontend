@@ -117,7 +117,7 @@ export default function Onboarding() {
           const limitedFiles = allFiles.slice(-20);
           localStorage.setItem('sapientlab_recent_files', JSON.stringify(limitedFiles));
           
-          console.log('Documentos subidos y procesados correctamente.');
+          console.log('✅ Documentos guardados en Material Reciente:', limitedFiles);
         } catch (docError) {
           console.warn('Advertencia: Los documentos no se pudieron subir, pero el proyecto fue creado:', docError);
           // No bloqueamos el flujo si falla la subida de documentos
