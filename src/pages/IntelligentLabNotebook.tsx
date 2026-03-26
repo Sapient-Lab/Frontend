@@ -139,6 +139,21 @@ export default function IntelligentLabNotebook() {
     });
   };
 
+  const normalizeNotebookText = (content: string) =>
+    content
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^>\s?/gm, '')
+      .replace(/^\s*[-*+]\s+/gm, '- ')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .trim();
+
+  const insertAssistantTextIntoNotebook = (content: string) => {
+    const plainText = normalizeNotebookText(content);
+    if (!plainText) return;
+    appendNoteContent(plainText);
+  };
+
   // Auto-trigger suggestions with debounce (saves to backend every 3s of inactivity)
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const content = e.target.value;
@@ -587,9 +602,22 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <ReactMarkdown>
-                      {msg.content}
-                    </ReactMarkdown>
+                    <div className="space-y-2">
+                      <ReactMarkdown>
+                        {msg.content}
+                      </ReactMarkdown>
+                      <button
+                        type="button"
+                        onClick={() => insertAssistantTextIntoNotebook(msg.content)}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${
+                          isDark
+                            ? 'bg-[#223349] text-blue-100 hover:bg-[#2a3d58]'
+                            : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        }`}
+                      >
+                        Escribir en notebook
+                      </button>
+                    </div>
                   ) : (
                     <p className="text-sm">{msg.content}</p>
                   )}
