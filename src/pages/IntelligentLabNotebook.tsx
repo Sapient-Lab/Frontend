@@ -14,6 +14,8 @@ import {
 } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 import { useTheme } from '../context/ThemeContext';
+import TaskRecommendation from '../components/TaskRecommendation';
+import type { TaskRecommendationItem } from '../components/TaskRecommendation';
 
 interface Note {
   id: number;
@@ -400,6 +402,55 @@ ${sugg.relatedStandards.map(s => `- ${s}`).join('\n')}
 ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safetyWarnings.map(w => `- ${w}`).join('\n')}` : ''}`;
   };
 
+  const generateTaskRecommendations = (assistantMessage: string): TaskRecommendationItem[] => {
+    const recommendations: TaskRecommendationItem[] = [];
+    const lowerMsg = assistantMessage.toLowerCase();
+
+    // Generar tareas más agresivamente
+    // 1. Si menciona acciones a tomar
+    if (lowerMsg.includes('próximo paso') || lowerMsg.includes('siguiente') || 
+        lowerMsg.includes('debería') || lowerMsg.includes('recomienda') ||
+        lowerMsg.includes('sugiero') || lowerMsg.includes('hacer')) {
+      recommendations.push({
+        title: 'Executar Acciones Recomendadas',
+        description: 'Completa las acciones sugeridas por el asistente inteligente del laboratorio.',
+        aiAssigner: 'Asistente del Notebook',
+      });
+    }
+
+    // 2. Si menciona validación
+    if (lowerMsg.includes('validar') || lowerMsg.includes('verificar') || 
+        lowerMsg.includes('confirmar') || lowerMsg.includes('comprobar')) {
+      recommendations.push({
+        title: 'Validar Datos Experimentales',
+        description: 'Verifica que los datos y parámetros del experimento sean correctos.',
+        aiAssigner: 'Asistente del Notebook',
+      });
+    }
+
+    // 3. Si menciona preguntas de seguimiento
+    if (lowerMsg.includes('pregunta') || lowerMsg.includes('considera') || 
+        lowerMsg.includes('piensa en') || lowerMsg.includes('análisis')) {
+      recommendations.push({
+        title: 'Responder Preguntas de Seguimiento',
+        description: 'El IA sugiere responder las preguntas para profundizar el análisis.',
+        aiAssigner: 'Asistente del Notebook',
+      });
+    }
+
+    // 4. Si menciona registrar o documentar
+    if (lowerMsg.includes('registra') || lowerMsg.includes('documenta') || 
+        lowerMsg.includes('anota') || lowerMsg.includes('detalla')) {
+      recommendations.push({
+        title: 'Documentar Resultados',
+        description: 'Asegúrate de registrar todos los detalles importantes del experimento.',
+        aiAssigner: 'Asistente del Notebook',
+      });
+    }
+
+    return recommendations;
+  };
+
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || isLoadingChat) return;
@@ -710,10 +761,18 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <ReactMarkdown>
                         {msg.content}
                       </ReactMarkdown>
+
+                      {/* Task Recommendations for Notebook */}
+                      {generateTaskRecommendations(msg.content).length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                          <TaskRecommendation recommendations={generateTaskRecommendations(msg.content)} />
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => insertAssistantTextIntoNotebook(msg.content)}
