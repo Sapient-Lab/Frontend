@@ -21,6 +21,7 @@ interface Note {
   id: number;
   experimentId: number;
   userId: number;
+  title: string;
   content: string;
   createdAt: string;
   updatedAt: string;
@@ -68,6 +69,9 @@ export default function IntelligentLabNotebook() {
   const [isExtractingInsertable, setIsExtractingInsertable] = useState(false);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [noteTitle, setNoteTitle] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -86,10 +90,23 @@ export default function IntelligentLabNotebook() {
 
   const loadNotes = async () => {
     try {
-      const response = await fetch(`/api/experiments/${experimentId}/notes`);
+      const userId = localStorage.getItem('sapientlab_user_id');
+      const url = userId
+        ? `/api/experiment-notes/by-experiment/${experimentId}?user_id=${userId}`
+        : `/api/experiment-notes/by-experiment/${experimentId}`;
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        setNotes(Array.isArray(data) ? data : []);
+        const normalized = Array.isArray(data) ? data : [];
+        setNotes(normalized.map((n: any) => ({
+          id: n.id,
+          experimentId: n.experiment_id,
+          userId: n.user_id,
+          title: n.title ?? '',
+          content: n.content,
+          createdAt: n.created_at,
+          updatedAt: n.updated_at,
+        })));
       }
     } catch {
       // notes endpoint not yet available
@@ -309,39 +326,88 @@ export default function IntelligentLabNotebook() {
     }
   };
 
+  const deriveTitle = (content: string): string => {
+    const firstLine = content.split('\n').find(l => l.trim()) ?? '';
+    return firstLine.substring(0, 100) || `Nota del ${new Date().toLocaleDateString()}`;
+  };
+
+  const mapNoteResponse = (n: any): Note => ({
+    id: n.id,
+    experimentId: n.experiment_id,
+    userId: n.user_id,
+    title: n.title ?? '',
+    content: n.content,
+    createdAt: n.created_at,
+    updatedAt: n.updated_at,
+  });
+
   const saveNote = async (content: string): Promise<number | null> => {
+    const userId = parseInt(localStorage.getItem('sapientlab_user_id') ?? '1', 10);
+    const title = noteTitle.trim() || deriveTitle(content);
+
     try {
       if (currentNoteId) {
-        const response = await fetch(`/api/experiments/${experimentId}/notes/${currentNoteId}`, {
-          method: 'PUT',
+        const response = await fetch(`/api/experiment-notes/${currentNoteId}`, {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ title, content }),
         });
         if (response.ok) {
-          const updated = await response.json();
-          setNotes(prev =>
-            prev.map(n => (n.id === currentNoteId ? { ...n, ...updated } : n))
-          );
+          const updated = mapNoteResponse(await response.json());
+          setNoteTitle(updated.title);
+          setNotes(prev => prev.map(n => (n.id === currentNoteId ? updated : n)));
           return currentNoteId;
         }
+        const err = await response.json().catch(() => null);
+        console.error('Error al actualizar nota:', response.status, err);
+        return null;
       } else {
-        const response = await fetch(`/api/experiments/${experimentId}/notes`, {
+        const response = await fetch('/api/experiment-notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({
+            experiment_id: experimentId,
+            user_id: userId,
+            title,
+            content,
+          }),
         });
         if (response.ok) {
-          const newNote = await response.json();
-          setNotes([newNote, ...notes]);
+          const newNote = mapNoteResponse(await response.json());
+          setNotes(prev => [newNote, ...prev]);
           setCurrentNoteId(newNote.id);
+          setNoteTitle(newNote.title);
           return newNote.id;
         }
+        const err = await response.json().catch(() => null);
+        console.error('Error al crear nota:', response.status, err);
+        return null;
       }
     } catch (error) {
       console.error('Error saving note:', error);
+      return null;
     }
+  };
 
-    return currentNoteId;
+  const handleSaveNote = async () => {
+    if (!noteContent.trim() || isSaving) return;
+    setIsSaving(true);
+    setSaveStatus('idle');
+    try {
+      const savedId = await saveNote(noteContent);
+      if (savedId !== null) {
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2500);
+      } else {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      }
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAnalyzeText = async () => {
@@ -529,13 +595,17 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
 
   const createNewNote = () => {
     setNoteContent('');
+    setNoteTitle('');
     setCurrentNoteId(null);
+    setSaveStatus('idle');
     setMessages([messages[0]]);
   };
 
   const selectNote = (note: Note) => {
     setNoteContent(note.content);
+    setNoteTitle(note.title);
     setCurrentNoteId(note.id);
+    setSaveStatus('idle');
     setShowHistory(false);
     setMessages([messages[0]]);
   };
@@ -650,7 +720,7 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                     <p className="text-xs truncate mt-1">
-                      {note.content.substring(0, 40)}...
+                      {note.title || note.content.substring(0, 40)}
                     </p>
                   </div>
                 ))
@@ -662,6 +732,18 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
         {/* Notepad Editor */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 flex flex-col p-6 overflow-hidden">
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                value={noteTitle}
+                onChange={e => setNoteTitle(e.target.value)}
+                placeholder={`Título de la nota (Experimento #${experimentId})...`}
+                className="flex-1 px-4 py-2 bg-[#0a0f1c] border border-accent/20 rounded-lg text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 font-mono text-slate-200 placeholder:text-slate-600 transition-all"
+              />
+              {currentNoteId && (
+                <span className="text-[10px] font-mono text-slate-500 bg-accent/5 border border-accent/20 px-2 py-1 rounded whitespace-nowrap">ID #{currentNoteId}</span>
+              )}
+            </div>
             <textarea
               ref={noteTextareaRef}
               value={noteContent}
@@ -683,10 +765,25 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 <FiBookOpen className="w-3 h-3" /> Analizar texto
               </button>
               <button
-                onClick={() => saveNote(noteContent)}
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 text-xs font-mono transition-all duration-300"
+                onClick={handleSaveNote}
+                disabled={isSaving || !noteContent.trim()}
+                className={`px-4 py-2 text-white rounded-lg flex items-center gap-2 text-xs font-mono transition-all duration-300 disabled:opacity-50 ${
+                  saveStatus === 'saved'
+                    ? 'bg-gradient-to-r from-emerald-400 to-teal-400 shadow-lg shadow-emerald-500/30'
+                    : saveStatus === 'error'
+                    ? 'bg-gradient-to-r from-red-500 to-rose-500 hover:shadow-lg hover:shadow-red-500/30'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg hover:shadow-emerald-500/30'
+                }`}
               >
-                <FiSave className="w-3 h-3" /> Guardar Nota
+                {isSaving ? (
+                  <><FiRefreshCw className="w-3 h-3 animate-spin" /> Guardando...</>
+                ) : saveStatus === 'saved' ? (
+                  <><FiSave className="w-3 h-3" /> ¡Guardado!</>
+                ) : saveStatus === 'error' ? (
+                  <><FiSave className="w-3 h-3" /> Error al guardar</>
+                ) : (
+                  <><FiSave className="w-3 h-3" /> Guardar Nota</>
+                )}
               </button>
               <button
                 onClick={downloadNoteAsPDF}
