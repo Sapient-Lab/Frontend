@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FiMail, FiUsers, FiUserPlus, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 import robotIcon3 from '../assets/robot-icon3.png'; // Ajusta la ruta según donde tengas la imagen
@@ -29,6 +29,18 @@ export default function Team() {
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const particles = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    width: Math.random() * 3 + 1,
+    height: Math.random() * 3 + 1,
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    opacity1: Math.random() * 0.3 + 0.1,
+    opacity2: Math.random() * 0.15,
+    delay: Math.random() * 15,
+    duration: Math.random() * 20 + 15,
+  })), []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -201,18 +213,18 @@ export default function Team() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
       
       {/* Partículas flotantes suaves */}
-      {[...Array(30)].map((_, i) => (
+      {particles.map((p) => (
         <div
-          key={i}
+          key={p.id}
           className="absolute rounded-full animate-float-gentle"
           style={{
-            width: `${Math.random() * 3 + 1}px`,
-            height: `${Math.random() * 3 + 1}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            background: `radial-gradient(circle, rgba(59,130,246,${Math.random() * 0.3 + 0.1}), rgba(139,92,246,${Math.random() * 0.15}))`,
-            animationDelay: `${Math.random() * 15}s`,
-            animationDuration: `${Math.random() * 20 + 15}s`,
+            width: `${p.width}px`,
+            height: `${p.height}px`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            background: `radial-gradient(circle, rgba(59,130,246,${p.opacity1}), rgba(139,92,246,${p.opacity2}))`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
           }}
         />
       ))}
