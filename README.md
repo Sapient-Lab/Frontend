@@ -167,12 +167,21 @@ La evidencia OpenML se incorpora a la respuesta explicada y no reemplaza el crit
 
 | Modulo | Estado | Notas |
 |---|---|---|
-| Notebook inteligente | Activo | Chat con contexto + extraccion insertable + guardado de notas por experimento. |
+| Notebook inteligente | Activo | Chat con contexto + extraccion insertable + guardado/edicion/historial/eliminacion de notas por experimento. |
 | Scanner de protocolo e imagen | Activo | Soporta texto, imagen y dictado de voz con fallback. |
 | Onboarding de proyecto | Activo | Crea proyecto, define objetivo y sube documentos iniciales. |
 | Equipo e invitaciones | Activo | Miembros, invitaciones pendientes y aprobacion/rechazo. |
 | Biblioteca documental | Activo | Carga/listado/eliminacion de documentos por proyecto. |
-| Chat documental en Resources | En evolucion | Actualmente usa respuesta simulada (mock) en UI. |
+| Chat documental en Resources | Activo | Consulta documental conectada a backend mediante `documentChat` y contexto de archivos cargados. |
+
+## Otras Funciones Implementadas
+
+- Persistencia real de notas de experimento (crear y actualizar).
+- Historial de notas por experimento en panel lateral.
+- Eliminacion de notas desde historial.
+- Titulo editable de nota y guardado con feedback de estado (`guardando`, `guardado`, `error`).
+- Insercion de contenido util del asistente con `extract-insertable`.
+- Analisis IA de nota con sugerencias y advertencias.
 
 ## Rutas principales
 
@@ -234,9 +243,14 @@ Esto permite ejecutar localmente y desplegar en cloud sin cambiar el codigo de l
 - `PUT /api/experiments/:experimentId/notes/:noteId`
 - `DELETE /api/experiments/:experimentId/notes/:noteId`
 - `POST /api/experiments/:experimentId/notes/:noteId/ai-suggestions`
+- `GET /api/experiment-notes/by-experiment/:experimentId`
+- `POST /api/experiment-notes`
+- `PATCH /api/experiment-notes/:noteId`
 - `GET /api/frontend/home`
 - `GET /api/frontend/themes`
 - `POST /api/frontend/metrics/counter-clicks/increment`
+
+Nota: actualmente conviven rutas legacy (`/api/experiments/:experimentId/notes/*`) y rutas nuevas (`/api/experiment-notes/*`) en el flujo de notebook para mantener compatibilidad durante la transicion.
 
 ### Contexto de proyecto y documentos
 
