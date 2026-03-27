@@ -47,4 +47,4 @@
   ```
 
 ---
-*Cualquier detalle sobre estos endpoints, por favor agregarlos al Postman / OpenAPI swagger para que el frontend pueda consumirlos usando los servicios de Axios/Fetch habituales.*
+*Cualquier detalle sobre estos endpoints, por favor agregarlos al Postman / OpenAPI swagger para que el frontend pueda consumirlos usando los servicios de Axios/Fetch habituales gracias.*
