@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { FiFileText, FiUploadCloud, FiMessageSquare, FiSend, FiLoader, FiBook, FiCpu } from 'react-icons/fi';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { FiFileText, FiUploadCloud, FiSend, FiLoader, FiBook, FiCpu } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 import { aiService } from '../services/aiService';
 
@@ -26,6 +26,19 @@ export default function Resources() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const particleDots = useMemo(
+    () =>
+      Array.from({ length: 25 }, () => ({
+        size: Math.random() * 3 + 1,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        blueAlpha: Math.random() * 0.3 + 0.1,
+        purpleAlpha: Math.random() * 0.15,
+        delay: Math.random() * 15,
+        duration: Math.random() * 20 + 15,
+      })),
+    []
+  );
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -208,18 +221,18 @@ export default function Resources() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
       
       {/* Partículas flotantes */}
-      {[...Array(25)].map((_, i) => (
+      {particleDots.map((dot, i) => (
         <div
           key={i}
           className="absolute rounded-full animate-float-gentle"
           style={{
-            width: `${Math.random() * 3 + 1}px`,
-            height: `${Math.random() * 3 + 1}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            background: `radial-gradient(circle, rgba(59,130,246,${Math.random() * 0.3 + 0.1}), rgba(139,92,246,${Math.random() * 0.15}))`,
-            animationDelay: `${Math.random() * 15}s`,
-            animationDuration: `${Math.random() * 20 + 15}s`,
+            width: `${dot.size}px`,
+            height: `${dot.size}px`,
+            left: `${dot.left}%`,
+            top: `${dot.top}%`,
+            background: `radial-gradient(circle, rgba(59,130,246,${dot.blueAlpha}), rgba(139,92,246,${dot.purpleAlpha}))`,
+            animationDelay: `${dot.delay}s`,
+            animationDuration: `${dot.duration}s`,
           }}
         />
       ))}
