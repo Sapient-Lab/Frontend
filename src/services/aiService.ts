@@ -20,6 +20,7 @@ export type NotebookChatPayload = {
   messages?: ChatMessage[];
   objective?: string;
   preferConcise?: boolean;
+  projectId?: number;
   notebook: {
     notebookId?: string;
     notebookTitle?: string;
@@ -78,12 +79,18 @@ export const aiService = {
    * Envía un mensaje al endpoint conversacional del backend
    */
   async sendMessage(message: string, messages?: ChatMessage[], provider?: 'azure' | 'mistral' | 'deepseek') {
+    const projectId = localStorage.getItem('sapientlab_project_id');
     const response = await fetch('/api/ai/conversation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, messages, provider }), 
+      body: JSON.stringify({ 
+        message, 
+        messages, 
+        provider,
+        projectId: projectId ? parseInt(projectId, 10) : undefined,
+      }), 
     });
 
     if (!response.ok) {
@@ -97,12 +104,18 @@ export const aiService = {
    * Chat especial con contexto del notebook (celdas + celda activa)
    */
   async notebookChat(payload: NotebookChatPayload) {
+    const projectId = localStorage.getItem('sapientlab_project_id');
+    const enhancedPayload = {
+      ...payload,
+      projectId: projectId ? parseInt(projectId, 10) : undefined,
+    };
+
     const response = await fetch('/api/ai/notebook/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(enhancedPayload),
     });
 
     if (!response.ok) {
@@ -135,18 +148,52 @@ export const aiService = {
   /**
    * Sube documentos del proyecto para dar contexto a la IA (Embeddings / Memoria)
    */
-  async uploadProjectDocuments(_files: File[], _projectId?: string) { return { success: true }; },
+  async uploadProjectDocuments(files: File[], projectId?: string) {
+    if (!files || files.length === 0) {
+      return { success: true, documents: [] };
+    }
+
+    if (!projectId) {
+      projectId = localStorage.getItem('sapientlab_project_id') || '';
+    }
+
+    if (!projectId) {
+      throw new Error('Project ID not found');
+    }
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    const response = await fetch(`/api/project-context/${projectId}/documents`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await this.parseError(response, 'Error al subir documentos del proyecto');
+      throw new Error(error);
+    }
+
+    return response.json();
+  },
 
   /**
    * Chat específico de código con Copilot AI
    */
   async copilotChat(message: string, language: string = 'typescript') {
+    const projectId = localStorage.getItem('sapientlab_project_id');
     const response = await fetch('/api/ai/copilot/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, language }), 
+      body: JSON.stringify({ 
+        message, 
+        language,
+        projectId: projectId ? parseInt(projectId, 10) : undefined,
+      }), 
     });
 
     if (!response.ok) throw new Error('Error en Copilot Chat');
@@ -292,5 +339,40 @@ export const aiService = {
     });
     if (!response.ok) throw new Error('Error al escanear el protocolo');
     return response.json();
+  },
+
+  /**
+   * Chat sobre documentos: Analiza documentos usando IA conversacional
+   */
+  async documentChat(query: string, documentNames: string[] = []) {
+    const prompt = `
+Eres un asistente especializado en análisis de documentos e investigación. 
+El usuario ha subido los siguientes documentos: ${documentNames.join(', ')}
+Responde la siguiente pregunta basándote en tu conocimiento de estos tipos de documentos y lo que sabrías de archivos con esos nombres.
+La respuesta debe ser específica, útil y basada en el contenido que típicamente encontraríamos en tales documentos.
+
+Pregunta del usuario: ${query}
+    `.trim();
+
+    try {
+      const response = await this.sendMessage(prompt, []);
+      // Extract the actual response text from the wrapper
+      const responseText = response?.rawModelResponse || response?.text || response?.message || JSON.stringify(response);
+      
+      // Format the response
+      if (!responseText) return 'Sin información disponible.';
+      
+      let formatted = responseText
+        .trim()
+        // Normalize paragraph spacing
+        .split('\n\n')
+        .filter((p: string) => p.trim().length > 0)
+        .join('\n\n');
+      
+      return formatted;
+    } catch (error) {
+      console.error('Error en documentChat:', error);
+      throw error;
+    }
   }
 };
