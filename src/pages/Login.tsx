@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import BottleAnimation from '../landing/components/BottleAnimation.jsx';
-import '../landing/landing.css';
+import { FiMail, FiLock, FiUser, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function Login() {
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,6 +13,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -34,17 +35,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      if (mode === 'forgot_password') {
-        if (!email) {
-          setError('Por favor, ingresa tu correo electrónico.');
-          setIsLoading(false);
-          return;
-        }
-        
-        const res = await authService.forgotPassword(email);
-        setSuccessMsg(res.message || 'Solicitud enviada correctamente.');
-        
-      } else if (mode === 'register') {
+      if (mode === 'register') {
         if (password !== confirmPassword) {
           setError('Las contraseñas no coinciden.');
           setIsLoading(false);
@@ -66,11 +57,9 @@ export default function Login() {
           localStorage.setItem('sapientlab_login_time', Date.now().toString());
           sessionStorage.setItem('active_session', 'true');
         }
-        console.log('Registro exitoso. Token fake guardado en fondo.');
         navigate('/onboarding');
         
       } else {
-        // mode === 'login'
         const res = await authService.login({ email, password });
         if (res.user?.id) localStorage.setItem('sapientlab_user_id', res.user.id.toString());
         if (res.user?.name) localStorage.setItem('sapientlab_user_name', res.user.name);
@@ -79,7 +68,6 @@ export default function Login() {
           localStorage.setItem('sapientlab_login_time', Date.now().toString());
           sessionStorage.setItem('active_session', 'true');
         }
-        console.log('Login exitoso. Token fake guardado en fondo.');
         navigate('/app'); 
       }
     } catch (err: any) {
@@ -89,212 +77,218 @@ export default function Login() {
     }
   };
 
-  const toggleMode = (newMode: 'login' | 'register' | 'forgot_password') => {
-    setMode(newMode);
-    setError('');
-    setSuccessMsg('');
-    setPassword('');
-    setConfirmPassword('');
-  };
-
   return (
-    <div className="min-h-screen bg-lab-bg relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute -top-24 -left-20 w-96 h-96 rounded-full bg-accent/15 blur-3xl" />
-        <div className="absolute -bottom-24 -right-12 w-96 h-96 rounded-full bg-[#2f6da6]/20 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-8 relative overflow-hidden bg-gradient-to-br from-[#0a0f1c] via-[#0c1220] to-[#0b1020]">
+      {/* Fondo con grid científico sutil */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
+      
+      {/* Efectos de glow suaves */}
+      <div className="absolute top-1/3 -left-48 w-96 h-96 bg-accent/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-1/3 -right-48 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px]" />
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 md:p-8">
-        <div className="w-full max-w-6xl grid lg:grid-cols-[1.2fr_0.85fr] gap-6 items-stretch">
-          <section className="hidden lg:flex relative rounded-3xl border border-cyan-300/35 overflow-hidden bg-gradient-to-br from-[#0d1f32] via-[#123252] to-[#0c253f] shadow-[0_20px_50px_rgba(7,28,48,0.45)]">
-            <div className="absolute inset-0 opacity-30" style={{
-              backgroundImage: 'linear-gradient(rgba(56,189,248,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.14) 1px, transparent 1px)',
-              backgroundSize: '44px 44px',
-            }} />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-cyan-400/10" />
-
-            <div className="relative z-10 flex flex-col justify-between p-10">
-              <div>
-                <p className="inline-flex items-center gap-2 text-xs tracking-[0.2em] font-mono px-3 py-1 rounded-full border border-cyan-200/40 bg-cyan-300/10 text-cyan-100">
-                  SAPIENT LAB AI
-                </p>
-
-                <h2 className="mt-6 text-4xl leading-tight font-bold text-white">
-                  Laboratorio inteligente,
-                  <span className="block text-cyan-300"> acceso en un clic.</span>
-                </h2>
-
-                <p className="mt-4 max-w-xl text-slate-200/90">
-                  Fusionamos la experiencia visual de la landing con tu flujo de autenticación.
-                  Inicia sesión y salta directo a tu workspace experimental.
-                </p>
-
-                <div className="mt-8 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-3">
-                    <p className="font-bold text-cyan-200">93%</p>
-                    <p className="text-xs text-slate-200">Menos tiempo</p>
-                  </div>
-                  <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-3">
-                    <p className="font-bold text-cyan-200">99.8%</p>
-                    <p className="text-xs text-slate-200">Precisión IA</p>
-                  </div>
-                  <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-3">
-                    <p className="font-bold text-cyan-200">24/7</p>
-                    <p className="text-xs text-slate-200">Asistencia</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative h-72 mt-6 overflow-hidden rounded-2xl border border-cyan-300/30 bg-gradient-to-b from-[#081827]/95 to-[#0e2a44]/90">
-                <div
-                  className="absolute inset-0 opacity-50"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(rgba(34,211,238,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.16) 1px, transparent 1px)',
-                    backgroundSize: '34px 34px',
-                  }}
-                />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.16),transparent_58%)]" />
-                <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 scale-[0.34] origin-center">
-                  <BottleAnimation />
-                </div>
+      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 lg:gap-12 items-center relative z-10">
+        
+        {/* Lado Izquierdo - Botella Animada SIN recuadro */}
+        <div className="hidden lg:flex flex-col items-center justify-center">
+          <div className="relative w-full max-w-md">
+            {/* Efecto de glow detrás de la botella - más sutil */}
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/10 via-cyan-500/10 to-accent/10 rounded-full blur-2xl" />
+            
+            {/* Botella sin contenedor con borde */}
+            <div className="relative flex items-center justify-center">
+              <div className="relative h-80 w-full flex items-center justify-center">
+                <BottleAnimation />
               </div>
             </div>
-          </section>
+            
+            {/* Texto del proyecto - integrado naturalmente */}
+            <div className="text-center mt-8 space-y-2">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-accent to-cyan-400 bg-clip-text text-transparent">
+                SAPIENT LAB
+              </h2>
+              <p className="text-slate-400 text-sm font-mono leading-relaxed">
+                Laboratorio de Investigación Asistida por IA
+              </p>
+              <p className="text-xs text-slate-500 font-mono">
+                Inteligencia Artificial para la Ciencia Moderna
+              </p>
+            </div>
+          </div>
+        </div>
 
-          <section className="w-full bg-surface p-8 rounded-2xl shadow-lg border border-lab-border">
-            <div className="mb-8 text-center">
-              <h1 className="text-2xl font-mono font-bold text-accent">Sapient Lab</h1>
-              <p className="text-sm text-muted mt-2">
-                {mode === 'login' && 'Inicia sesión para continuar'}
-                {mode === 'register' && 'Crea tu cuenta de laboratorio'}
-                {mode === 'forgot_password' && 'Recuperar contraseña'}
+        {/* Lado Derecho - Formulario */}
+        <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
+          <div className="bg-[#0f1624]/80 backdrop-blur-xl border border-accent/20 rounded-2xl p-8 shadow-2xl">
+            
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent-dim mb-4 shadow-lg">
+                <span className="text-white font-mono text-xl font-bold">SL</span>
+              </div>
+              <p className="text-xs font-mono text-accent tracking-wider mb-2">SAPIENT LAB</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent mb-2">
+                {mode === 'login' ? 'Bienvenido de vuelta' : 'Crear una cuenta'}
+              </h1>
+              <p className="text-slate-400 text-sm font-mono">
+                {mode === 'login' 
+                  ? 'Inicia sesión para continuar en tu espacio de trabajo' 
+                  : 'Comienza tu viaje científico con SAPIENT LAB'}
               </p>
             </div>
 
+            {/* Mensajes de error/éxito */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
                 {error}
               </div>
             )}
-
             {successMsg && (
-              <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded border border-green-200">
+              <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-mono">
                 {successMsg}
               </div>
             )}
 
+            {/* Formulario */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-mono font-medium text-accent mb-1.5">Correo Electrónico</label>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#05080f] border border-accent/20 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 font-mono text-sm text-slate-200 placeholder:text-slate-600 transition-all"
+                    placeholder="Ingresa tu correo electrónico"
+                  />
+                </div>
+              </div>
+
+              {/* Nombre completo (solo registro) */}
               {mode === 'register' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans"
-                    placeholder="Ej. Ada Lovelace"
-                  />
+                  <label className="block text-xs font-mono font-medium text-accent mb-1.5">Nombre Completo</label>
+                  <div className="relative">
+                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-[#05080f] border border-accent/20 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 font-mono text-sm text-slate-200 placeholder:text-slate-600 transition-all"
+                      placeholder="Ingresa tu nombre completo"
+                    />
+                  </div>
                 </div>
               )}
 
+              {/* Contraseña */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans"
-                  placeholder="tu@email.com"
-                />
+                <label className="block text-xs font-mono font-medium text-accent mb-1.5">Contraseña</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-12 py-2.5 bg-[#05080f] border border-accent/20 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 font-mono text-sm text-slate-200 placeholder:text-slate-600 transition-all"
+                    placeholder={mode === 'login' ? "Ingresa tu contraseña" : "Crea tu contraseña"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  >
+                    {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
-              {mode !== 'forgot_password' && (
+              {/* Confirmar contraseña (solo registro) */}
+              {mode === 'register' && (
                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                    {mode === 'login' && (
-                      <button
-                        type="button"
-                        onClick={() => toggleMode('forgot_password')}
-                        className="text-xs text-accent hover:underline focus:outline-none"
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative group">
+                  <label className="block text-xs font-mono font-medium text-accent mb-1.5">Confirmar Contraseña</label>
+                  <div className="relative">
+                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                     <input
                       type="password"
                       required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans"
-                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-[#05080f] border border-accent/20 rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 font-mono text-sm text-slate-200 placeholder:text-slate-600 transition-all"
+                      placeholder="Confirma tu contraseña"
                     />
-                    {mode === 'register' && (
-                      <div className="absolute z-10 hidden group-hover:block w-[280px] p-3 mt-2 bg-gray-800 text-white text-xs rounded shadow-lg left-0 top-full">
-                        <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-800 rotate-45"></div>
-                        <p className="font-semibold mb-1">La contraseña debe incluir:</p>
-                        <ul className="list-disc pl-4 space-y-1">
-                          <li className={password.length >= 8 ? 'text-green-400' : 'text-gray-300'}>Al menos 8 caracteres</li>
-                          <li className={/[A-Z]/.test(password) ? 'text-green-400' : 'text-gray-300'}>Al menos una mayúscula</li>
-                          <li className={/[a-z]/.test(password) ? 'text-green-400' : 'text-gray-300'}>Al menos una minúscula</li>
-                          <li className={/[0-9]/.test(password) ? 'text-green-400' : 'text-gray-300'}>Al menos un número</li>
-                          <li className={/[!@#$%^&*.,_-]/.test(password) ? 'text-green-400' : 'text-gray-300'}>Un carácter especial (!@#$%^&*.,_-)</li>
-                        </ul>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
 
-              {mode === 'register' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-lab-border rounded focus:outline-none focus:border-accent font-sans"
-                    placeholder="••••••••"
-                  />
+              {/* Forgot password link (solo login) */}
+              {mode === 'login' && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => {/* Implementar forgot password */}}
+                    className="text-xs text-accent/70 hover:text-accent font-mono transition-colors"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
                 </div>
               )}
 
+              {/* Botón submit */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full text-white py-2 px-4 rounded transition-colors font-medium font-mono mt-2 ${isLoading ? 'bg-muted cursor-not-allowed' : 'bg-accent hover:bg-accent-dim'}`}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-accent to-accent-dim text-white font-mono font-medium hover:shadow-[0_0_20px_rgba(17,67,112,0.4)] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-6"
               >
-                {isLoading ? 'CARGANDO...' : (
+                {isLoading ? (
                   <>
-                    {mode === 'login' && 'ENTRAR'}
-                    {mode === 'register' && 'REGISTRARSE'}
-                    {mode === 'forgot_password' && 'ENVIAR ENLACE'}
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Cargando...
+                  </>
+                ) : (
+                  <>
+                    {mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
+                    <FiArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
+            {/* Footer con switch de modo */}
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted">
-                {mode === 'login' ? '¿No tienes cuenta? ' :
-                  mode === 'register' ? '¿Ya tienes cuenta? ' : '¿Recordaste tu contraseña? '}
+              <span className="text-slate-500 font-mono">
+                {mode === 'login' ? "¿No tienes una cuenta? " : "¿Ya tienes una cuenta? "}
               </span>
               <button
                 type="button"
-                onClick={() => toggleMode(mode === 'login' ? 'register' : 'login')}
-                className="text-accent font-medium hover:underline cursor-pointer"
+                onClick={() => {
+                  setMode(mode === 'login' ? 'register' : 'login');
+                  setError('');
+                  setSuccessMsg('');
+                  setPassword('');
+                  setConfirmPassword('');
+                }}
+                className="text-accent hover:text-cyan-400 font-mono font-medium transition-colors"
               >
-                {mode === 'login' ? 'Regístrate aquí' : 'Inicia sesión'}
+                {mode === 'login' ? 'Crear una cuenta' : 'Iniciar Sesión'}
               </button>
             </div>
-          </section>
+
+            {/* Términos */}
+            <p className="mt-6 text-center text-[10px] text-slate-600 font-mono leading-relaxed">
+              Al continuar, aceptas nuestros{' '}
+              <button className="text-accent hover:text-cyan-400">Términos de Servicio</button>
+              {' '}y{' '}
+              <button className="text-accent hover:text-cyan-400">Política de Privacidad</button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

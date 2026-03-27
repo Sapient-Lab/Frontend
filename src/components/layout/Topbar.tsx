@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FiMoon, FiSun, FiActivity } from 'react-icons/fi'
+import { FiActivity, FiLogOut } from 'react-icons/fi'
 import type { NavItem } from '../../types/navigation'
-import { useTheme } from '../../context/ThemeContext'
 
 const navItems: NavItem[] = [
   { label: 'Laboratorio', path: '/app/lab' },
@@ -14,7 +13,6 @@ export default function Topbar() {
   const location = useLocation()
   const currentPath = location.pathname
   const navigate = useNavigate()
-  const { isDark, toggleTheme } = useTheme()
 
   let userEmail = 'usuario@email.com';
   let userInitials = 'FC';
@@ -29,40 +27,46 @@ export default function Topbar() {
     console.error('No se pudo leer el usuario de localStorage', error);
   }
 
-  return (
-    <header className={`h-[64px] backdrop-blur-md border-b flex items-center px-3 sm:px-4 lg:px-6 gap-3 lg:gap-6 sticky top-0 z-50 transition-colors ${
-      isDark
-        ? 'bg-[#0d1726]/92 border-[#223349]'
-        : 'bg-white/90 border-lab-border/70'
-    }`}>
+  const handleLogout = () => {
+    sessionStorage.removeItem('active_session');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
+  return (
+    <header className="h-[64px] bg-[#0f1624]/90 backdrop-blur-xl border-b border-accent/20 flex items-center px-3 sm:px-4 lg:px-6 gap-3 lg:gap-6 sticky top-0 z-50 transition-all duration-300">
+      
       {/* Brand */}
       <div
         onClick={() => navigate('/app')}
-        className="flex shrink-0 items-center gap-3 font-semibold text-[15px] text-accent tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
+        className="flex shrink-0 items-center gap-3 font-semibold text-[15px] cursor-pointer group transition-all duration-300"
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-[#123155] flex items-center justify-center shadow-[0_8px_20px_rgba(20,65,110,0.25)]">
-          <FiActivity className="w-5 h-5 text-white opacity-90" />
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <FiActivity className="w-5 h-5 text-white" />
         </div>
         <div className="leading-tight">
-          <p className="font-semibold text-sm">SapientLab</p>
-          <p className="hidden md:block text-[10px] text-muted tracking-[0.18em] uppercase">Notebook Assistant</p>
+          <p className="font-bold text-base bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+            SapientLab
+          </p>
+          <p className="hidden md:block text-[9px] font-mono text-accent tracking-[0.2em] uppercase">
+            Notebook Assistant
+          </p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex gap-1 flex-1 min-w-0 overflow-x-auto whitespace-nowrap pr-1">
+      <nav className="flex gap-1 flex-1 min-w-0 overflow-x-auto whitespace-nowrap pr-1 custom-scrollbar">
         {navItems.map((item) => {
           const isActive = currentPath.startsWith(item.path)
           return (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`shrink-0 px-3.5 py-2 rounded-lg text-[13px] transition-all cursor-pointer border border-transparent
-                ${isActive
-                  ? 'bg-accent-light text-accent font-medium border-accent/20 shadow-[inset_0_0_0_1px_rgba(28,61,107,0.08)]'
-                  : `text-muted hover:bg-lab-bg ${isDark ? 'hover:text-blue-100' : 'hover:text-gray-800'}`
-                }`}
+              className={`shrink-0 px-4 py-2 rounded-lg text-[12px] font-mono font-medium transition-all duration-300 cursor-pointer ${
+                isActive
+                  ? 'bg-gradient-to-r from-accent to-purple-600 text-white shadow-lg shadow-accent/30'
+                  : 'text-slate-400 hover:text-accent hover:bg-accent/10'
+              }`}
             >
               {item.label}
             </button>
@@ -70,53 +74,63 @@ export default function Topbar() {
         })}
       </nav>
 
-      {/* Right */}
-      <div className="shrink-0 flex items-center gap-2 md:gap-3">
-        <button
-          onClick={toggleTheme}
-          className="h-[32px] px-3 rounded-full border border-lab-border bg-lab-bg text-[12px] font-medium text-muted hover:text-accent hover:border-accent/40 transition-colors flex items-center gap-2"
-          title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-        >
-          {isDark ? <FiSun className="w-4 h-4" /> : <FiMoon className="w-4 h-4" />}
-          <span className="hidden sm:inline">{isDark ? 'Claro' : 'Oscuro'}</span>
-        </button>
-
-        <div className={`hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full border border-lab-border bg-lab-bg text-[10px] uppercase tracking-widest ${
-          isDark ? 'text-blue-100' : 'text-gray-600'
-        }`}>
-          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-          Session segura
+      {/* Right Section - Card de Usuario */}
+      <div className="shrink-0 flex items-center gap-3 md:gap-4">
+        
+        {/* Session Status */}
+        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent/5 text-[9px] font-mono uppercase tracking-wider">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-accent">Session segura</span>
         </div>
 
-        <div className="hidden 2xl:flex flex-col items-end mr-1">
-          <span className={`text-[11px] font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{userEmail}</span>
+        {/* User Card - Estilo tarjeta pequeña */}
+        <div className="group relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-accent/30 to-purple-500/30 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-300" />
+          <div className="relative flex items-center gap-3 px-3 py-1.5 rounded-xl bg-accent/5 border border-accent/20 hover:border-accent/50 transition-all duration-300">
+            
+            {/* Avatar */}
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shadow-md">
+              {userInitials}
+            </div>
+            
+            {/* User Info */}
+            <div className="hidden 2xl:flex flex-col">
+              <span className="text-[10px] font-mono text-slate-300">{userEmail}</span>
+              <span className="text-[8px] font-mono text-slate-500">Investigador</span>
+            </div>
+            
+            {/* Logout Button dentro de la card */}
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-mono text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 group/btn"
+              title="Cerrar sesión"
+            >
+              <FiLogOut className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+              <span className="hidden md:inline">Salir</span>
+            </button>
+          </div>
         </div>
-        <div className="w-[32px] h-[32px] bg-accent rounded-full flex items-center justify-center text-white text-xs font-semibold">
-          {userInitials}
-        </div>
-        <button 
-          onClick={() => {
-            sessionStorage.removeItem('active_session');
-            localStorage.removeItem('user');
-            navigate('/login');
-          }}
-          className="hidden md:inline ml-1 text-[12px] font-mono text-muted hover:text-accent underline transition-colors"
-        >
-          Cerrar sesión
-        </button>
-        <button
-          onClick={() => {
-            sessionStorage.removeItem('active_session');
-            localStorage.removeItem('user');
-            navigate('/login');
-          }}
-          className="md:hidden text-[11px] font-mono text-muted hover:text-accent transition-colors"
-          title="Cerrar sesión"
-        >
-          Salir
-        </button>
       </div>
 
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(59, 130, 246, 0.1);
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(59, 130, 246, 0.4);
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(59, 130, 246, 0.6);
+        }
+      `}</style>
     </header>
   )
 }

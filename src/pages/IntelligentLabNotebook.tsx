@@ -54,10 +54,9 @@ export default function IntelligentLabNotebook() {
   const [noteContent, setNoteContent] = useState('');
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNoteId, setCurrentNoteId] = useState<number | null>(null);
-  const [experimentId] = useState<number>(1); // TODO: Get from context or URL params
+  const [experimentId] = useState<number>(1);
   const [isDictating, setIsDictating] = useState(false);
 
-  // Chat states
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -70,20 +69,17 @@ export default function IntelligentLabNotebook() {
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Refs
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-scroll chat
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Load notes on mount
   useEffect(() => {
     loadNotes();
   }, [experimentId]);
@@ -174,7 +170,6 @@ export default function IntelligentLabNotebook() {
       appendNoteContent(plainText);
     } catch (error) {
       console.error('Error extrayendo contenido insertable:', error);
-      // Fallback local si la API no esta disponible
       const plainText = normalizeNotebookText(content);
       if (!plainText) return;
       appendNoteContent(plainText);
@@ -183,7 +178,6 @@ export default function IntelligentLabNotebook() {
     }
   };
 
-  // Handle note changes - only update local state, save only on button click
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const content = e.target.value;
     setNoteContent(content);
@@ -318,7 +312,6 @@ export default function IntelligentLabNotebook() {
   const saveNote = async (content: string): Promise<number | null> => {
     try {
       if (currentNoteId) {
-        // Update existing note
         const response = await fetch(`/api/experiments/${experimentId}/notes/${currentNoteId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -332,7 +325,6 @@ export default function IntelligentLabNotebook() {
           return currentNoteId;
         }
       } else {
-        // Create new note
         const response = await fetch(`/api/experiments/${experimentId}/notes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -373,7 +365,6 @@ export default function IntelligentLabNotebook() {
       if (response.ok) {
         const data = await response.json();
 
-        // Add AI suggestions to chat
         const suggestionText = formatSuggestionsAsMarkdown(data.suggestions);
         setMessages(prev => [
           ...prev,
@@ -406,8 +397,6 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
     const recommendations: TaskRecommendationItem[] = [];
     const lowerMsg = assistantMessage.toLowerCase();
 
-    // Generar tareas más agresivamente
-    // 1. Si menciona acciones a tomar
     if (lowerMsg.includes('próximo paso') || lowerMsg.includes('siguiente') || 
         lowerMsg.includes('debería') || lowerMsg.includes('recomienda') ||
         lowerMsg.includes('sugiero') || lowerMsg.includes('hacer')) {
@@ -418,7 +407,6 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
       });
     }
 
-    // 2. Si menciona validación
     if (lowerMsg.includes('validar') || lowerMsg.includes('verificar') || 
         lowerMsg.includes('confirmar') || lowerMsg.includes('comprobar')) {
       recommendations.push({
@@ -428,7 +416,6 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
       });
     }
 
-    // 3. Si menciona preguntas de seguimiento
     if (lowerMsg.includes('pregunta') || lowerMsg.includes('considera') || 
         lowerMsg.includes('piensa en') || lowerMsg.includes('análisis')) {
       recommendations.push({
@@ -438,7 +425,6 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
       });
     }
 
-    // 4. Si menciona registrar o documentar
     if (lowerMsg.includes('registra') || lowerMsg.includes('documenta') || 
         lowerMsg.includes('anota') || lowerMsg.includes('detalla')) {
       recommendations.push({
@@ -458,7 +444,6 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
     const userMessage = chatInput.trim();
     setChatInput('');
 
-    // Add user message to chat
     setMessages(prev => [...prev, { role: 'user', content: userMessage }] as ChatMessage[]);
     setIsLoadingChat(true);
 
@@ -545,18 +530,17 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
   const createNewNote = () => {
     setNoteContent('');
     setCurrentNoteId(null);
-    setMessages([messages[0]]); // Reset chat to initial message
+    setMessages([messages[0]]);
   };
 
   const selectNote = (note: Note) => {
     setNoteContent(note.content);
     setCurrentNoteId(note.id);
     setShowHistory(false);
-    setMessages([messages[0]]); // Reset chat
+    setMessages([messages[0]]);
   };
 
   const downloadNoteAsPDF = () => {
-    // TODO: Implement PDF export
     const element = document.createElement('a');
     const file = new Blob([noteContent], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
@@ -567,58 +551,54 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
   };
 
   return (
-    <div
-      className={`h-full w-full overflow-hidden flex flex-col ${
-        isDark ? 'bg-[#0d1726]' : 'bg-gray-50'
-      }`}
-    >
-      {/* Header */}
-      <div
-        className={`px-6 py-4 border-b ${
-          isDark
-            ? 'bg-[#0d1726] border-[#223349]'
-            : 'bg-white border-lab-border'
-        }`}
-      >
+    <div className={`h-full w-full overflow-hidden flex flex-col bg-gradient-to-br from-[#0a0f1c] via-[#0c1220] to-[#0b1020]`}>
+      
+      {/* Header con estilo científico */}
+      <div className="px-6 py-4 border-b border-accent/20 bg-[#0f1624]/80 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              <FiBookOpen className="w-5 h-5 text-accent" />
-              Lab Notebook Inteligente
-            </h1>
-            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center shadow-lg">
+              <FiBookOpen className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent flex items-center gap-2">
+                Lab Notebook Inteligente
+              </h1>
+              <p className="text-[10px] font-mono text-accent tracking-wider">SISTEMA DE REGISTRO CIENTÍFICO</p>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent">
               Experimento #{experimentId}
             </span>
-            <button
-              type="button"
-              onClick={startHandsFreeDictation}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 transition-colors ${
-                isDictating
-                  ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-accent-light text-accent hover:bg-accent hover:text-white'
-              }`}
-              title={isDictating ? 'Detener dictado' : 'Trabajo sin manos'}
-            >
-              {isDictating ? <FiMicOff className="w-4 h-4" /> : <FiMic className="w-4 h-4" />}
-              {isDictating ? 'Detener' : 'Trabajo sin manos'}
-            </button>
           </div>
           <div className="flex gap-2">
             <button
-              onClick={createNewNote}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 text-sm"
+              type="button"
+              onClick={startHandsFreeDictation}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium flex items-center gap-2 transition-all duration-300 ${
+                isDictating
+                  ? 'bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/30'
+                  : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20'
+              }`}
+              title={isDictating ? 'Detener dictado' : 'Trabajo sin manos'}
             >
-              <FiPlus className="w-4 h-4" /> Nueva Nota
+              {isDictating ? <FiMicOff className="w-3 h-3" /> : <FiMic className="w-3 h-3" />}
+              {isDictating ? 'Detener' : 'Trabajo sin manos'}
+            </button>
+            <button
+              onClick={createNewNote}
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-accent to-purple-600 text-white hover:shadow-lg hover:shadow-accent/30 transition-all duration-300 flex items-center gap-2 text-xs font-mono"
+            >
+              <FiPlus className="w-3 h-3" /> Nueva Nota
             </button>
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm ${
-                isDark
-                  ? 'bg-[#1a2a3a] border border-[#223349] text-white'
-                  : 'bg-gray-200 border border-gray-300 text-gray-800'
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-mono transition-all duration-300 ${
+                showHistory
+                  ? 'bg-accent/20 border border-accent/50 text-accent'
+                  : 'bg-accent/10 border border-accent/30 text-slate-400 hover:bg-accent/20'
               }`}
             >
-              <FiClock className="w-4 h-4" /> Historial ({notes.length})
+              <FiClock className="w-3 h-3" /> Historial ({notes.length})
             </button>
           </div>
         </div>
@@ -628,28 +608,19 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
       <div className="flex-1 flex overflow-hidden">
         {/* History Panel */}
         {showHistory && (
-          <div
-            className={`w-64 border-r overflow-y-auto ${
-              isDark
-                ? 'bg-[#0d1726] border-[#223349]'
-                : 'bg-white border-lab-border'
-            }`}
-          >
-            <div className="p-4 space-y-2">
+          <div className="w-64 border-r border-accent/20 overflow-y-auto bg-[#0f1624]/60 backdrop-blur-sm">
+            <div className="p-3 space-y-2">
+              <h3 className="text-[10px] font-mono text-accent uppercase tracking-wider px-2 mb-3">NOTAS ANTERIORES</h3>
               {notes.length === 0 ? (
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Sin notas aún
-                </p>
+                <p className="text-xs text-slate-500 font-mono text-center py-4">Sin notas aún</p>
               ) : (
                 notes.map(note => (
                   <div
                     key={note.id}
-                    className={`relative w-full text-left p-3 pr-10 rounded-lg transition-colors cursor-pointer ${
+                    className={`relative w-full text-left p-3 pr-10 rounded-lg transition-all duration-300 cursor-pointer ${
                       currentNoteId === note.id
-                        ? 'bg-blue-500 text-white'
-                        : isDark
-                          ? 'bg-[#1a2a3a] text-gray-200 hover:bg-[#2a3a4a]'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-accent to-purple-600 text-white shadow-lg'
+                        : 'bg-accent/5 border border-accent/20 hover:border-accent/50 text-slate-300'
                     }`}
                     onClick={() => selectNote(note)}
                     role="button"
@@ -669,18 +640,16 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                       className={`absolute top-2 right-2 p-1.5 rounded-md transition-colors ${
                         currentNoteId === note.id
                           ? 'bg-white/15 hover:bg-white/25 text-white'
-                          : isDark
-                            ? 'bg-[#223349] hover:bg-[#2a3d58] text-red-300'
-                            : 'bg-white hover:bg-red-50 text-red-600'
+                          : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
                       }`}
                       title="Eliminar esta nota"
                     >
-                      <FiTrash2 className="w-3.5 h-3.5" />
+                      <FiTrash2 className="w-3 h-3" />
                     </button>
-                    <p className="text-xs truncate font-mono">
+                    <p className="text-[10px] font-mono truncate opacity-70">
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
-                    <p className="text-xs truncate opacity-75">
+                    <p className="text-xs truncate mt-1">
                       {note.content.substring(0, 40)}...
                     </p>
                   </div>
@@ -692,59 +661,49 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
 
         {/* Notepad Editor */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className={`flex-1 flex flex-col p-6 overflow-hidden ${isDark ? 'bg-[#0d1726]' : 'bg-white'}`}>
+          <div className="flex-1 flex flex-col p-6 overflow-hidden">
             <textarea
               ref={noteTextareaRef}
               value={noteContent}
               onChange={handleNoteChange}
               placeholder="Escribe tus notas del experimento aquí. Luego usa 'Analizar texto' para pedir sugerencias a la IA..."
-              className={`flex-1 p-4 rounded-lg resize-none font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                isDark
-                  ? 'bg-[#1a2a3a] border border-[#223349] text-white placeholder-gray-500'
-                  : 'bg-gray-50 border border-lab-border text-gray-800 placeholder-gray-400'
-              }`}
+              className="flex-1 p-4 rounded-xl resize-none font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 bg-[#0a0f1c] border border-accent/20 text-slate-200 placeholder:text-slate-600 transition-all duration-300"
             />
             <div className="flex gap-2 mt-4 justify-end">
               {isGeneratingSuggestions && (
-                <span className="text-xs text-blue-500 flex items-center gap-1">
-                  <FiRefreshCw className="w-4 h-4 animate-spin" /> Analizando...
+                <span className="text-xs text-accent flex items-center gap-1">
+                  <FiRefreshCw className="w-3 h-3 animate-spin" /> Analizando...
                 </span>
               )}
               <button
                 onClick={handleAnalyzeText}
                 disabled={isGeneratingSuggestions || !noteContent.trim()}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-accent to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-accent/30 disabled:opacity-50 flex items-center gap-2 text-xs font-mono transition-all duration-300"
               >
-                <FiBookOpen className="w-4 h-4" /> Analizar texto
+                <FiBookOpen className="w-3 h-3" /> Analizar texto
               </button>
               <button
                 onClick={() => saveNote(noteContent)}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 text-xs font-mono transition-all duration-300"
               >
-                <FiSave className="w-4 h-4" /> Guardar Nota
+                <FiSave className="w-3 h-3" /> Guardar Nota
               </button>
               <button
                 onClick={downloadNoteAsPDF}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg hover:shadow-lg flex items-center gap-2 text-xs font-mono transition-all duration-300"
               >
-                <FiDownload className="w-4 h-4" /> Descargar
+                <FiDownload className="w-3 h-3" /> Descargar
               </button>
             </div>
           </div>
         </div>
 
         {/* AI Chat Panel */}
-        <div
-          className={`w-96 flex flex-col border-l overflow-hidden ${
-            isDark
-              ? 'bg-[#0d1726] border-[#223349]'
-              : 'bg-white border-lab-border'
-          }`}
-        >
+        <div className="w-96 flex flex-col border-l border-accent/20 overflow-hidden bg-[#0f1624]/80 backdrop-blur-sm">
           {/* Chat Messages */}
           <div
             ref={scrollRef}
-            className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-[#0d1726]' : 'bg-gray-50'}`}
+            className="flex-1 overflow-y-auto p-4 space-y-4"
           >
             {messages.map((msg, idx) => (
               <div
@@ -752,23 +711,20 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs px-4 py-2 rounded-lg ${
+                  className={`max-w-xs px-4 py-2.5 rounded-xl ${
                     msg.role === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : isDark
-                        ? 'bg-[#1a2a3a] text-white'
-                        : 'bg-gray-200 text-gray-800'
+                      ? 'bg-gradient-to-r from-accent to-purple-600 text-white'
+                      : 'bg-accent/10 border border-accent/20 text-slate-200'
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3 text-sm">
                       <ReactMarkdown>
                         {msg.content}
                       </ReactMarkdown>
 
-                      {/* Task Recommendations for Notebook */}
                       {generateTaskRecommendations(msg.content).length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                        <div className="mt-3 pt-3 border-t border-accent/20">
                           <TaskRecommendation recommendations={generateTaskRecommendations(msg.content)} />
                         </div>
                       )}
@@ -777,13 +733,13 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                         type="button"
                         onClick={() => insertAssistantTextIntoNotebook(msg.content)}
                         disabled={isExtractingInsertable}
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${
-                          isDark
-                            ? 'bg-[#223349] text-blue-100 hover:bg-[#2a3d58]'
-                            : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                        } ${isExtractingInsertable ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`text-[10px] font-mono font-medium px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                          isExtractingInsertable
+                            ? 'bg-accent/10 text-slate-500 cursor-not-allowed'
+                            : 'bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30'
+                        }`}
                       >
-                        {isExtractingInsertable ? 'Extrayendo...' : 'Escribir en notebook'}
+                        {isExtractingInsertable ? 'Extrayendo...' : '📝 Escribir en notebook'}
                       </button>
                     </div>
                   ) : (
@@ -794,11 +750,11 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
             ))}
             {isLoadingChat && (
               <div className="flex justify-start">
-                <div className={`${isDark ? 'bg-[#1a2a3a]' : 'bg-gray-200'} px-4 py-2 rounded-lg`}>
+                <div className="bg-accent/10 border border-accent/20 px-4 py-2 rounded-xl">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce delay-100" />
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce delay-200" />
+                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce" />
+                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce delay-100" />
+                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce delay-200" />
                   </div>
                 </div>
               </div>
@@ -808,7 +764,7 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
           {/* Chat Input */}
           <form
             onSubmit={handleSendChat}
-            className={`border-t p-4 ${isDark ? 'border-[#223349] bg-[#0d1726]' : 'border-lab-border bg-white'}`}
+            className="border-t border-accent/20 p-4 bg-[#0f1624]/60"
           >
             <div className="flex gap-2">
               <input
@@ -816,16 +772,12 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 placeholder="Haz una pregunta..."
-                className={`flex-1 px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDark
-                    ? 'bg-[#1a2a3a] border border-[#223349] text-white placeholder-gray-500'
-                    : 'bg-gray-50 border border-lab-border text-gray-800'
-                }`}
+                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 bg-[#0a0f1c] border border-accent/20 text-slate-200 placeholder:text-slate-600 transition-all duration-300"
               />
               <button
                 type="submit"
                 disabled={isLoadingChat || !chatInput.trim()}
-                className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 flex items-center gap-1 text-sm"
+                className="px-3 py-2 bg-gradient-to-r from-accent to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-accent/30 disabled:opacity-50 flex items-center gap-1 text-sm transition-all duration-300"
               >
                 <FiSend className="w-4 h-4" />
               </button>
