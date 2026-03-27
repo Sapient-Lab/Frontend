@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FiMail, FiUsers } from 'react-icons/fi';
+import { FiMail, FiUsers, FiUserPlus, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
+import robotIcon3 from '../assets/robot-icon3.png'; // Ajusta la ruta según donde tengas la imagen
 
 type MemberStatus = 'active' | 'pending';
 type Role = 'Administrador' | 'Colaborador' | 'Lector';
@@ -20,13 +21,22 @@ interface PendingInvitation {
   name: string;
   email: string;
 }
+
 export default function Team() {
   const { projectId, projectMode, setProjectMode } = useProject();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
-
   const [pendingRequests, setPendingRequests] = useState<PendingInvitation[]>([]);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const toInitials = (nameOrEmail: string) =>
     nameOrEmail
@@ -38,7 +48,7 @@ export default function Team() {
       .toUpperCase() || 'NA';
 
   const getMemberColor = (index: number) => {
-    const colors = ['bg-accent', 'bg-blue-600', 'bg-green-600', 'bg-cyan-600', 'bg-indigo-600'];
+    const colors = ['from-accent to-purple-600', 'from-blue-600 to-cyan-600', 'from-emerald-600 to-teal-600', 'from-orange-600 to-amber-600', 'from-pink-600 to-rose-600'];
     return colors[index % colors.length];
   };
 
@@ -101,7 +111,6 @@ export default function Team() {
     }
   };
 
-  // Fetch miembros actuales y solicitudes pendientes desde el backend real
   useEffect(() => {
     reloadTeamData();
   }, [projectId]);
@@ -186,48 +195,102 @@ export default function Team() {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#fbfbfb] p-8 lg:p-10 flex justify-center">
-      <div className="w-full max-w-4xl">
+    <div className="h-full w-full overflow-y-auto p-8 lg:p-10 relative bg-gradient-to-br from-[#0a0f1c] via-[#0c1220] to-[#0b1020]">
+      
+      {/* Fondo con grid científico */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
+      
+      {/* Partículas flotantes suaves */}
+      {[...Array(30)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full animate-float-gentle"
+          style={{
+            width: `${Math.random() * 3 + 1}px`,
+            height: `${Math.random() * 3 + 1}px`,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            background: `radial-gradient(circle, rgba(59,130,246,${Math.random() * 0.3 + 0.1}), rgba(139,92,246,${Math.random() * 0.15}))`,
+            animationDelay: `${Math.random() * 15}s`,
+            animationDuration: `${Math.random() * 20 + 15}s`,
+          }}
+        />
+      ))}
+      
+      {/* Efecto de glow que sigue al mouse */}
+      <div 
+        className="fixed w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none transition-all duration-500 ease-out"
+        style={{
+          background: 'radial-gradient(circle, rgba(59,130,246,0.07), rgba(139,92,246,0.03), transparent 70%)',
+          left: mousePosition.x - 200,
+          top: mousePosition.y - 200,
+        }}
+      />
+      
+      <div className="relative z-10 w-full max-w-6xl mx-auto">
         
-        {/* Cabecera */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
-            Gestión de Equipo
-          </h1>
-          <p className="text-sm text-gray-500">
-            {projectMode === 'solo' 
-              ? 'Actualmente estás trabajando en modo individual. Invita a otros para colaborar en tu entorno de laboratorio.'
-              : 'Administra los accesos y roles de los miembros de tu proyecto.'}
-          </p>
+        {/* Header con Robots en Equipo */}
+        <div className="flex items-start justify-between gap-6 mb-8">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center shadow-lg">
+                <FiUsers className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+                  Gestión de Equipo
+                </h1>
+                <p className="text-xs font-mono text-accent tracking-wider">COLABORACIÓN CIENTÍFICA</p>
+              </div>
+            </div>
+            <p className="text-slate-400 text-sm font-mono mt-1">
+              {projectMode === 'solo' 
+                ? 'Actualmente estás trabajando en modo individual. Invita a otros para colaborar en tu entorno de laboratorio.'
+                : 'Administra los accesos y roles de los miembros de tu proyecto.'}
+            </p>
+          </div>
+          
+          {/* Robots en Equipo */}
+          <div className="hidden lg:block relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-purple-500/20 rounded-full blur-xl animate-pulse-slow" />
+            <img 
+              src={robotIcon3} 
+              alt="Robots colaborando en equipo"
+              className="w-80 h-80 lg:w-40 lg:h-40 object-contain relative z-10 animate-float-robot hover:scale-110 transition-transform duration-500 cursor-pointer"
+            />
+            <div className="absolute -top-2 -right-2 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+            <div className="absolute -bottom-1 left-3 w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+            <div className="absolute top-1/2 -left-1 w-1.5 h-1.5 bg-accent rounded-full animate-pulse delay-500" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Formulario de Invitación */}
+          {/* Formulario de Invitación - estilo científico */}
           <div className="lg:col-span-1">
-            <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm sticky top-8">
+            <div className="bg-[#0f1624]/80 backdrop-blur-sm border border-accent/20 rounded-xl p-6 shadow-lg hover:shadow-2xl hover:border-accent/50 transition-all duration-500 sticky top-8">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-accent-light text-accent flex items-center justify-center text-xl">
-                  <FiMail className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center shadow-lg">
+                  <FiMail className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-800">Invitar Miembro</h3>
-                  <span className="text-[10px] text-gray-500">Solo usuarios con proyectos individuales</span>
+                  <h3 className="text-sm font-bold text-slate-100">Invitar Miembro</h3>
+                  <span className="text-[9px] font-mono text-slate-500">Solo usuarios con proyectos individuales</span>
                 </div>
               </div>
 
               <form onSubmit={handleInvite} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-2">Correo Electrónico</label>
+                  <label className="block text-[10px] font-mono font-semibold text-accent mb-2 uppercase tracking-wider">Correo Electrónico</label>
                   <input 
                     type="email" 
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
                     placeholder="colega@universidad.edu"
-                    className="w-full px-3 py-2 border border-lab-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-[#0a0f1c] border border-accent/20 rounded-lg text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 font-mono text-slate-200 placeholder:text-slate-600 transition-all"
                     required
                   />
-                  <p className="text-[10px] text-gray-500 mt-2 leading-relaxed flex items-start gap-1.5">
+                  <p className="text-[9px] font-mono text-slate-500 mt-2 leading-relaxed flex items-start gap-1.5">
                     <FiMail className="w-3 h-3 mt-0.5 shrink-0" />
                     <span>La invitación será enviada al correo. El usuario debe aceptarla para unirse al proyecto.</span>
                   </p>
@@ -236,7 +299,7 @@ export default function Team() {
                 <button
                   type="submit"
                   disabled={isSubmittingInvite}
-                  className="w-full py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dim transition-colors shadow-sm disabled:opacity-60"
+                  className="w-full py-2.5 bg-gradient-to-r from-accent to-purple-600 text-white text-xs font-mono font-medium rounded-lg hover:shadow-lg hover:shadow-accent/30 transition-all duration-300 disabled:opacity-60"
                 >
                   {isSubmittingInvite ? 'Enviando...' : 'Enviar Invitación'}
                 </button>
@@ -245,44 +308,51 @@ export default function Team() {
           </div>
 
           {/* Lista de Miembros */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm">
-              <h3 className="text-[13px] font-bold uppercase text-gray-400 tracking-wider mb-4 border-b border-gray-100 pb-3 flex justify-between">
-                <span>Miembros Actuales ({members.length})</span>
-                {projectMode === 'solo' && <span className="bg-orange-100 text-orange-700 px-2 rounded-full normal-case text-[10px] flex items-center">Modo Solo</span>}
-                {projectMode === 'team' && <span className="bg-blue-100 text-blue-700 px-2 rounded-full normal-case text-[10px] flex items-center">Modo Equipo</span>}
-              </h3>
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-[#0f1624]/80 backdrop-blur-sm border border-accent/20 rounded-xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-accent/20">
+                <h3 className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider flex items-center gap-2">
+                  <FiUsers className="w-3 h-3" />
+                  Miembros Actuales ({members.length})
+                </h3>
+                {projectMode === 'solo' && (
+                  <span className="bg-orange-500/10 border border-orange-500/30 text-orange-400 px-2 py-0.5 rounded-full text-[9px] font-mono">Modo Solo</span>
+                )}
+                {projectMode === 'team' && (
+                  <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] font-mono">Modo Equipo</span>
+                )}
+              </div>
 
-              <div className="space-y-4">
-                {members.map(member => (
-                  <div key={member.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+              <div className="space-y-3">
+                {members.map((member, idx) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/5 transition-all duration-300 border border-transparent hover:border-accent/20 group">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm ${member.color}`}>
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${member.color} flex items-center justify-center text-white text-sm font-bold shadow-md group-hover:scale-110 transition-transform duration-300`}>
                         {member.initials}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-gray-800">{member.name}</p>
+                          <p className="text-sm font-bold text-slate-100">{member.name}</p>
                           {member.status === 'pending' && (
-                            <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">Pendiente</span>
+                            <span className="text-[9px] bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-1.5 py-0.5 rounded-full font-mono">Pendiente</span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 font-mono">{member.email}</p>
+                        <p className="text-[10px] font-mono text-slate-500">{member.email}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-6">
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <div className="flex items-center gap-4">
+                      <span className="text-[10px] font-mono text-slate-400 bg-accent/10 px-2 py-1 rounded">
                         {member.role}
                       </span>
                       
                       {member.name !== 'Tú' && (
                         <button 
                           onClick={() => removeMember(member.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          className="text-slate-500 hover:text-red-400 transition-colors"
                           title="Eliminar miembro"
                         >
-                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
@@ -292,48 +362,55 @@ export default function Team() {
                 ))}
               </div>
               
-              {projectMode === 'solo' && (
-                <div className="mt-8 p-6 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center bg-gray-50/50">
-                  <FiUsers className="w-10 h-10 mb-3 opacity-70 text-gray-400" />
-                  <p className="text-sm font-semibold text-gray-600">No hay nadie más por aquí</p>
-                  <p className="text-xs text-gray-400 mt-1 max-w-xs">Utiliza el formulario de la izquierda para invitar colaboradores y potenciar tu investigación.</p>
+              {members.length === 0 && (
+                <div className="mt-6 p-8 border-2 border-dashed border-accent/20 rounded-xl flex flex-col items-center justify-center text-center bg-accent/5">
+                  <FiUsers className="w-12 h-12 mb-3 opacity-50 text-accent" />
+                  <p className="text-sm font-semibold text-slate-300">No hay miembros en el equipo</p>
+                  <p className="text-[10px] font-mono text-slate-500 mt-1 max-w-xs">Utiliza el formulario de la izquierda para invitar colaboradores y potenciar tu investigación.</p>
                 </div>
               )}
-
             </div>
 
             {/* Panel de Solicitudes Entrantes */}
-            <div className="bg-white border border-lab-border rounded-xl p-6 shadow-sm mt-8">
-              <h3 className="text-[13px] font-bold uppercase text-gray-400 tracking-wider mb-4 border-b border-gray-100 pb-3 flex items-center justify-between">
-                <span>Solicitudes de unión ({pendingRequests.length})</span>
-                {pendingRequests.length > 0 && <span className="bg-red-100 text-red-700 px-2 rounded-full normal-case text-[10px] flex items-center shadow-sm">Nuevas</span>}
-              </h3>
+            <div className="bg-[#0f1624]/80 backdrop-blur-sm border border-accent/20 rounded-xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-accent/20">
+                <h3 className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider flex items-center gap-2">
+                  <FiClock className="w-3 h-3" />
+                  Solicitudes de unión ({pendingRequests.length})
+                </h3>
+                {pendingRequests.length > 0 && (
+                  <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-2 py-0.5 rounded-full text-[9px] font-mono">Nuevas</span>
+                )}
+              </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {pendingRequests.length === 0 ? (
-                  <p className="text-sm font-medium text-gray-400 text-center py-4">No tienes solicitudes pendientes.</p>
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <FiUserPlus className="w-10 h-10 text-slate-600 mb-2" />
+                    <p className="text-xs font-mono text-slate-500 text-center">No tienes solicitudes pendientes.</p>
+                  </div>
                 ) : (
                   pendingRequests.map(req => (
-                    <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg gap-4">
+                    <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-accent/5 border border-accent/20 rounded-lg gap-4 hover:bg-accent/10 transition-all duration-300">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                           {req.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-800">{req.name}</p>
-                          <p className="text-xs text-gray-500 font-mono">{req.email}</p>
+                          <p className="text-sm font-bold text-slate-100">{req.name}</p>
+                          <p className="text-[10px] font-mono text-slate-500">{req.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleAcceptRequest(req.id)}
-                          className="px-3 py-1.5 bg-accent text-white text-xs font-semibold rounded hover:bg-accent-dim transition-colors"
+                          className="px-3 py-1.5 bg-gradient-to-r from-accent to-purple-600 text-white text-[10px] font-mono font-semibold rounded-lg hover:shadow-lg transition-all duration-300"
                         >
                           Aceptar
                         </button>
                         <button
                           onClick={() => handleDeclineRequest(req.id)}
-                          className="px-3 py-1.5 bg-white border border-gray-300 text-gray-600 text-xs font-semibold rounded hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="px-3 py-1.5 bg-transparent border border-red-500/50 text-red-400 text-[10px] font-mono font-semibold rounded-lg hover:bg-red-500/10 transition-all duration-300"
                         >
                           Rechazar
                         </button>
@@ -343,12 +420,54 @@ export default function Team() {
                 )}
               </div>
             </div>
-
           </div>
-
         </div>
-
       </div>
+
+      <style>{`
+        @keyframes float-gentle {
+          0%, 100% {
+            transform: translateY(0px) translateX(0px);
+            opacity: 0.2;
+          }
+          50% {
+            transform: translateY(-15px) translateX(8px);
+            opacity: 0.5;
+          }
+        }
+        
+        @keyframes float-robot {
+          0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-6px) rotate(1deg);
+          }
+        }
+        
+        @keyframes pulse-slow {
+          0%, 100% {
+            opacity: 0.4;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.1);
+          }
+        }
+        
+        .animate-float-gentle {
+          animation: float-gentle ease-in-out infinite;
+        }
+        
+        .animate-float-robot {
+          animation: float-robot 4s ease-in-out infinite;
+        }
+        
+        .animate-pulse-slow {
+          animation: pulse-slow 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

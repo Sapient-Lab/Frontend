@@ -79,7 +79,6 @@ export const aiService = {
    * Envía un mensaje al endpoint conversacional del backend
    */
   async sendMessage(message: string, messages?: ChatMessage[], provider?: 'azure' | 'mistral' | 'deepseek') {
-    const projectId = localStorage.getItem('sapientlab_project_id');
     const response = await fetch('/api/ai/conversation', {
       method: 'POST',
       headers: {
@@ -89,7 +88,6 @@ export const aiService = {
         message, 
         messages, 
         provider,
-        projectId: projectId ? parseInt(projectId, 10) : undefined,
       }), 
     });
 
@@ -104,18 +102,12 @@ export const aiService = {
    * Chat especial con contexto del notebook (celdas + celda activa)
    */
   async notebookChat(payload: NotebookChatPayload) {
-    const projectId = localStorage.getItem('sapientlab_project_id');
-    const enhancedPayload = {
-      ...payload,
-      projectId: projectId ? parseInt(projectId, 10) : undefined,
-    };
-
     const response = await fetch('/api/ai/notebook/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(enhancedPayload),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
