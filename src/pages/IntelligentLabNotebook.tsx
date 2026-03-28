@@ -73,7 +73,6 @@ export default function IntelligentLabNotebook() {
   const [noteTitle, setNoteTitle] = useState('');
   const [isUploadingBlockchain, setIsUploadingBlockchain] = useState(false);
   const [blockchainStatus, setBlockchainStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [lastMintedTokenId, setLastMintedTokenId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -472,8 +471,7 @@ export default function IntelligentLabNotebook() {
         throw new Error(errData?.message ?? `Error ${response.status}`);
       }
 
-      const result = await response.json();
-      setLastMintedTokenId(result?.nft?.tokenId ?? null);
+      await response.json();
       setBlockchainStatus('success');
     } catch (error) {
       console.error('Error subiendo a blockchain:', error);
@@ -900,7 +898,7 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                   </a>
                 </div>
                 <button
-                  onClick={() => { setBlockchainStatus('idle'); setLastMintedTokenId(null); }}
+                  onClick={() => setBlockchainStatus('idle')}
                   className="text-amber-500/50 hover:text-amber-400 text-xs font-mono shrink-0 transition-colors"
                 >
                   ✕
