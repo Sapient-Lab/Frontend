@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { FiX, FiMenu, FiCpu, FiUploadCloud, FiMic, FiMicOff, FiSend } from 'react-icons/fi'
 import { aiService } from '../../services/aiService'
 
@@ -6,6 +6,17 @@ type ScanResult = {
   summary: string
   hazards: string[]
   checklist: { action: string; cautions?: string; riskLevel?: string }[]
+}
+
+type BrowserSpeechRecognition = {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onresult: ((event: any) => void) | null
+  onerror: ((event: any) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
 }
 
 export default function Sidebar() {
@@ -17,7 +28,156 @@ export default function Sidebar() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
+  const [isListening, setIsListening] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const chunksRef = useRef<BlobPart[]>([])
+
+  useEffect(() => {
+    return () => {
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current)
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop()
+      }
+    }
+  }, [])
+
+  const stopCurrentListening = () => {
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current)
+      listeningTimeoutRef.current = null
+    }
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      return
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+    }
+  }
+
+  const handleStartListening = async () => {
+    if (isListening) {
+      stopCurrentListening()
+      return
+    }
+
+    setIsListening(true)
+    setError('')
+
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+
+    if (SpeechRecognitionCtor) {
+      try {
+        const recognition: BrowserSpeechRecognition = new SpeechRecognitionCtor()
+        recognitionRef.current = recognition
+        recognition.lang = 'es-MX'
+        recognition.continuous = true
+        recognition.interimResults = false
+
+        recognition.onresult = (event: any) => {
+          const transcripts: string[] = []
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const transcript = event.results[i]?.[0]?.transcript?.trim()
+            if (transcript) {
+              transcripts.push(transcript)
+            }
+          }
+          if (transcripts.length > 0) {
+            const chunk = transcripts.join(' ')
+            setProtocolText((prev) => `${prev}${prev ? '\n' : ''}${chunk}`)
+          }
+        }
+
+        recognition.onerror = (event: any) => {
+          const code = String(event?.error ?? 'unknown')
+          if (code !== 'aborted') {
+            setError(`Error de dictado por voz (${code}).`)
+          }
+        }
+
+        recognition.onend = () => {
+          recognitionRef.current = null
+          setIsListening(false)
+          if (listeningTimeoutRef.current) {
+            clearTimeout(listeningTimeoutRef.current)
+            listeningTimeoutRef.current = null
+          }
+        }
+
+        recognition.start()
+        listeningTimeoutRef.current = setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.stop()
+          }
+        }, 30000)
+        return
+      } catch {
+        recognitionRef.current = null
+      }
+    }
+
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const supportedMimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType))
+
+      const mediaRecorder = supportedMimeType
+        ? new MediaRecorder(mediaStream, { mimeType: supportedMimeType })
+        : new MediaRecorder(mediaStream)
+
+      mediaRecorderRef.current = mediaRecorder
+      chunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        chunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, {
+          type: mediaRecorder.mimeType || 'audio/webm',
+        })
+
+        mediaStream.getTracks().forEach((track) => track.stop())
+        mediaRecorderRef.current = null
+        setIsListening(false)
+        if (listeningTimeoutRef.current) {
+          clearTimeout(listeningTimeoutRef.current)
+          listeningTimeoutRef.current = null
+        }
+
+        try {
+          const transcribedText = await aiService.speechToText(audioBlob)
+          setProtocolText((prev) => prev + (prev ? '\n' : '') + transcribedText)
+        } catch (err: any) {
+          setError('Error al transcribir: ' + (err.message || 'Error desconocido'))
+          setIsListening(false)
+        }
+      }
+
+      mediaRecorder.start()
+      listeningTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop()
+        }
+      }, 30000)
+    } catch (err: any) {
+      setIsListening(false)
+      setError('Acceso al micrófono denegado. Verifica los permisos del navegador.')
+      console.error(err)
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -201,9 +361,18 @@ export default function Sidebar() {
                   <label className="text-xs font-mono font-bold text-accent uppercase tracking-wider">
                     2. Instrucciones / Contexto Adicional
                   </label>
-                  <button className="px-3 py-1.5 rounded-lg text-xs font-mono bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 transition-all duration-300 flex items-center gap-2">
-                    <FiMic className="w-3.5 h-3.5" />
-                    Dictar
+                  <button
+                    onClick={handleStartListening}
+                    type="button"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium flex items-center gap-2 transition-all duration-300 ${
+                      isListening
+                        ? 'bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/30'
+                        : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20'
+                    }`}
+                    title={isListening ? 'Detener dictado' : 'Dictar protocolo'}
+                  >
+                    {isListening ? <FiMicOff className="w-3.5 h-3.5" /> : <FiMic className="w-3.5 h-3.5" />}
+                    {isListening ? 'Detener' : 'Dictar'}
                   </button>
                 </div>
                 <textarea

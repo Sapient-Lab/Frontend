@@ -27,7 +27,7 @@ type CurrentUser = { name: string; initials: string; role: string; id: string };
 export default function Dashboard() {
   const navigate = useNavigate();
   const { projectMode, projectId } = useProject();
-  const [aiMessage, setAiMessage] = useState('Bienvenido a tu Dashboard. Comienza a trabajar en tus proyectos.');
+  const [aiMessage] = useState('Bienvenido a tu Dashboard. Comienza a trabajar en tus proyectos.');
   const [recentActivity, setRecentActivity] = useState<Array<{ id: string | number; time: string; text: string; user: string; color: string }>>(
     []
   );

@@ -37,29 +37,29 @@ export default function TaskRecommendation({ recommendations }: TaskRecommendati
   };
 
   return (
-    <div className="mt-6 pt-6 border-t border-gray-200">
-      <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-        <FiAward className="text-yellow-500" /> Puedes hacer esto:
+    <div className="mt-6 pt-6 border-t border-accent/20">
+      <h3 className="text-sm font-semibold text-accent mb-4 flex items-center gap-2">
+        <FiAward className="text-accent" /> Puedes hacer esto:
       </h3>
       
       <div className="space-y-3">
         {recommendations.map((task, idx) => (
           <div 
             key={idx}
-            className="flex gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors"
+            className="flex gap-3 p-3 bg-accent/5 border border-accent/20 rounded-lg hover:bg-accent/10 transition-colors"
           >
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800">{task.title}</p>
-              <p className="text-xs text-gray-600 mt-1">{task.description}</p>
-              <p className="text-xs text-blue-600 mt-2">Sugerido por: {task.aiAssigner}</p>
+              <p className="text-sm font-medium text-slate-200">{task.title}</p>
+              <p className="text-xs text-slate-400 mt-1">{task.description}</p>
+              <p className="text-xs text-accent/70 mt-2">Sugerido por: {task.aiAssigner}</p>
             </div>
             
             <button
               onClick={() => handleAddTask(task)}
               className={`flex-shrink-0 px-3 py-2 rounded text-xs font-medium transition-colors ${
                 addedTasks.has(task.title)
-                  ? 'bg-green-500 text-white flex items-center gap-1'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
+                  ? 'bg-green-500/80 text-white flex items-center gap-1'
+                  : 'bg-accent text-[#0a0f1c] hover:bg-accent/90'
               }`}
             >
               {addedTasks.has(task.title) ? (

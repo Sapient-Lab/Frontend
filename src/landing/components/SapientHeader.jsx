@@ -36,11 +36,8 @@ const SapientHeader = () => {
   }, []);
 
   const navItems = [
-    { label: "Inicio", href: "#home" },
-    { label: "Capacidades", href: "#capabilities" },
-    { label: "Métricas", href: "#metrics" },
-    { label: "Impacto", href: "#impact" },
-    { label: "Demo IA", href: "#demo" },
+    { label: "Home", href: "#home" },
+    { label: "Capabilities", href: "#capabilities" },
   ];
 
   return (
@@ -69,7 +66,7 @@ const SapientHeader = () => {
             />
           </div>
           <span className="font-display text-lg font-bold tracking-wider text-cyan-700 dark:text-cyan-400">
-            SAPIENT LAB AI
+            SAPIENT LAB AI 
           </span>
           <span className="hidden md:inline-block text-xs text-gray-500 dark:text-gray-500 font-mono border-l border-gray-300 dark:border-gray-700 pl-3">
           </span>
@@ -95,7 +92,7 @@ const SapientHeader = () => {
             to="/login"
             className="hidden md:inline-flex font-mono text-xs font-semibold tracking-wider px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-500 dark:to-blue-600 text-white"
           >
-            IR A LOGIN
+            SIGN IN
           </Link>
 
           <button
@@ -146,7 +143,7 @@ const SapientHeader = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="font-mono text-sm font-semibold tracking-wider px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-500 dark:to-blue-600 text-white mt-2 text-center"
               >
-                IR A LOGIN
+                SIGN IN
               </Link>
             </div>
           </motion.div>
