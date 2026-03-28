@@ -1,45 +1,51 @@
 import { motion } from "framer-motion";
 import { 
-  Brain, FileCode, Cog, ShieldCheck, 
+  Brain, FileCode, Cog, ShieldCheck,
   Database, Lock, Sparkles 
 } from "lucide-react";
 
 const capabilities = [
   { 
     icon: Brain, 
-    title: "IA Explicable", 
-    desc: "Modelos transparentes que justifican cada recomendación con evidencia científica.",
-    color: "from-cyan-500 to-blue-500"
+    title: "Explainable Reasoning",
+    desc: "Every suggestion includes clear justification to support scientific decision-making.",
+    color: "from-cyan-500 to-blue-500",
+    path: "/app/lab"
   },
   { 
     icon: FileCode, 
-    title: "Multiformato", 
-    desc: "Procesa textos, CSV, imágenes y datos estructurados en un flujo unificado.",
-    color: "from-purple-500 to-pink-500"
+    title: "Multimodal Analysis",
+    desc: "Analyze text, CSV, image, and voice inside one notebook workflow.",
+    color: "from-purple-500 to-pink-500",
+    path: "/app/protocolos"
   },
   { 
     icon: Cog, 
-    title: "Agentes Autónomos", 
-    desc: "Flujos de trabajo experimentales guiados por IA que optimizan cada etapa.",
-    color: "from-emerald-500 to-teal-500"
+    title: "Agent Orchestration",
+    desc: "Interpret protocols, analyze results, and propose explained next-step variations.",
+    color: "from-emerald-500 to-teal-500",
+    path: "/app/lab"
   },
   { 
     icon: ShieldCheck, 
-    title: "Seguridad Estricta", 
-    desc: "Encriptación de grado médico con cumplimiento normativo HIPAA/GDPR.",
-    color: "from-red-500 to-orange-500"
+    title: "Strict Safety",
+    desc: "Guardrails and filtering for sensitive biological and clinical scenarios.",
+    color: "from-red-500 to-orange-500",
+    path: "/login"
   },
   { 
     icon: Database, 
-    title: "Trazabilidad Total", 
-    desc: "Registro inmutable de todos los experimentos con auditoría en tiempo real.",
-    color: "from-blue-500 to-cyan-500"
+    title: "External Evidence",
+    desc: "OpenML connector enriches recommendations with benchmark metadata.",
+    color: "from-blue-500 to-cyan-500",
+    path: "/app/docs"
   },
   { 
     icon: Lock, 
-    title: "Filtrado Ético", 
-    desc: "Control automatizado de contenido no permitido por normativa internacional.",
-    color: "from-violet-500 to-purple-500"
+    title: "Human-in-the-Loop",
+    desc: "AI assists reasoning, while final decisions always remain with researchers.",
+    color: "from-violet-500 to-purple-500",
+    path: "/login"
   },
 ];
 
@@ -61,13 +67,13 @@ const CapabilitiesSection = () => {
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
             <span className="gradient-text">
-              Infraestructura de IA
+              Scientific AI
             </span>
             <br />
-            <span className="text-gray-900 dark:text-gray-200">de Grado Científico</span>
+            <span className="text-gray-900 dark:text-gray-200">Core Infrastructure</span>
           </h2>
           <p className="text-gray-700 dark:text-gray-400 max-w-2xl mx-auto font-mono">
-            Tecnología de vanguardia diseñada específicamente para entornos de investigación de alta exigencia
+            Core capabilities aligned with the Innovation Challenge 2026 goals
           </p>
         </motion.div>
 
@@ -94,10 +100,6 @@ const CapabilitiesSection = () => {
                 {c.desc}
               </p>
               
-              <div className="mt-4 flex items-center gap-2 text-xs text-cyan-600 dark:text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span>Más información</span>
-                <span>→</span>
-              </div>
             </motion.div>
           ))}
         </div>
