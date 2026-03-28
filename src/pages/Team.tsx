@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FiMail, FiUsers, FiUserPlus, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { FiMail, FiUsers, FiUserPlus, FiClock } from 'react-icons/fi';
 import { useProject } from '../context/ProjectContext';
 import robotIcon3 from '../assets/robot-icon3.png'; // Ajusta la ruta según donde tengas la imagen
 
@@ -336,7 +336,7 @@ export default function Team() {
               </div>
 
               <div className="space-y-3">
-                {members.map((member, idx) => (
+                {members.map((member) => (
                   <div key={member.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/5 transition-all duration-300 border border-transparent hover:border-accent/20 group">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${member.color} flex items-center justify-center text-white text-sm font-bold shadow-md group-hover:scale-110 transition-transform duration-300`}>

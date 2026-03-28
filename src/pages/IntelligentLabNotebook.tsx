@@ -13,7 +13,6 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
-import { useTheme } from '../context/ThemeContext';
 import TaskRecommendation from '../components/TaskRecommendation';
 import type { TaskRecommendationItem } from '../components/TaskRecommendation';
 
@@ -51,7 +50,6 @@ type BrowserSpeechRecognition = {
 };
 
 export default function IntelligentLabNotebook() {
-  const { isDark } = useTheme();
   const [noteContent, setNoteContent] = useState('');
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNoteId, setCurrentNoteId] = useState<number | null>(null);
