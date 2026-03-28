@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProject } from '../context/ProjectContext';
 
 interface ProjectDocument {
@@ -26,6 +26,8 @@ export default function DocsLibrary() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (projectId) {
@@ -54,17 +56,44 @@ export default function DocsLibrary() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!projectId || !e.target.files) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | File[]) => {
+    if (!projectId) {
+      setError('No hay proyecto seleccionado');
+      return;
+    }
+
+    const files = Array.isArray(e) ? e : (e.target.files ? Array.from(e.target.files) : []);
+    
+    if (files.length === 0) return;
+
+    // Validar tipos de archivo permitidos
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const validFiles = files.filter(f => {
+      const isValid = allowedTypes.includes(f.type) || 
+                     f.name.endsWith('.pdf') || 
+                     f.name.endsWith('.doc') || 
+                     f.name.endsWith('.docx') || 
+                     f.name.endsWith('.txt');
+      if (!isValid) {
+        console.warn(`⚠️ Archivo rechazado: ${f.name} (${f.type})`);
+      }
+      return isValid;
+    });
+
+    if (validFiles.length === 0) {
+      setError('No hay archivos válidos. Soportamos: PDF, DOCX, DOC, TXT');
+      return;
+    }
 
     try {
       setUploading(true);
-      const filesArray = Array.from(e.target.files);
+      setError(null);
       const formData = new FormData();
-      filesArray.forEach(file => {
+      validFiles.forEach(file => {
         formData.append('files', file);
       });
 
+      console.log(`🚀 Subiendo ${validFiles.length} archivo(s)...`);
       const response = await fetch(`/api/project-context/${projectId}/documents`, {
         method: 'POST',
         body: formData,
@@ -72,29 +101,49 @@ export default function DocsLibrary() {
 
       if (!response.ok) throw new Error('Error al subir documentos');
       
-      // Agregar archivos a Material Reciente (filtrados por projectId)
-      const recentFiles = filesArray.map(file => ({
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        size: file.size
-      }));
-      
-      const storageKey = `sapientlab_recent_files_project_${projectId}`;
-      const savedFiles = localStorage.getItem(storageKey);
-      const existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
-      const allFiles = [...existingFiles, ...recentFiles];
-      // Limitar a los últimos 20 archivos
-      const limitedFiles = allFiles.slice(-20);
-      localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
-      console.log(`✅ Documentos guardados en Material Reciente para proyecto ${projectId}:`, limitedFiles);
+      console.log(`✅ ${validFiles.length} archivo(s) subido(s) exitosamente`);
       
       // Recargar contexto
       await fetchProjectContext();
-      e.target.value = ''; // Reset input
+      
+      // Limpiar input
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al subir documentos');
+      const errorMsg = err instanceof Error ? err.message : 'Error al subir documentos';
+      setError(errorMsg);
+      console.error('❌ Error:', errorMsg);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      console.log('📁 Archivos detectados en dropzone:', e.dataTransfer.files.length);
+      handleFileUpload(Array.from(e.dataTransfer.files));
     }
   };
 
@@ -141,15 +190,48 @@ export default function DocsLibrary() {
         )}
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Subir documentos a la biblioteca:</label>
-          <input 
+          <label className="block text-sm font-medium text-gray-700 mb-3">Agregar documentos a la biblioteca:</label>
+          
+          {/* Drag & Drop Zone */}
+          <div
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 mb-3 ${
+              isDragging
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+            } ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <div className={`text-4xl mb-3 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`}>
+              📄
+            </div>
+            <p className={`font-semibold ${isDragging ? 'text-blue-600' : 'text-gray-700'}`}>
+              {isDragging ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí'}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">o haz clic para seleccionar</p>
+            <p className="text-xs text-gray-400 mt-2">Soporta: PDF, DOCX, DOC, TXT</p>
+          </div>
+
+          {/* File Input */}
+          <input
             type="file"
             multiple
-            disabled={uploading}
+            ref={fileInputRef}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
             onChange={handleFileUpload}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-blue-500 file:text-white hover:file:bg-blue-600 transition-colors disabled:opacity-50"
+            disabled={uploading}
           />
-          <p className="text-xs text-gray-500 mt-1">Soporta: PDF, TXT, DOCX, CSV, etc.</p>
+
+          {/* Upload Status */}
+          {uploading && (
+            <div className="p-3 bg-blue-50 text-blue-700 rounded text-sm">
+              Subiendo documentos...
+            </div>
+          )}
         </div>
 
         {error && (

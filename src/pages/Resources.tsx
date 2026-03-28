@@ -101,11 +101,38 @@ export default function Resources() {
 
   const handleFileUpload = async (files: File[]) => {
     if (!projectId) {
-      console.error('❌ Cannot upload files without projectId');
+      console.error('❌ No se puede subir archivos sin projectId');
+      alert('Por favor selecciona un proyecto primero');
       return;
     }
     
-    const newFiles = files.map(f => ({
+    if (files.length === 0) {
+      console.warn('⚠️ No hay archivos para subir');
+      return;
+    }
+
+    // Validar tipos de archivo permitidos
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const validFiles = files.filter(f => {
+      const isValid = allowedTypes.includes(f.type) || 
+                     f.name.endsWith('.pdf') || 
+                     f.name.endsWith('.doc') || 
+                     f.name.endsWith('.docx') || 
+                     f.name.endsWith('.txt');
+      if (!isValid) {
+        console.warn(`⚠️ Archivo rechazado (tipo no soportado): ${f.name} (${f.type})`);
+      }
+      return isValid;
+    });
+
+    if (validFiles.length === 0) {
+      alert('No hay archivos válidos. Soportamos: PDF, DOCX, DOC, TXT');
+      return;
+    }
+
+    console.log(`📁 Procesando ${validFiles.length} archivo(s) válido(s)`);
+
+    const newFiles = validFiles.map(f => ({
       id: Math.random().toString(36).substr(2, 9),
       name: f.name,
       size: f.size
@@ -117,16 +144,18 @@ export default function Resources() {
       
       const storageKey = `sapientlab_recent_files_project_${projectId}`;
       localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
-      console.log(`Material Reciente actualizado para proyecto ${projectId}:`, limitedFiles);
+      console.log(`✅ Material Reciente actualizado para proyecto ${projectId}:`, limitedFiles.length, 'archivos');
       
       return limitedFiles;
     });
 
     try {
-      await aiService.uploadProjectDocuments(files, projectId?.toString());
-      console.log('Documentos reportados al backend para embeddings.');
+      console.log(`🚀 Subiendo ${validFiles.length} archivo(s) al backend...`);
+      await aiService.uploadProjectDocuments(validFiles, projectId?.toString());
+      console.log('✅ Documentos reportados al backend para embeddings.');
     } catch (e) {
-      console.error('Error subiendo documento al backend:', e);
+      console.error('❌ Error subiendo documento al backend:', e);
+      alert('Hubo un error al procesar los archivos. Verifica la consola para más detalles.');
     }
   };
 
@@ -353,12 +382,29 @@ export default function Resources() {
             </div>
             
             <div 
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Solo desactiva si realmente salimos del contenedor principal
+                if (e.currentTarget === e.target) {
+                  setIsDragging(false);
+                }
+              }}
               onDrop={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsDragging(false);
-                if (e.dataTransfer.files) {
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                  console.log('📁 Archivos detectados en dropzone:', e.dataTransfer.files.length);
                   handleFileUpload(Array.from(e.dataTransfer.files));
                 }
               }}
@@ -378,9 +424,14 @@ export default function Resources() {
                 multiple 
                 ref={fileInputRef} 
                 className="hidden" 
-                accept=".pdf,.doc,.docx,.txt"
+                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                 onChange={(e) => {
-                  if (e.target.files) handleFileUpload(Array.from(e.target.files));
+                  if (e.target.files && e.target.files.length > 0) {
+                    console.log('📂 Archivos seleccionados:', e.target.files.length);
+                    handleFileUpload(Array.from(e.target.files));
+                    // Limpia el input para permitir seleccionar el mismo archivo nuevamente
+                    e.target.value = '';
+                  }
                 }}
               />
             </div>
