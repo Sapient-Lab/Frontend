@@ -54,108 +54,78 @@ export default function Resources() {
     }
   }, [chatHistory, isChatLoading]);
 
+  const getStorageKey = () => {
+    if (projectId) return `sapientlab_recent_files_project_${projectId}`;
+    const userId = localStorage.getItem('sapientlab_user_id') ?? 'default';
+    return `sapientlab_recent_files_user_${userId}`;
+  };
+
   useEffect(() => {
+    const storageKey = getStorageKey();
+
     const loadRecentFiles = () => {
-      if (!projectId) {
-        console.warn('⚠️ No projectId available for Material Reciente');
-        setLocalFiles([]);
-        return;
-      }
-      
-      const storageKey = `sapientlab_recent_files_project_${projectId}`;
       const savedFiles = localStorage.getItem(storageKey);
-      console.log(`🔍 Material Reciente para proyecto ${projectId}:`, savedFiles);
-      
       if (savedFiles) {
         try {
           const files = JSON.parse(savedFiles);
-          if (Array.isArray(files)) {
-            setLocalFiles(files);
-            console.log(`✅ Material Reciente cargado para proyecto ${projectId}:`, files.length, 'archivos');
-          } else {
-            console.warn('⚠️ Material Reciente no es un array:', files);
-            setLocalFiles([]);
-          }
-        } catch (err) {
-          console.error('❌ Error al parsear Material Reciente:', err);
+          setLocalFiles(Array.isArray(files) ? files : []);
+        } catch {
           setLocalFiles([]);
         }
       } else {
-        console.log(`ℹ️ No hay Material Reciente para proyecto ${projectId}`);
         setLocalFiles([]);
       }
     };
 
     loadRecentFiles();
-    
+
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `sapientlab_recent_files_project_${projectId}`) {
-        console.log(`🔄 Cambio detectado en Material Reciente para proyecto ${projectId}`);
-        loadRecentFiles();
-      }
+      if (e.key === storageKey) loadRecentFiles();
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const handleFileUpload = async (files: File[]) => {
-    if (!projectId) {
-      console.error('❌ No se puede subir archivos sin projectId');
-      alert('Por favor selecciona un proyecto primero');
-      return;
-    }
-    
-    if (files.length === 0) {
-      console.warn('⚠️ No hay archivos para subir');
-      return;
-    }
+    if (files.length === 0) return;
+
+    const effectiveProjectId = projectId?.toString()
+      ?? localStorage.getItem('sapientlab_user_id')
+      ?? 'default';
 
     // Validar tipos de archivo permitidos
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-    const validFiles = files.filter(f => {
-      const isValid = allowedTypes.includes(f.type) || 
-                     f.name.endsWith('.pdf') || 
-                     f.name.endsWith('.doc') || 
-                     f.name.endsWith('.docx') || 
-                     f.name.endsWith('.txt');
-      if (!isValid) {
-        console.warn(`⚠️ Archivo rechazado (tipo no soportado): ${f.name} (${f.type})`);
-      }
-      return isValid;
-    });
+    const validFiles = files.filter(f =>
+      allowedTypes.includes(f.type) ||
+      f.name.endsWith('.pdf') ||
+      f.name.endsWith('.doc') ||
+      f.name.endsWith('.docx') ||
+      f.name.endsWith('.txt')
+    );
 
     if (validFiles.length === 0) {
       alert('No hay archivos válidos. Soportamos: PDF, DOCX, DOC, TXT');
       return;
     }
 
-    console.log(`📁 Procesando ${validFiles.length} archivo(s) válido(s)`);
-
     const newFiles = validFiles.map(f => ({
       id: Math.random().toString(36).substr(2, 9),
       name: f.name,
-      size: f.size
+      size: f.size,
     }));
-    
+
     setLocalFiles(prev => {
-      const allFiles = [...prev, ...newFiles];
-      const limitedFiles = allFiles.slice(-20);
-      
-      const storageKey = `sapientlab_recent_files_project_${projectId}`;
-      localStorage.setItem(storageKey, JSON.stringify(limitedFiles));
-      console.log(`✅ Material Reciente actualizado para proyecto ${projectId}:`, limitedFiles.length, 'archivos');
-      
+      const limitedFiles = [...prev, ...newFiles].slice(-20);
+      localStorage.setItem(getStorageKey(), JSON.stringify(limitedFiles));
       return limitedFiles;
     });
 
     try {
-      console.log(`🚀 Subiendo ${validFiles.length} archivo(s) al backend...`);
-      await aiService.uploadProjectDocuments(validFiles, projectId?.toString());
-      console.log('✅ Documentos reportados al backend para embeddings.');
+      await aiService.uploadProjectDocuments(validFiles, effectiveProjectId);
     } catch (e) {
       console.error('❌ Error subiendo documento al backend:', e);
-      alert('Hubo un error al procesar los archivos. Verifica la consola para más detalles.');
     }
   };
 
