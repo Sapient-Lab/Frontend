@@ -281,13 +281,7 @@ export default function Login() {
               </button>
             </div>
 
-            {/* Términos */}
-            <p className="mt-6 text-center text-[10px] text-slate-600 font-mono leading-relaxed">
-              Al continuar, aceptas nuestros{' '}
-              <button className="text-accent hover:text-cyan-400">Términos de Servicio</button>
-              {' '}y{' '}
-              <button className="text-accent hover:text-cyan-400">Política de Privacidad</button>
-            </p>
+            
           </div>
         </div>
       </div>

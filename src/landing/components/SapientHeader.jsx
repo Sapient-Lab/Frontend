@@ -66,7 +66,7 @@ const SapientHeader = () => {
             />
           </div>
           <span className="font-display text-lg font-bold tracking-wider text-cyan-700 dark:text-cyan-400">
-            SAPIENT LAB AI
+            SAPIENT LAB AI 
           </span>
           <span className="hidden md:inline-block text-xs text-gray-500 dark:text-gray-500 font-mono border-l border-gray-300 dark:border-gray-700 pl-3">
           </span>
