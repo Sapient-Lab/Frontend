@@ -11,6 +11,7 @@ import {
   FiMic,
   FiMicOff,
   FiTrash2,
+  FiUploadCloud,
 } from 'react-icons/fi';
 import { aiService } from '../services/aiService';
 import TaskRecommendation from '../components/TaskRecommendation';
@@ -70,6 +71,8 @@ export default function IntelligentLabNotebook() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [noteTitle, setNoteTitle] = useState('');
+  const [isUploadingBlockchain, setIsUploadingBlockchain] = useState(false);
+  const [blockchainStatus, setBlockchainStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -419,6 +422,66 @@ export default function IntelligentLabNotebook() {
     await generateSuggestions(noteIdToAnalyze);
   };
 
+  const handleUploadToBlockchain = async () => {
+    if (!noteContent.trim() || isUploadingBlockchain) return;
+    setIsUploadingBlockchain(true);
+    setBlockchainStatus('idle');
+
+    try {
+      // 1. Guardar la nota para asegurar que existe en el backend y tiene ID real
+      const savedId = await saveNote(noteContent);
+      if (!savedId) throw new Error('No se pudo guardar la nota antes de mintear');
+
+      // 2. Obtener los datos reales de la nota desde el backend
+      const noteResponse = await fetch(`/api/experiment-notes/${savedId}`);
+      if (!noteResponse.ok) throw new Error(`Error al obtener nota: ${noteResponse.status}`);
+      const noteData = await noteResponse.json();
+
+      const title = noteData.title ?? noteTitle.trim() ?? deriveTitle(noteContent);
+      const description = noteData.content ?? noteContent;
+      const createdAt = noteData.created_at
+        ? new Date(noteData.created_at).toISOString().replace('T', ' ').substring(0, 23)
+        : new Date().toISOString().replace('T', ' ').substring(0, 23);
+      const publishedAt = new Date().toISOString().replace('T', ' ').substring(0, 23);
+      const userName = localStorage.getItem('sapientlab_user_name') ?? 'Desconocido';
+
+      // 3. Construir el payload exacto que espera el endpoint
+      const payload = {
+        name: title,
+        description,
+        image: 'https://moccasin-magnetic-gopher-766.mypinata.cloud/ipfs/bafybeiagdk4wzi4pz6sbzytf6w2b5kxj6idyex5lsuzkfcu7lngo6rinjm',
+        attributes: [
+          { trait_type: 'ID', value: `EXP-${savedId}` },
+          { trait_type: 'Usuario', value: userName },
+          { trait_type: 'Creado', value: createdAt },
+          { trait_type: 'publicado', value: publishedAt },
+        ],
+      };
+
+      // 4. Subir a blockchain
+      const blockchainUrl = import.meta.env.VITE_API_BLOCKCHAIN ?? 'https://backend-blockchain-sapiens-lab.vercel.app';
+      const response = await fetch(`${blockchainUrl}/pinata/upload-json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.message ?? `Error ${response.status}`);
+      }
+
+      await response.json();
+      setBlockchainStatus('success');
+    } catch (error) {
+      console.error('Error subiendo a blockchain:', error);
+      setBlockchainStatus('error');
+      setTimeout(() => setBlockchainStatus('idle'), 4000);
+    } finally {
+      setIsUploadingBlockchain(false);
+    }
+  };
+
   const generateSuggestions = async (noteId: number) => {
     setIsGeneratingSuggestions(true);
     try {
@@ -749,10 +812,15 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
               placeholder="Escribe tus notas del experimento aquí. Luego usa 'Analizar texto' para pedir sugerencias a la IA..."
               className="flex-1 p-4 rounded-xl resize-none font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 bg-[#0a0f1c] border border-accent/20 text-slate-200 placeholder:text-slate-600 transition-all duration-300"
             />
-            <div className="flex gap-2 mt-4 justify-end">
+            <div className="flex gap-2 mt-4 justify-end flex-wrap">
               {isGeneratingSuggestions && (
                 <span className="text-xs text-accent flex items-center gap-1">
                   <FiRefreshCw className="w-3 h-3 animate-spin" /> Analizando...
+                </span>
+              )}
+              {isUploadingBlockchain && (
+                <span className="text-xs text-amber-400 flex items-center gap-1">
+                  <FiRefreshCw className="w-3 h-3 animate-spin" /> Subiendo a blockchain...
                 </span>
               )}
               <button
@@ -761,6 +829,27 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 className="px-4 py-2 bg-gradient-to-r from-accent to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-accent/30 disabled:opacity-50 flex items-center gap-2 text-xs font-mono transition-all duration-300"
               >
                 <FiBookOpen className="w-3 h-3" /> Analizar texto
+              </button>
+              <button
+                onClick={handleUploadToBlockchain}
+                disabled={isUploadingBlockchain || !noteContent.trim()}
+                className={`px-4 py-2 text-white rounded-lg flex items-center gap-2 text-xs font-mono transition-all duration-300 disabled:opacity-50 ${
+                  blockchainStatus === 'success'
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 shadow-lg shadow-amber-500/30'
+                    : blockchainStatus === 'error'
+                    ? 'bg-gradient-to-r from-red-500 to-rose-500 hover:shadow-lg hover:shadow-red-500/30'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:shadow-lg hover:shadow-amber-500/30'
+                }`}
+              >
+                {isUploadingBlockchain ? (
+                  <><FiRefreshCw className="w-3 h-3 animate-spin" /> Subiendo...</>
+                ) : blockchainStatus === 'success' ? (
+                  <><FiUploadCloud className="w-3 h-3" /> ¡Minteado!</>
+                ) : blockchainStatus === 'error' ? (
+                  <><FiUploadCloud className="w-3 h-3" /> Error al mintear</>
+                ) : (
+                  <><FiUploadCloud className="w-3 h-3" /> Subir a Blockchain</>
+                )}
               </button>
               <button
                 onClick={handleSaveNote}
@@ -790,6 +879,32 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 <FiDownload className="w-3 h-3" /> Descargar
               </button>
             </div>
+
+            {/* Banner Auditar Nota en Blockchain */}
+            {blockchainStatus === 'success' && (
+              <div className="mt-3 flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                  <FiUploadCloud className="w-4 h-4 text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-mono font-semibold text-amber-300">Nota minteada en Somnia Network</p>
+                  <a
+                    href="https://shannon-explorer.somnia.network/token/0xE16EcfeE6067B4918AF3eAF09Dd134FFdaE92D4D"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-mono text-amber-400/80 hover:text-amber-300 underline underline-offset-2 truncate block transition-colors"
+                  >
+                    Auditar Notas →
+                  </a>
+                </div>
+                <button
+                  onClick={() => setBlockchainStatus('idle')}
+                  className="text-amber-500/50 hover:text-amber-400 text-xs font-mono shrink-0 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
