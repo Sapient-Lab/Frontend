@@ -10,6 +10,16 @@ Frontend oficial de Sapient Lab para el reto Lab Notebook AI Assistant del Micro
 
 Este cliente web permite a investigadores interactuar con un asistente de laboratorio orientado a explicabilidad, seguridad y soporte a decision cientifica, sin reemplazar el juicio humano.
 
+## Challenge 2026 (resumen operativo)
+
+El producto se disena para cumplir este objetivo del reto:
+
+> Ayudar a investigadores a razonar sobre experimentos sin reemplazar su juicio cientifico,
+> con un asistente basado en agentes que interprete protocolos, sugiera variaciones y analice
+> resultados desde texto, CSV e imagenes, explicando por que recomienda cada paso.
+
+En frontend esto se traduce en: interfaz de trabajo, trazabilidad de recomendaciones, flujo de insercion limpia al notebook y visibilidad de contexto para decisiones humanas.
+
 ## Objetivo del proyecto
 
 Sapient Lab implementa una experiencia de notebook cientifico asistido por agentes para:
@@ -32,6 +42,7 @@ Sapient Lab implementa una experiencia de notebook cientifico asistido por agent
 | Editor embebido | Monaco Editor |
 | Integracion API | fetch + proxy Vite + interceptor de base URL |
 | IA backend | Azure AI stack (via API backend) |
+| Benchmark externo | OpenML (via backend `/api/openml/*`) |
 
 ## Alineacion con criterios del challenge
 
@@ -73,6 +84,74 @@ sequenceDiagram
   UI->>API: POST/PUT /api/experiments/:id/notes
 ```
 
+## Como interactuan los agentes de IA
+
+Diagrama de orquestacion funcional (vista frontend -> backend):
+
+```mermaid
+flowchart TD
+  U[Investigador] --> UI[Frontend Notebook]
+  UI --> ORQ[Agent Orchestrator API]
+
+  ORQ --> PI[Protocol Interpreter Agent]
+  ORQ --> RV[Variation Recommender Agent]
+  ORQ --> MA[Multimodal Analyzer Agent]
+  ORQ --> OM[OpenML Evidence Agent]
+  ORQ --> SA[Safety Guardrails Agent]
+  ORQ --> EX[Explainability Agent]
+
+  PI --> EX
+  RV --> EX
+  MA --> EX
+  OM --> EX
+  SA --> EX
+
+  EX --> RESP[Respuesta justificada]
+  RESP --> UI
+  UI --> U
+```
+
+Diagrama de interaccion para una consulta real en notebook:
+
+```mermaid
+sequenceDiagram
+  participant R as Researcher
+  participant FE as Frontend
+  participant ORQ as Agent Orchestrator
+  participant PI as Protocol Interpreter
+  participant MA as Multimodal Analyzer
+  participant OM as OpenML Agent
+  participant SG as Safety Guardrails
+  participant EX as Explainability Agent
+
+  R->>FE: Pregunta sobre siguiente paso experimental
+  FE->>ORQ: POST /api/ai/notebook/chat
+  ORQ->>PI: Interpretar protocolo y estado
+  ORQ->>MA: Analizar texto/CSV/imagen
+  ORQ->>OM: Buscar evidencia de referencia (OpenML)
+  PI-->>ORQ: Hipotesis + contexto
+  MA-->>ORQ: Hallazgos multimodales
+  OM-->>ORQ: Metricas/datasets comparables
+  ORQ->>SG: Validar limites bio/clinicos y contenido
+  SG-->>ORQ: Respuesta permitida + ajustes
+  ORQ->>EX: Construir recomendacion explicada
+  EX-->>FE: Respuesta con justificacion y advertencias
+  FE-->>R: Recomendacion para decision humana
+```
+
+Este diseno mantiene al investigador en control y deja explicita la evidencia usada para cada sugerencia.
+
+## OpenML en producto
+
+El frontend consume OpenML de forma indirecta a traves del backend para enriquecer recomendaciones con benchmarks y metadata publica:
+
+- descubrimiento de datasets relevantes,
+- consulta de tareas y tipos de tarea,
+- inspeccion de runs/evaluaciones,
+- comparacion de medidas de desempeno.
+
+La evidencia OpenML se incorpora a la respuesta explicada y no reemplaza el criterio cientifico del equipo.
+
 ## Modulos funcionales
 
 - Landing y narrativa del producto: [src/landing](src/landing)
@@ -88,12 +167,21 @@ sequenceDiagram
 
 | Modulo | Estado | Notas |
 |---|---|---|
-| Notebook inteligente | Activo | Chat con contexto + extraccion insertable + guardado de notas por experimento. |
+| Notebook inteligente | Activo | Chat con contexto + extraccion insertable + guardado/edicion/historial/eliminacion de notas por experimento. |
 | Scanner de protocolo e imagen | Activo | Soporta texto, imagen y dictado de voz con fallback. |
 | Onboarding de proyecto | Activo | Crea proyecto, define objetivo y sube documentos iniciales. |
 | Equipo e invitaciones | Activo | Miembros, invitaciones pendientes y aprobacion/rechazo. |
 | Biblioteca documental | Activo | Carga/listado/eliminacion de documentos por proyecto. |
-| Chat documental en Resources | En evolucion | Actualmente usa respuesta simulada (mock) en UI. |
+| Chat documental en Resources | Activo | Consulta documental conectada a backend mediante `documentChat` y contexto de archivos cargados. |
+
+## Otras Funciones Implementadas
+
+- Persistencia real de notas de experimento (crear y actualizar).
+- Historial de notas por experimento en panel lateral.
+- Eliminacion de notas desde historial.
+- Titulo editable de nota y guardado con feedback de estado (`guardando`, `guardado`, `error`).
+- Insercion de contenido util del asistente con `extract-insertable`.
+- Analisis IA de nota con sugerencias y advertencias.
 
 ## Rutas principales
 
@@ -155,15 +243,44 @@ Esto permite ejecutar localmente y desplegar en cloud sin cambiar el codigo de l
 - `PUT /api/experiments/:experimentId/notes/:noteId`
 - `DELETE /api/experiments/:experimentId/notes/:noteId`
 - `POST /api/experiments/:experimentId/notes/:noteId/ai-suggestions`
+- `GET /api/experiment-notes/by-experiment/:experimentId`
+- `POST /api/experiment-notes`
+- `PATCH /api/experiment-notes/:noteId`
 - `GET /api/frontend/home`
 - `GET /api/frontend/themes`
 - `POST /api/frontend/metrics/counter-clicks/increment`
+
+Nota: actualmente conviven rutas legacy (`/api/experiments/:experimentId/notes/*`) y rutas nuevas (`/api/experiment-notes/*`) en el flujo de notebook para mantener compatibilidad durante la transicion.
 
 ### Contexto de proyecto y documentos
 
 - `GET /api/project-context/:projectId`
 - `POST /api/project-context/:projectId/documents`
 - `DELETE /api/project-context/:projectId/documents/:documentId`
+
+### OpenML (nuevo recurso del challenge)
+
+- `GET /api/openml/datasets`
+- `GET /api/openml/datasets/qualities/list`
+- `GET /api/openml/datasets/tag`
+- `GET /api/openml/datasets/:id`
+- `GET /api/openml/datasets/:id/features`
+- `GET /api/openml/datasets/:id/qualities`
+- `GET /api/openml/tasks`
+- `GET /api/openml/tasks/types`
+- `GET /api/openml/tasks/types/:id`
+- `GET /api/openml/tasks/:id`
+- `GET /api/openml/flows`
+- `GET /api/openml/flows/exists`
+- `GET /api/openml/flows/:id`
+- `GET /api/openml/runs`
+- `GET /api/openml/runs/:id`
+- `GET /api/openml/runs/:id/trace`
+- `GET /api/openml/evaluations`
+- `GET /api/openml/evaluations/measures`
+- `GET /api/openml/setups/:id`
+- `GET /api/openml/studies`
+- `GET /api/openml/studies/:id`
 
 ### Integraciones
 

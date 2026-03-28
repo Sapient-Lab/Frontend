@@ -29,6 +29,8 @@ export interface AuthResponse {
   };
 }
 
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
+
 export const authService = {
   /**
    * Iniciar Sesión REAL
@@ -36,7 +38,7 @@ export const authService = {
    */
   async login(payload: LoginPayload): Promise<AuthResponse> {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -69,7 +71,7 @@ export const authService = {
    */
   async register(payload: RegisterPayload): Promise<AuthResponse> {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -101,7 +103,7 @@ export const authService = {
    */
   async forgotPassword(email: string): Promise<AuthResponse> {
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
