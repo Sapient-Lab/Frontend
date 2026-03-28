@@ -73,6 +73,7 @@ export default function IntelligentLabNotebook() {
   const [noteTitle, setNoteTitle] = useState('');
   const [isUploadingBlockchain, setIsUploadingBlockchain] = useState(false);
   const [blockchainStatus, setBlockchainStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [lastMintedTokenId, setLastMintedTokenId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -471,12 +472,13 @@ export default function IntelligentLabNotebook() {
         throw new Error(errData?.message ?? `Error ${response.status}`);
       }
 
+      const result = await response.json();
+      setLastMintedTokenId(result?.nft?.tokenId ?? null);
       setBlockchainStatus('success');
-      setTimeout(() => setBlockchainStatus('idle'), 3000);
     } catch (error) {
       console.error('Error subiendo a blockchain:', error);
       setBlockchainStatus('error');
-      setTimeout(() => setBlockchainStatus('idle'), 3000);
+      setTimeout(() => setBlockchainStatus('idle'), 4000);
     } finally {
       setIsUploadingBlockchain(false);
     }
@@ -879,6 +881,32 @@ ${sugg.safetyWarnings.length > 0 ? `### Advertencias de Seguridad\n${sugg.safety
                 <FiDownload className="w-3 h-3" /> Descargar
               </button>
             </div>
+
+            {/* Banner Auditar Nota en Blockchain */}
+            {blockchainStatus === 'success' && (
+              <div className="mt-3 flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                  <FiUploadCloud className="w-4 h-4 text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-mono font-semibold text-amber-300">Nota minteada en Somnia Network</p>
+                  <a
+                    href="https://shannon-explorer.somnia.network/token/0xE16EcfeE6067B4918AF3eAF09Dd134FFdaE92D4D"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-mono text-amber-400/80 hover:text-amber-300 underline underline-offset-2 truncate block transition-colors"
+                  >
+                    Auditar Notas →
+                  </a>
+                </div>
+                <button
+                  onClick={() => { setBlockchainStatus('idle'); setLastMintedTokenId(null); }}
+                  className="text-amber-500/50 hover:text-amber-400 text-xs font-mono shrink-0 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
