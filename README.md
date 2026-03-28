@@ -173,6 +173,100 @@ La evidencia OpenML se incorpora a la respuesta explicada y no reemplaza el crit
 | Equipo e invitaciones | Activo | Miembros, invitaciones pendientes y aprobacion/rechazo. |
 | Biblioteca documental | Activo | Carga/listado/eliminacion de documentos por proyecto. |
 | Chat documental en Resources | Activo | Consulta documental conectada a backend mediante `documentChat` y contexto de archivos cargados. |
+| Auditabilidad Blockchain | Activo | Minteo de notas como NFT en Somnia Network via Pinata IPFS. Banner con link al explorador tras minteo exitoso. |
+
+## Auditabilidad con Blockchain — Somnia Network
+
+Sapient Lab integra un mecanismo de auditabilidad descentralizada que permite inmutable el registro de notas de experimento en la red **Somnia Shannon Testnet** mediante NFTs. Esto garantiza que cualquier investigador o auditor externo pueda verificar la existencia e integridad de un experimento sin depender de infraestructura centralizada.
+
+### Por que blockchain
+
+La investigacion cientifica requiere trazabilidad. Una nota guardada en una base de datos puede ser editada o eliminada sin dejar rastro. Al mintear el contenido de una nota como NFT en una blockchain publica:
+
+- El hash del contenido queda sellado de forma permanente.
+- La fecha de publicacion es verificable por cualquiera.
+- El autor queda asociado al token sin necesidad de confianza en el servidor.
+- Cualquier auditoria puede validar que el experimento existia en ese estado exacto.
+
+### Flujo de uso
+
+```mermaid
+sequenceDiagram
+  participant I as Investigador
+  participant UI as Notebook UI
+  participant BE as Backend API
+  participant BC as Blockchain API (Vercel)
+  participant IPFS as Pinata IPFS
+  participant SOM as Somnia Network
+
+  I->>UI: Escribe nota y pulsa "Subir a Blockchain"
+  UI->>BE: Guarda nota (POST/PATCH /api/experiment-notes)
+  BE-->>UI: Nota con ID y created_at reales
+  UI->>BE: GET /api/experiment-notes/:id
+  BE-->>UI: Datos completos: title, content, created_at
+  UI->>BC: POST /pinata/upload-json con metadata NFT
+  BC->>IPFS: Sube JSON de metadatos
+  IPFS-->>BC: CID + URL publica
+  BC->>SOM: Mintea NFT con tokenURI = URL de IPFS
+  SOM-->>BC: tokenId + transactionHash
+  BC-->>UI: Respuesta con nft.tokenId y explorer URLs
+  UI->>I: Banner "Nota minteada" con link al explorador
+```
+
+### Estructura del NFT minteado
+
+Cada nota se convierte en un NFT ERC-721 con los siguientes metadatos:
+
+```json
+{
+  "name": "<titulo de la nota>",
+  "description": "<contenido completo de la nota>",
+  "image": "https://moccasin-magnetic-gopher-766.mypinata.cloud/ipfs/bafybeiagdk4wzi4pz6sbzytf6w2b5kxj6idyex5lsuzkfcu7lngo6rinjm",
+  "attributes": [
+    { "trait_type": "ID",        "value": "EXP-{id}" },
+    { "trait_type": "Usuario",   "value": "<nombre del investigador>" },
+    { "trait_type": "Creado",    "value": "<fecha de creacion desde backend>" },
+    { "trait_type": "publicado", "value": "<fecha de minteado>" }
+  ]
+}
+```
+
+Los datos de `name`, `description` y `Creado` se obtienen directamente del backend para garantizar que el contenido auditado coincide con lo almacenado en la base de datos, no con una version local del cliente.
+
+### Infraestructura blockchain
+
+| Campo | Valor |
+|---|---|
+| Red | Somnia Shannon Testnet |
+| Contrato NFT | `0xE16EcfeE6067B4918AF3eAF09Dd134FFdaE92D4D` |
+| Almacenamiento de metadatos | Pinata IPFS |
+| Explorador de bloques | https://shannon-explorer.somnia.network |
+| Auditar coleccion | https://shannon-explorer.somnia.network/token/0xE16EcfeE6067B4918AF3eAF09Dd134FFdaE92D4D |
+| API Blockchain | https://backend-blockchain-sapiens-lab.vercel.app |
+
+### Variable de entorno requerida
+
+```env
+VITE_API_BLOCKCHAIN=https://backend-blockchain-sapiens-lab.vercel.app
+```
+
+Esta variable debe estar presente en `.env.development` y `.env.production`.
+
+### Endpoint consumido
+
+```
+POST {VITE_API_BLOCKCHAIN}/pinata/upload-json
+```
+
+Referencia completa del endpoint en [implementaci-n-de-pinata-IPFS/ENDPOINT_UPLOAD_JSON.md](../implementaci-n-de-pinata-IPFS/ENDPOINT_UPLOAD_JSON.md).
+
+### UX del flujo de auditabilidad
+
+1. El investigador redacta su nota en el **Notebook Inteligente**.
+2. Pulsa el boton **"Subir a Blockchain"** junto a "Analizar texto".
+3. El sistema guarda la nota en el backend, obtiene sus datos reales y construye el payload NFT.
+4. Tras el minteo exitoso aparece un banner ambar con el enlace **"Auditar Notas →"** que apunta al contrato en el explorador de Somnia.
+5. Cualquier persona con el link puede verificar el token y sus metadatos sin necesidad de acceso a la plataforma.
 
 ## Otras Funciones Implementadas
 
@@ -311,12 +405,14 @@ Archivo recomendado para desarrollo: .env.development.
 
 - VITE_API_URL: URL base del backend.
 - VITE_API_TARGET: objetivo de proxy de Vite (opcional, recomendado en local).
+- VITE_API_BLOCKCHAIN: URL del servicio blockchain para minteo de notas en Somnia Network.
 
 Ejemplo:
 
 ```env
 VITE_API_URL=http://localhost:3000
 VITE_API_TARGET=http://localhost:3000
+VITE_API_BLOCKCHAIN=https://backend-blockchain-sapiens-lab.vercel.app
 ```
 
 ## Instalacion y ejecucion
