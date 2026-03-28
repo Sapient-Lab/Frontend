@@ -433,10 +433,10 @@ export default function ProtocolScanner() {
               <h2 className="text-[10px] font-mono font-bold text-accent uppercase tracking-wider">2. Instrucciones / Contexto Adicional</h2>
               <button
                 onClick={handleStartListening}
-                disabled={isLoading}
+                type="button"
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-medium flex items-center gap-2 transition-all duration-300 ${
                   isListening
-                    ? 'bg-red-500/20 border border-red-500/50 text-red-400'
+                    ? 'bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/30'
                     : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20'
                 }`}
                 title="Dictar protocolo (máx 30s)"
