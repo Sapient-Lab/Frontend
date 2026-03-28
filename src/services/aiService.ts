@@ -78,7 +78,13 @@ export const aiService = {
   /**
    * Envía un mensaje al endpoint conversacional del backend
    */
-  async sendMessage(message: string, messages?: ChatMessage[], provider?: 'azure' | 'mistral' | 'deepseek') {
+  async sendMessage(
+    message: string,
+    messages?: ChatMessage[],
+    provider?: 'azure' | 'mistral' | 'deepseek',
+    projectId?: number,
+    fallbackSystemPrompt?: string,
+  ) {
     const response = await fetch('/api/ai/conversation', {
       method: 'POST',
       headers: {
@@ -88,6 +94,8 @@ export const aiService = {
         message, 
         messages, 
         provider,
+        projectId,
+        fallbackSystemPrompt,
       }), 
     });
 
@@ -337,17 +345,25 @@ export const aiService = {
    * Chat sobre documentos: Analiza documentos usando IA conversacional
    */
   async documentChat(query: string, documentNames: string[] = []) {
-    const prompt = `
-Eres un asistente especializado en análisis de documentos e investigación. 
-El usuario ha subido los siguientes documentos: ${documentNames.join(', ')}
-Responde la siguiente pregunta basándote en tu conocimiento de estos tipos de documentos y lo que sabrías de archivos con esos nombres.
-La respuesta debe ser específica, útil y basada en el contenido que típicamente encontraríamos en tales documentos.
-
-Pregunta del usuario: ${query}
-    `.trim();
+    const localProjectId = localStorage.getItem('sapientlab_project_id');
+    const projectId = localProjectId ? parseInt(localProjectId, 10) : undefined;
+    const fallbackSystemPrompt = [
+      'Eres un asistente de investigación científica especializado en análisis documental.',
+      'Responde en español usando primero la evidencia del contexto del proyecto y del contenido recuperado de documentos.',
+      'No afirmes que no tienes acceso al archivo si en el contexto ya se proporcionó contenido documental.',
+      'Si la evidencia no alcanza para responder con precisión, indica explícitamente qué dato o sección falta.',
+      'No inventes resultados ni detalles técnicos no sustentados.',
+      `Documentos cargados por el usuario: ${documentNames.join(', ') || 'No especificados'}.`,
+    ].join(' ');
 
     try {
-      const response = await this.sendMessage(prompt, []);
+      const response = await this.sendMessage(
+        query,
+        [],
+        undefined,
+        Number.isNaN(projectId as number) ? undefined : projectId,
+        fallbackSystemPrompt,
+      );
       // Extract the actual response text from the wrapper
       const responseText = response?.rawModelResponse || response?.text || response?.message || JSON.stringify(response);
       
